@@ -1,4 +1,15 @@
+(load "../inverse-kinematics-wrapper.l")
+(load "../discrete-kinematics-configuration-task.l")
+(load "../sqp-msc-optimization.l")
+(require "models/arrow-object.l")
+
 (load "models/room610-scene.l")
+
+(load "yamaguchi_6axis_arm_with_vacuum_base.l")
+(defmethod yamaguchi_6axis_arm_with_vacuum_base-robot
+  (:end-coords ()
+    (send self :rarm :end-coords)))
+
 
 (defclass attachable-plane
   :super propertied-object
@@ -45,23 +56,88 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
      (send cube :set-color (float-vector 1 0 0 0.5))
      cube)
    )
+  (:offset
+   ()
+   _offset)
+  (:min-angle-list
+   ()
+   _min-angle-list)
+  (:max-angle-list
+   ()
+   _max-angle-list)
+  (:normal
+   ()
+   _normal)
   )
 
-(defun main ()
-  (let ((room610 (room610))
-        (p (instance attachable-plane :init
-                     :offset 900
-                     :min-angle-list (list 7750 -250)
-                     :max-angle-list (list 8350 600)
-                     :normal :z+)))
-    (objects (append (send room610 :objects) (list (send p :object))))
-    )
+
+(defun main
+    (&key
+     (pre-process-func)
+     (post-process-func)
+     &allow-other-keys
+     )
+  ;; 1. Prepare task environment
+  ;; If you change task configuration, change only this section.
+  (setq *room610* (room610))
+  (setq *attachable-plane* (instance attachable-plane :init
+                                     :offset 900
+                                     :min-angle-list (list 7750 -250)
+                                     :max-angle-list (list 8350 600)
+                                     :normal :z+))
+  (setq *robot* (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init))
+  (setq *arrow* (instance arrow-object :init))
+  (send *arrow* :newcoords
+        (make-coords :pos (float-vector 8000 800 1000) :rpy (list (deg2rad 60) 0 0)))
+  (objects (append (send *room610* :objects)
+                   (list (send *attachable-plane* :object)
+                         *robot*
+                         *arrow*)))
+
+  ;; 2. Rotate *robot* along *attachable-plane*
+  ;; It is assumed that *robot* and *room610* coords are the same at first.
+  (let ((normal (send *attachable-plane* :normal))
+        (offset (send *attachable-plane* :offset)))
+    (when (eq normal :x+)
+      (send *robot* :rotate pi/2 :y)
+      (send *robot* :locate (float-vector offset 0 0) :world))
+    (when (eq normal :x-)
+      (send *robot* :rotate -pi/2 :y)
+      (send *robot* :locate (float-vector offset 0 0) :world))
+    (when (eq normal :y+)
+      (send *robot* :rotate -pi/2 :x)
+      (send *robot* :locate (float-vector 0 offset 0) :world))
+    (when (eq normal :y-)
+      (send *robot* :rotate pi/2 :x)
+      (send *robot* :locate (float-vector 0 offset 0) :world))
+    (when (eq normal :z+)
+      (send *robot* :locate (float-vector 0 0 offset) :world))
+    (when (eq normal :z-)
+      (send *robot* :rotate pi :x)
+      (send *robot* :locate (float-vector 0 0 offset) :world)))
+
+  ;; optimization
+  (send *robot*
+        :inverse-kinematics-optmotiongen
+        (send *arrow* :copy-worldcoords)
+        :move-target (send *robot* :end-coords)
+        :translation-axis t
+        :rotation-axis nil
+        :debug-view t
+        :root-virtual-mode
+        (let ((normal (send *attachable-plane* :normal)))
+          (when (or (eq normal :x+) (eq normal :x-)) :planar-x)
+          (when (or (eq normal :y+) (eq normal :y-)) :planar-y)
+          (when (or (eq normal :z+) (eq normal :z-)) :planar-z))
+        ;; The last added element is rotation joint on the plane (continuous rotation)
+        :root-virtual-joint-min-angle-list
+        (append (send *attachable-plane* :min-angle-list) (list -1e10))
+        :root-virtual-joint-max-angle-list
+        (append (send *attachable-plane* :max-angle-list) (list 1e10))
+        :pre-process-func pre-process-func
+        :post-process-func post-process-func
+        )
   nil)
-
-
-;; 3. タスクのターゲット位置を指定する（室岡さんと同じように、arrowで与える）
-
-;; 4. 3.の情報から、610モデルにタスク位置をvisualizeする。
 
 ;; 5. 1.のnormal情報から、*robot*のベースを回転させる。
 
