@@ -92,6 +92,8 @@ Initialize instance
           (setq joint-axis-list
                 (list :x :y :z :x :y :z))
           )
+         ;; Note that linear joint is world coords axis
+         ;; On the other hand, rotational joint is robot coords axis
          ((equal mode :planar)
           (setq joint-class-list
                 (list linear-joint linear-joint rotational-joint))
@@ -102,13 +104,13 @@ Initialize instance
           (setq joint-class-list
                 (list linear-joint linear-joint rotational-joint))
           (setq joint-axis-list
-                (list :y :z :x))
+                (list :y :z :z))
           )
          ((equal mode :planar-y)
           (setq joint-class-list
                 (list linear-joint linear-joint rotational-joint))
           (setq joint-axis-list
-                (list :z :x :y))
+                (list :z :x :z))
           )
          ((equal mode :planar-z)
           (setq joint-class-list

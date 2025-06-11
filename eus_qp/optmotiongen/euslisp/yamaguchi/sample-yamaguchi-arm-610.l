@@ -70,7 +70,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
    _normal)
   )
 
-
+;; TODO: Visualize normal arrow (Create :normal-object function)
 (defun main
     (&key
      (pre-process-func)
@@ -80,15 +80,20 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
   ;; 1. Prepare task environment
   ;; If you change task configuration, change only this section.
   (setq *room610* (room610))
+  ;; (setq *attachable-plane* (instance attachable-plane :init
+  ;;                                    :offset 900
+  ;;                                    :min-angle-list (list 7750 -250)
+  ;;                                    :max-angle-list (list 8350 600)
+  ;;                                    :normal :z+))
   (setq *attachable-plane* (instance attachable-plane :init
-                                     :offset 900
-                                     :min-angle-list (list 7750 -250)
-                                     :max-angle-list (list 8350 600)
-                                     :normal :z+))
+                                     :offset 8500
+                                     :min-angle-list (list -250 900)
+                                     :max-angle-list (list 600 2000)
+                                     :normal :x-))
   (setq *robot* (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init))
   (setq *arrow* (instance arrow-object :init))
   (send *arrow* :newcoords
-        (make-coords :pos (float-vector 8000 800 1000) :rpy (list (deg2rad 60) 0 0)))
+        (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
   (objects (append (send *room610* :objects)
                    (list (send *attachable-plane* :object)
                          *robot*
@@ -96,6 +101,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
 
   ;; 2. Rotate *robot* along *attachable-plane*
   ;; It is assumed that *robot* and *room610* coords are the same at first.
+  (send *robot* :newcoords (make-coords))
   (let ((normal (send *attachable-plane* :normal))
         (offset (send *attachable-plane* :offset)))
     (when (eq normal :x+)
@@ -125,10 +131,11 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
         :rotation-axis nil
         :debug-view t
         :root-virtual-mode
-        (let ((normal (send *attachable-plane* :normal)))
-          (when (or (eq normal :x+) (eq normal :x-)) :planar-x)
-          (when (or (eq normal :y+) (eq normal :y-)) :planar-y)
-          (when (or (eq normal :z+) (eq normal :z-)) :planar-z))
+        (let ((normal (send *attachable-plane* :normal)) mode)
+          (when (or (eq normal :x+) (eq normal :x-)) (setq mode :planar-x))
+          (when (or (eq normal :y+) (eq normal :y-)) (setq mode :planar-y))
+          (when (or (eq normal :z+) (eq normal :z-)) (setq mode :planar-z))
+          mode)
         ;; The last added element is rotation joint on the plane (continuous rotation)
         :root-virtual-joint-min-angle-list
         (append (send *attachable-plane* :min-angle-list) (list -1e10))
@@ -138,9 +145,3 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
         :post-process-func post-process-func
         )
   nil)
-
-;; 5. 1.のnormal情報から、*robot*のベースを回転させる。
-
-;; 6. 1.と3.の情報から、optmotiongenの制約を作り、実際にベース移動IKを解く。
-
-;; -> これができれば、610の好きな場所を配置可能面/タスク位置にして、ベース移動IKを解けるようになる。
