@@ -2,6 +2,7 @@
 (load "../discrete-kinematics-configuration-task.l")
 (load "../sqp-msc-optimization.l")
 (require "models/arrow-object.l")
+(require "models/single-arrow-object.l")
 
 (load "models/room610-scene.l")
 
@@ -53,9 +54,24 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
      (setq cube (make-cube (elt size 0) (elt size 1) (elt size 2)))
      (send cube :newcoords
            (make-coords :pos (float-vector (elt pos 0) (elt pos 1) (elt pos 2))))
-     (send cube :set-color (float-vector 1 0 0 0.5))
+     (send cube :set-color (float-vector 1 0 0 0.3))
      cube)
    )
+  (:normal-object
+   ()
+   (let ((arrow (single-arrow)))
+     (send arrow :newcoords (send (send self :object) :copy-worldcoords))
+     (cond ((eq _normal :x+)
+            (send arrow :rotate -pi/2 :z))
+           ((eq _normal :x-)
+            (send arrow :rotate pi/2 :z))
+           ((eq _normal :y-)
+            (send arrow :rotate pi :x))
+           ((eq _normal :z+)
+            (send arrow :rotate pi/2 :x))
+           ((eq _normal :z-)
+            (send arrow :rotate -pi/2 :x)))
+     arrow))
   (:offset
    ()
    _offset)
@@ -70,7 +86,6 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
    _normal)
   )
 
-;; TODO: Visualize normal arrow (Create :normal-object function)
 (defun main
     (&key
      (pre-process-func)
@@ -80,22 +95,23 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
   ;; 1. Prepare task environment
   ;; If you change task configuration, change only this section.
   (setq *room610* (room610))
-  ;; (setq *attachable-plane* (instance attachable-plane :init
-  ;;                                    :offset 900
-  ;;                                    :min-angle-list (list 7750 -250)
-  ;;                                    :max-angle-list (list 8350 600)
-  ;;                                    :normal :z+))
   (setq *attachable-plane* (instance attachable-plane :init
-                                     :offset 8500
-                                     :min-angle-list (list -250 900)
-                                     :max-angle-list (list 600 2000)
-                                     :normal :x-))
+                                     :offset 900
+                                     :min-angle-list (list 7750 -250)
+                                     :max-angle-list (list 8350 600)
+                                     :normal :z+))
+  ;; (setq *attachable-plane* (instance attachable-plane :init
+  ;;                                    :offset 8500
+  ;;                                    :min-angle-list (list -250 900)
+  ;;                                    :max-angle-list (list 600 2000)
+  ;;                                    :normal :x-))
   (setq *robot* (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init))
   (setq *arrow* (instance arrow-object :init))
   (send *arrow* :newcoords
         (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
   (objects (append (send *room610* :objects)
                    (list (send *attachable-plane* :object)
+                         (send *attachable-plane* :normal-object)
                          *robot*
                          *arrow*)))
 
