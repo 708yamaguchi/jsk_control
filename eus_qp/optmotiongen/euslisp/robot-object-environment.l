@@ -45,7 +45,7 @@
     (robot)
     (object)
     (contact-list)
-    (root-virtual-mode :6dof) ;; :6dof, :planar, :fix are supported
+    (root-virtual-mode :6dof) ;; :6dof, :planar, :planar-x, :planar-y, :planar-z, :fix are supported. :planar is the same as :planar-z
     (root-virtual-joint-class-list)
     (root-virtual-joint-axis-list)
     )

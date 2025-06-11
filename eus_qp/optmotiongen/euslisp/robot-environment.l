@@ -44,7 +44,7 @@
    (&key
     (robot)
     (contact-list)
-    (root-virtual-mode :6dof) ;; :6dof, :planar, :fix are supported
+    (root-virtual-mode :6dof) ;; :6dof, :planar, :planar-x, :planar-y, :planar-z, :fix are supported. :planar is the same as :planar-z
     (root-virtual-joint-class-list)
     (root-virtual-joint-axis-list)
     (root-virtual-joint-min-angle-list)
@@ -93,6 +93,24 @@ Initialize instance
                 (list :x :y :z :x :y :z))
           )
          ((equal mode :planar)
+          (setq joint-class-list
+                (list linear-joint linear-joint rotational-joint))
+          (setq joint-axis-list
+                (list :x :y :z))
+          )
+         ((equal mode :planar-x)
+          (setq joint-class-list
+                (list linear-joint linear-joint rotational-joint))
+          (setq joint-axis-list
+                (list :y :z :x))
+          )
+         ((equal mode :planar-y)
+          (setq joint-class-list
+                (list linear-joint linear-joint rotational-joint))
+          (setq joint-axis-list
+                (list :z :x :y))
+          )
+         ((equal mode :planar-z)
           (setq joint-class-list
                 (list linear-joint linear-joint rotational-joint))
           (setq joint-axis-list
