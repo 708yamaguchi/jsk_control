@@ -95,69 +95,82 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
   ;; 1. Prepare task environment
   ;; If you change task configuration, change only this section.
   (setq *room610* (room610))
-  (setq *attachable-plane* (instance attachable-plane :init
-                                     :offset 900
-                                     :min-angle-list (list 7750 -250)
-                                     :max-angle-list (list 8350 600)
-                                     :normal :z+))
-  ;; (setq *attachable-plane* (instance attachable-plane :init
-  ;;                                    :offset 8500
-  ;;                                    :min-angle-list (list -250 900)
-  ;;                                    :max-angle-list (list 600 2000)
-  ;;                                    :normal :x-))
-  (setq *robot* (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init))
-  (setq *arrow* (instance arrow-object :init))
-  (send *arrow* :newcoords
-        (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
+  ;; *robot-list*, *attachable-plane-list* and *task-arrow-list* are the same length and correspond in order
+  (setq *robot-list*
+        (list (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)
+              (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
+  (setq *attachable-plane-list*
+        (list
+         (instance attachable-plane :init
+                   :offset 900
+                   :min-angle-list (list 7800 -250)
+                   :max-angle-list (list 8300 600)
+                   :normal :z+)
+         (instance attachable-plane :init
+                   :offset 8500
+                   :min-angle-list (list -1250 1100)
+                   :max-angle-list (list 1600 2000)
+                   :normal :x-)))
+  (setq *task-arrow-list*
+        (list
+         (send (instance arrow-object :init) :newcoords
+               (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
+         (send (instance arrow-object :init) :newcoords
+               (make-coords :pos (float-vector 8200 -800 1000) :rpy (list (deg2rad 60) 0 0)))
+         ))
   (objects (append (send *room610* :objects)
-                   (list (send *attachable-plane* :object)
-                         (send *attachable-plane* :normal-object)
-                         *robot*
-                         *arrow*)))
+                   *robot-list*
+                   (send-all *attachable-plane-list* :object)
+                   (send-all *attachable-plane-list* :normal-object)
+                   *task-arrow-list*))
 
-  ;; 2. Rotate *robot* along *attachable-plane*
-  ;; It is assumed that *robot* and *room610* coords are the same at first.
-  (send *robot* :newcoords (make-coords))
-  (let ((normal (send *attachable-plane* :normal))
-        (offset (send *attachable-plane* :offset)))
-    (when (eq normal :x+)
-      (send *robot* :rotate pi/2 :y)
-      (send *robot* :locate (float-vector offset 0 0) :world))
-    (when (eq normal :x-)
-      (send *robot* :rotate -pi/2 :y)
-      (send *robot* :locate (float-vector offset 0 0) :world))
-    (when (eq normal :y+)
-      (send *robot* :rotate -pi/2 :x)
-      (send *robot* :locate (float-vector 0 offset 0) :world))
-    (when (eq normal :y-)
-      (send *robot* :rotate pi/2 :x)
-      (send *robot* :locate (float-vector 0 offset 0) :world))
-    (when (eq normal :z+)
-      (send *robot* :locate (float-vector 0 0 offset) :world))
-    (when (eq normal :z-)
-      (send *robot* :rotate pi :x)
-      (send *robot* :locate (float-vector 0 0 offset) :world)))
+  (dotimes (i (length *robot-list*))
+    (let ((robot (elt *robot-list* i))
+          (task-plane (elt *attachable-plane-list* i))
+          (task-arrow (elt *task-arrow-list* i)))
+      ;; 2. Rotate robot along task-plane
+      ;; It is assumed that robot and room610 coords are the same at first.
+      (send robot :newcoords (make-coords))
+      (let ((normal (send task-plane :normal))
+            (offset (send task-plane :offset)))
+        (when (eq normal :x+)
+          (send robot :rotate pi/2 :y)
+          (send robot :locate (float-vector offset 0 0) :world))
+        (when (eq normal :x-)
+          (send robot :rotate -pi/2 :y)
+          (send robot :locate (float-vector offset 0 0) :world))
+        (when (eq normal :y+)
+          (send robot :rotate -pi/2 :x)
+          (send robot :locate (float-vector 0 offset 0) :world))
+        (when (eq normal :y-)
+          (send robot :rotate pi/2 :x)
+          (send robot :locate (float-vector 0 offset 0) :world))
+        (when (eq normal :z+)
+          (send robot :locate (float-vector 0 0 offset) :world))
+        (when (eq normal :z-)
+          (send robot :rotate pi :x)
+          (send robot :locate (float-vector 0 0 offset) :world)))
 
-  ;; optimization
-  (send *robot*
-        :inverse-kinematics-optmotiongen
-        (send *arrow* :copy-worldcoords)
-        :move-target (send *robot* :end-coords)
-        :translation-axis t
-        :rotation-axis nil
-        :debug-view t
-        :root-virtual-mode
-        (let ((normal (send *attachable-plane* :normal)) mode)
-          (when (or (eq normal :x+) (eq normal :x-)) (setq mode :planar-x))
-          (when (or (eq normal :y+) (eq normal :y-)) (setq mode :planar-y))
-          (when (or (eq normal :z+) (eq normal :z-)) (setq mode :planar-z))
-          mode)
-        ;; The last added element is rotation joint on the plane (continuous rotation)
-        :root-virtual-joint-min-angle-list
-        (append (send *attachable-plane* :min-angle-list) (list -1e10))
-        :root-virtual-joint-max-angle-list
-        (append (send *attachable-plane* :max-angle-list) (list 1e10))
-        :pre-process-func pre-process-func
-        :post-process-func post-process-func
-        )
+      ;; optimization
+      (send robot
+            :inverse-kinematics-optmotiongen
+            (send task-arrow :copy-worldcoords)
+            :move-target (send robot :end-coords)
+            :translation-axis t
+            :rotation-axis nil
+            :debug-view t
+            :root-virtual-mode
+            (let ((normal (send task-plane :normal)) mode)
+              (when (or (eq normal :x+) (eq normal :x-)) (setq mode :planar-x))
+              (when (or (eq normal :y+) (eq normal :y-)) (setq mode :planar-y))
+              (when (or (eq normal :z+) (eq normal :z-)) (setq mode :planar-z))
+              mode)
+            ;; The last added element is rotation joint on the plane (continuous rotation)
+            :root-virtual-joint-min-angle-list
+            (append (send task-plane :min-angle-list) (list -1e10))
+            :root-virtual-joint-max-angle-list
+            (append (send task-plane :max-angle-list) (list 1e10))
+            :pre-process-func pre-process-func
+            :post-process-func post-process-func)
+      ))
   nil)
