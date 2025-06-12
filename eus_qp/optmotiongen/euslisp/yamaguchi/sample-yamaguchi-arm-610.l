@@ -4,87 +4,14 @@
 (require "models/arrow-object.l")
 (require "models/single-arrow-object.l")
 
-(load "models/room610-scene.l")
+;; Set *room610-model-list*
+(load "room610-model-list.l")
+(load "attachable-plane.l")
 
-(load "yamaguchi_6axis_arm_with_vacuum_base.l")
+(require "yamaguchi_6axis_arm_with_vacuum_base.l")
 (defmethod yamaguchi_6axis_arm_with_vacuum_base-robot
   (:end-coords ()
     (send self :rarm :end-coords)))
-
-
-(defclass attachable-plane
-  :super propertied-object
-  :slots (_min-angle-list _max-angle-list _offset _normal)
-  :documentation
-  "
-610モデルの中でアームを配置できる平面（長方形）を指定する。例えばXY平面内で、Z軸正方向にロボットアームを置くなら、以下のようにする。angle-listの順番に注意。ZX平面なら、(z, x)の順に与える
-offsetは平面の位置
-最小値、最大値、平面の位置は、ワールド座標で指定する。
-normalは:x-, :x+, :y-, :y+, :z-, :z+
-"
-  )
-
-(defmethod attachable-plane
-  (:init
-   (&key
-    (offset)
-    (min-angle-list)
-    (max-angle-list)
-    (normal)
-    )
-   (setq _offset offset)
-   (setq _min-angle-list min-angle-list)
-   (setq _max-angle-list max-angle-list)
-   (setq _normal normal)
-   )
-  (:object
-   ()
-   (let ((mid (mapcar #'(lambda (x y) (* (+ x y) 0.5)) _min-angle-list _max-angle-list))
-         (diff (mapcar #'- _max-angle-list  _min-angle-list))
-         size pos cube)
-     (when (or (eq _normal :z-) (eq _normal :z+))
-       (setq size (list (elt diff 0) (elt diff 1) 1))
-       (setq pos (list (elt mid 0) (elt mid 1) _offset)))
-     (when (or (eq _normal :y-) (eq _normal :y+))
-       (setq size (list (elt diff 1) 1 (elt diff 0)))
-       (setq pos (list (elt mid 1) _offset (elt mid 0))))
-     (when (or (eq _normal :x-) (eq _normal :x+))
-       (setq size (list 1 (elt diff 0) (elt diff 1)))
-       (setq pos (list _offset (elt mid 0) (elt mid 1))))
-     (setq cube (make-cube (elt size 0) (elt size 1) (elt size 2)))
-     (send cube :newcoords
-           (make-coords :pos (float-vector (elt pos 0) (elt pos 1) (elt pos 2))))
-     (send cube :set-color (float-vector 1 0 0 0.3))
-     cube)
-   )
-  (:normal-object
-   ()
-   (let ((arrow (single-arrow)))
-     (send arrow :newcoords (send (send self :object) :copy-worldcoords))
-     (cond ((eq _normal :x+)
-            (send arrow :rotate -pi/2 :z))
-           ((eq _normal :x-)
-            (send arrow :rotate pi/2 :z))
-           ((eq _normal :y-)
-            (send arrow :rotate pi :x))
-           ((eq _normal :z+)
-            (send arrow :rotate pi/2 :x))
-           ((eq _normal :z-)
-            (send arrow :rotate -pi/2 :x)))
-     arrow))
-  (:offset
-   ()
-   _offset)
-  (:min-angle-list
-   ()
-   _min-angle-list)
-  (:max-angle-list
-   ()
-   _max-angle-list)
-  (:normal
-   ()
-   _normal)
-  )
 
 (defun main
     (&key
@@ -94,11 +21,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
      )
   ;; 1. Prepare task environment
   ;; If you change task configuration, change only this section.
-  (setq *room610* (room610))
   ;; *robot-list*, *attachable-plane-list* and *task-arrow-list* are the same length and correspond in order
-  (setq *robot-list*
-        (list (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)
-              (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
   (setq *attachable-plane-list*
         (list
          (instance attachable-plane :init
@@ -110,19 +33,29 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
                    :offset 8500
                    :min-angle-list (list -1250 1100)
                    :max-angle-list (list 1600 2000)
-                   :normal :x-)))
+                   :normal :x-)
+         (instance attachable-plane :init
+                   :offset 720
+                   :min-angle-list (list 4300 -700)
+                   :max-angle-list (list 5000 150)
+                   :normal :z+)))
   (setq *task-arrow-list*
         (list
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
          (send (instance arrow-object :init) :newcoords
-               (make-coords :pos (float-vector 8200 -800 1000) :rpy (list (deg2rad 60) 0 0)))
+               (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
+         (send (instance arrow-object :init) :newcoords
+               (make-coords :pos (float-vector 4600 350 720) :rpy (list 0 0 0)))
          ))
-  (objects (append (send *room610* :objects)
-                   *robot-list*
+  (setq *robot-list* nil)
+  (dotimes (i (length *attachable-plane-list*))
+    (setq *robot-list* (append *robot-list* (list (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))))
+  (objects (append *room610-model-list*
                    (send-all *attachable-plane-list* :object)
                    (send-all *attachable-plane-list* :normal-object)
-                   *task-arrow-list*))
+                   *task-arrow-list*
+                   *robot-list*))
 
   (dotimes (i (length *robot-list*))
     (let ((robot (elt *robot-list* i))
