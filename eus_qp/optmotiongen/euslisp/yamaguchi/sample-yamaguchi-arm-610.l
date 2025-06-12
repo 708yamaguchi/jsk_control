@@ -44,6 +44,11 @@
                    :min-angle-list (list 6050 1870)
                    :max-angle-list (list 6450 2150)
                    :normal :z+)
+         (instance attachable-plane :init
+                   :offset 1900
+                   :min-angle-list (list 6720 2010)
+                   :max-angle-list (list 7300 2520)
+                   :normal :z+)
          ))
   (setq *task-arrow-list*
         (list
@@ -55,6 +60,8 @@
                (make-coords :pos (float-vector 4600 350 720) :rpy (list 0 0 0)))
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
+         (send (instance arrow-object :init) :newcoords
+               (make-coords :pos (float-vector 7000 2400 1900) :rpy (list 0 0 0)))
          ))
   (setq *robot-list* nil)
   (let ((robot (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
@@ -95,6 +102,7 @@
           (send robot :locate (float-vector 0 0 offset) :world)))
 
       ;; 3. optimization
+      ;; TODO: 自己干渉回避
       (send robot
             :inverse-kinematics-optmotiongen
             (send task-arrow :copy-worldcoords)
