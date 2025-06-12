@@ -38,7 +38,13 @@
                    :offset 720
                    :min-angle-list (list 4300 -700)
                    :max-angle-list (list 5000 150)
-                   :normal :z+)))
+                   :normal :z+)
+         (instance attachable-plane :init
+                   :offset 1200
+                   :min-angle-list (list 6050 1870)
+                   :max-angle-list (list 6450 2150)
+                   :normal :z+)
+         ))
   (setq *task-arrow-list*
         (list
          (send (instance arrow-object :init) :newcoords
@@ -47,13 +53,17 @@
                (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 4600 350 720) :rpy (list 0 0 0)))
+         (send (instance arrow-object :init) :newcoords
+               (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
          ))
   (setq *robot-list* nil)
-  (dotimes (i (length *attachable-plane-list*))
-    (setq *robot-list* (append *robot-list* (list (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))))
+  (let ((robot (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
+    (dotimes (i (length *attachable-plane-list*))
+      (setq *robot-list* (append *robot-list*
+                                 (list (copy-object robot))))))
   (objects (append *room610-model-list*
                    (send-all *attachable-plane-list* :object)
-                   (send-all *attachable-plane-list* :normal-object)
+                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
                    *task-arrow-list*
                    *robot-list*))
 
@@ -84,7 +94,7 @@
           (send robot :rotate pi :x)
           (send robot :locate (float-vector 0 0 offset) :world)))
 
-      ;; optimization
+      ;; 3. optimization
       (send robot
             :inverse-kinematics-optmotiongen
             (send task-arrow :copy-worldcoords)
@@ -107,3 +117,5 @@
             :post-process-func post-process-func)
       ))
   nil)
+
+(warn "(main)~%")
