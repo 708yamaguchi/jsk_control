@@ -4,14 +4,9 @@
 (require "models/arrow-object.l")
 (require "models/single-arrow-object.l")
 
-;; Set *room610-model-list*
-(load "room610-model-list.l")
+(load "room610-model-list.l") ;; Set *room610-model-list*
 (load "attachable-plane.l")
-
-(require "yamaguchi_6axis_arm_with_vacuum_base.l")
-(defmethod yamaguchi_6axis_arm_with_vacuum_base-robot
-  (:end-coords ()
-    (send self :rarm :end-coords)))
+(load "yamaguchi-arm.l") ;; Define (yamaguchi-arm) function
 
 (defun main
     (&key
@@ -45,26 +40,31 @@
                    :max-angle-list (list 6450 2150)
                    :normal :z+)
          (instance attachable-plane :init
-                   :offset 1900
+                   :offset 1850
                    :min-angle-list (list 6720 2010)
                    :max-angle-list (list 7300 2520)
                    :normal :z+)
          ))
   (setq *task-arrow-list*
         (list
+         ;; 蛇口
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
+         ;; IH
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
+         ;; 中央の机
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 4600 350 720) :rpy (list 0 0 0)))
+         ;; 電子レンジ
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
+         ;; 冷蔵庫
          (send (instance arrow-object :init) :newcoords
-               (make-coords :pos (float-vector 7000 2400 1900) :rpy (list 0 0 0)))
+               (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
          ))
   (setq *robot-list* nil)
-  (let ((robot (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
+  (let ((robot (yamaguchi-arm)))
     (dotimes (i (length *attachable-plane-list*))
       (setq *robot-list* (append *robot-list*
                                  (list (copy-object robot))))))
@@ -102,13 +102,18 @@
           (send robot :locate (float-vector 0 0 offset) :world)))
 
       ;; 3. optimization
-      ;; TODO: 自己干渉回避
+      ;; TODO: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
       (send robot
             :inverse-kinematics-optmotiongen
             (send task-arrow :copy-worldcoords)
             :move-target (send robot :end-coords)
             :translation-axis t
             :rotation-axis nil
+            :collision-avoidance-link-pair (list
+                                            (list (elt (send robot :links) 0) (elt (send robot :links) 3))
+                                            (list (elt (send robot :links) 0) (car (last (send robot :links))))
+                                            )
+            :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
             :debug-view t
             :root-virtual-mode
             (let ((normal (send task-plane :normal)) mode)
