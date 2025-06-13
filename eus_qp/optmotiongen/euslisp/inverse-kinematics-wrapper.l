@@ -256,7 +256,7 @@ Solve inverse kinematics problem with sqp optimization.
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
-    (attachable-plane-list :nil) ;; If you use this argument, root-virtual*** arguments are overwritten
+    (attachable-plane-list :nil) ;; When using this argument, root-virtual-mode and root-virtual-**angle-limit arguments are ignored
     (joint-angle-margin 0.0)
     (posture-joint-list
      (make-list (length target-coords-list) :initial-element nil))

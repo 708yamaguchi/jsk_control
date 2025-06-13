@@ -223,6 +223,7 @@
                        ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
                        *task-arrow-list*
                        robot-list))
-      (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func))
+      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+      )
     ret))
 (warn "(main-with-trajectory)~%")
