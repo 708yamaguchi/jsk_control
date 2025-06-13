@@ -256,6 +256,7 @@ Solve inverse kinematics problem with sqp optimization.
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
+    (attachable-plane-list :nil) ;; If you use this argument, root-virtual*** arguments are overwritten
     (joint-angle-margin 0.0)
     (posture-joint-list
      (make-list (length target-coords-list) :initial-element nil))
@@ -336,6 +337,33 @@ Solve inverse kinematics problem with sqp optimization.
                         :obstacles obstacles)
                   ))
            )
+          (root-virtual-mode-list
+           (cond ((equal attachable-plane-list :nil) (make-list (length target-coords-list) :initial-element root-virtual-mode))
+                 (t (mapcar #'(lambda (p)
+                                (cond ((or (equal (send p :normal) :x+) (equal (send p :normal) :x-)) :planar-x)
+                                      ((or (equal (send p :normal) :y+) (equal (send p :normal) :y-)) :planar-y)
+                                      ((or (equal (send p :normal) :z+) (equal (send p :normal) :z-)) :planar-z)))
+                            attachable-plane-list))))
+          (root-virtual-joint-min-angle-list-list
+           (cond ((equal attachable-plane-list :nil) (make-list (length target-coords-list) :initial-element root-virtual-joint-min-angle-list))
+                 (t (mapcar #'(lambda (p) (append (send p :min-angle-list) (list -1e10))) attachable-plane-list))))
+          (root-virtual-joint-max-angle-list-list
+           (cond ((equal attachable-plane-list :nil) (make-list (length target-coords-list) :initial-element root-virtual-joint-max-angle-list))
+                 (t (mapcar #'(lambda (p) (append (send p :max-angle-list) (list 1e10))) attachable-plane-list))))
+          (robot-initial-coords-list
+           (cond ((equal attachable-plane-list :nil) (make-list (length target-coords-list) :initial-element (send self :copy-worldcoords)))
+                 (t (mapcar #'(lambda (p)
+                                (let ((co (make-coords))
+                                      (normal (send p :normal))
+                                      (offset (send p :offset)))
+                                  (cond ((equal normal :x+) (send co :rotate pi/2 :y) (send co :locate (float-vector offset 0 0) :world))
+                                        ((equal normal :x-) (send co :rotate -pi/2 :y) (send co :locate (float-vector offset 0 0) :world))
+                                        ((equal normal :y+) (send co :rotate -pi/2 :x) (send co :locate (float-vector 0 offset 0) :world))
+                                        ((equal normal :y-) (send co :rotate pi/2 :x) (send co :locate (float-vector 0 offset 0) :world))
+                                        ((equal normal :z+) (send co :locate (float-vector 0 0 offset) :world))
+                                        ((equal normal :z-) (send co :rotate pi :x) (send co :locate (float-vector 0 0 offset) :world)))
+                                  co))
+                            attachable-plane-list))))
           (robot-env-list
            (progn
              ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
@@ -347,12 +375,19 @@ Solve inverse kinematics problem with sqp optimization.
                    translation-axis
                    rotation-axis
                    transform-coords
+                   ;; added
+                   root-virtual-mode
+                   root-virtual-joint-min-angle-list
+                   root-virtual-joint-max-angle-list
+                   robot-initial-coords
                    )
                   (send self :put :move-target move-target)
                   (let* ((robot
                           (progn
                             (send self :put :target-coords target-coords)
-                            (copy-object self)
+                            (let ((robot-copy (copy-object self)))
+                              (send robot-copy :newcoords robot-initial-coords)
+                              robot-copy)
                             ))
                          (contact-list
                           (mapcar
@@ -386,6 +421,7 @@ Solve inverse kinematics problem with sqp optimization.
                                     :robot robot
                                     :contact-list (remove nil contact-list)
                                     :root-virtual-mode root-virtual-mode
+                                    ;; The last added element is rotation joint on the plane (continuous rotation)
                                     :root-virtual-joint-min-angle-list root-virtual-joint-min-angle-list
                                     :root-virtual-joint-max-angle-list root-virtual-joint-max-angle-list
                                     ))
@@ -406,6 +442,11 @@ Solve inverse kinematics problem with sqp optimization.
               translation-axis-list
               rotation-axis-list
               transform-coords-list
+              ;; added
+              root-virtual-mode-list
+              root-virtual-joint-min-angle-list-list
+              root-virtual-joint-max-angle-list-list
+              robot-initial-coords-list
               )
              ))
           (instant-config-task-list
