@@ -48,6 +48,8 @@
     (target-posture-scale 1e-3)
     (norm-regular-scale-max 1e-2)
     (norm-regular-scale-offset 1e-7)
+    (convergence-check-func)
+    (failure-callback-func)
     (pre-process-func)
     (post-process-func)
     &allow-other-keys
@@ -160,56 +162,60 @@ Solve inverse kinematics problem with sqp optimization.
            (instance sqp-optimization :init
                      :config-task instant-config-task
                      :convergence-check-func
-                     #'(lambda (sqp)
-                         (let* ((config-task
-                                 (send sqp :config-task))
-                                (kin-task-value
-                                 (send config-task :kinematics-task-value :update? nil))
-                                (pos-diff-list
-                                 (divide-vector kin-task-value :segment-length 3 :interval-length 3))
-                                (rot-diff-list
-                                 (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
-                                (thre
-                                 (send config-task :get :thre))
-                                (rthre
-                                 (send config-task :get :rthre))
-                                )
-                           (and (every #'(lambda (pos-diff pos-th) (< (* 1e3 (norm pos-diff)) pos-th)) pos-diff-list thre) ;; [mm]
-                                (every #'(lambda (rot-diff rot-th) (< (rad2deg (norm rot-diff)) rot-th)) rot-diff-list rthre)) ;; [deg]
-                           ))
+                     (if convergence-check-func
+                         convergence-check-func
+                       #'(lambda (sqp)
+                           (let* ((config-task
+                                   (send sqp :config-task))
+                                  (kin-task-value
+                                   (send config-task :kinematics-task-value :update? nil))
+                                  (pos-diff-list
+                                   (divide-vector kin-task-value :segment-length 3 :interval-length 3))
+                                  (rot-diff-list
+                                   (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
+                                  (thre
+                                   (send config-task :get :thre))
+                                  (rthre
+                                   (send config-task :get :rthre))
+                                  )
+                             (and (every #'(lambda (pos-diff pos-th) (< (* 1e3 (norm pos-diff)) pos-th)) pos-diff-list thre) ;; [mm]
+                                  (every #'(lambda (rot-diff rot-th) (< (rad2deg (norm rot-diff)) rot-th)) rot-diff-list rthre)) ;; [deg]
+                             )))
                      :failure-callback-func
-                     #'(lambda (sqp)
-                         (let* ((config-task
-                                 (send sqp :config-task))
-                                (kin-task-value
-                                 (send config-task :kinematics-task-value :update? nil))
-                                (pos-diff-list
-                                 (divide-vector kin-task-value :segment-length 3 :interval-length 3))
-                                (rot-diff-list
-                                 (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
-                                (thre
-                                 (send config-task :get :thre))
-                                (rthre
-                                 (send config-task :get :rthre))
-                                )
-                           (warning-message 3 "inverse-kinematics-optmotiongen failed.~%")
-                           (map
-                            nil
-                            #'(lambda (i pos-diff rot-diff pos-th rot-th)
-                                (warning-message
-                                 (if (>= (* 1e3 (norm pos-diff)) pos-th) 1 3)
-                                 "pos[~1d]  ~5,3f / ~5,3f  ~a~%" i (* 1e3 (norm pos-diff)) pos-th pos-diff) ;; [mm]
-                                (warning-message
-                                 (if (>= (rad2deg (norm rot-diff)) rot-th) 1 3)
-                                 "rot[~1d]  ~5,3f / ~5,3f  ~a~%" i (rad2deg (norm rot-diff)) rot-th rot-diff) ;; [deg]
-                                )
-                            (range (length pos-diff-list))
-                            pos-diff-list
-                            rot-diff-list
-                            thre
-                            rthre
-                            )
-                           ))
+                     (if failure-callback-func
+                         failure-callback-func
+                       #'(lambda (sqp)
+                           (let* ((config-task
+                                   (send sqp :config-task))
+                                  (kin-task-value
+                                   (send config-task :kinematics-task-value :update? nil))
+                                  (pos-diff-list
+                                   (divide-vector kin-task-value :segment-length 3 :interval-length 3))
+                                  (rot-diff-list
+                                   (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
+                                  (thre
+                                   (send config-task :get :thre))
+                                  (rthre
+                                   (send config-task :get :rthre))
+                                  )
+                             (warning-message 3 "inverse-kinematics-optmotiongen failed.~%")
+                             (map
+                              nil
+                              #'(lambda (i pos-diff rot-diff pos-th rot-th)
+                                  (warning-message
+                                   (if (>= (* 1e3 (norm pos-diff)) pos-th) 1 3)
+                                   "pos[~1d]  ~5,3f / ~5,3f  ~a~%" i (* 1e3 (norm pos-diff)) pos-th pos-diff) ;; [mm]
+                                  (warning-message
+                                   (if (>= (rad2deg (norm rot-diff)) rot-th) 1 3)
+                                   "rot[~1d]  ~5,3f / ~5,3f  ~a~%" i (rad2deg (norm rot-diff)) rot-th rot-diff) ;; [deg]
+                                  )
+                              (range (length pos-diff-list))
+                              pos-diff-list
+                              rot-diff-list
+                              thre
+                              rthre
+                              )
+                             )))
                      :pre-process-func pre-process-func
                      :post-process-func post-process-func
                      :no-visualize? (not debug-view)
@@ -265,6 +271,8 @@ Solve inverse kinematics problem with sqp optimization.
     (norm-regular-scale-max 1e-3)
     (norm-regular-scale-offset 1e-7)
     (adjacent-regular-scale 0.0)
+    (convergence-check-func)
+    (failure-callback-func)
     (pre-process-func)
     (post-process-func)
     &allow-other-keys
@@ -507,9 +515,36 @@ Solve inverse kinematics problem with sqp optimization.
            (instance sqp-optimization :init
                      :config-task trajectory-config-task
                      :convergence-check-func
-                     #'(lambda (sqp)
-                         (let* ((converge? t)
-                                )
+                     (if convergence-check-func
+                         convergence-check-func
+                       #'(lambda (sqp)
+                           (let* ((converge? t)
+                                  )
+                             (dolist (config-task (send (send sqp :config-task) :instant-config-task-list))
+                               (let* ((kin-task-value
+                                       (send config-task :kinematics-task-value :update? nil))
+                                      (pos-diff-list
+                                       (divide-vector kin-task-value :segment-length 3 :interval-length 3))
+                                      (rot-diff-list
+                                       (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
+                                      (thre
+                                       (send config-task :get :thre))
+                                      (rthre
+                                       (send config-task :get :rthre))
+                                      )
+                                 (unless (and (every #'(lambda (pos-diff pos-th) (< (* 1e3 (norm pos-diff)) pos-th)) pos-diff-list thre) ;; [mm]
+                                              (every #'(lambda (rot-diff rot-th) (< (rad2deg (norm rot-diff)) rot-th)) rot-diff-list rthre)) ;; [deg]
+                                   (setq converge? nil)
+                                   (return-from nil nil)
+                                   )
+                                 ))
+                             converge?
+                             )))
+                     :failure-callback-func
+                     (if failure-callback-func
+                         failure-callback-func
+                       #'(lambda (sqp)
+                           (warning-message 3 "inverse-kinematics-optmotiongen failed.~%")
                            (dolist (config-task (send (send sqp :config-task) :instant-config-task-list))
                              (let* ((kin-task-value
                                      (send config-task :kinematics-task-value :update? nil))
@@ -522,47 +557,24 @@ Solve inverse kinematics problem with sqp optimization.
                                     (rthre
                                      (send config-task :get :rthre))
                                     )
-                               (unless (and (every #'(lambda (pos-diff pos-th) (< (* 1e3 (norm pos-diff)) pos-th)) pos-diff-list thre) ;; [mm]
-                                            (every #'(lambda (rot-diff rot-th) (< (rad2deg (norm rot-diff)) rot-th)) rot-diff-list rthre)) ;; [deg]
-                                 (setq converge? nil)
-                                 (return-from nil nil)
-                                 )
+                               (map
+                                nil
+                                #'(lambda (i pos-diff rot-diff pos-th rot-th)
+                                    (warning-message
+                                     (if (>= (* 1e3 (norm pos-diff)) pos-th) 1 3)
+                                     "pos[~1d]  ~5,3f / ~5,3f  ~a~%" i (* 1e3 (norm pos-diff)) pos-th pos-diff) ;; [mm]
+                                    (warning-message
+                                     (if (>= (rad2deg (norm rot-diff)) rot-th) 1 3)
+                                     "rot[~1d]  ~5,3f / ~5,3f  ~a~%" i (rad2deg (norm rot-diff)) rot-th rot-diff) ;; [deg]
+                                    )
+                                (range (length pos-diff-list))
+                                pos-diff-list
+                                rot-diff-list
+                                thre
+                                rthre
+                                )
                                ))
-                           converge?
                            ))
-                     :failure-callback-func
-                     #'(lambda (sqp)
-                         (warning-message 3 "inverse-kinematics-optmotiongen failed.~%")
-                         (dolist (config-task (send (send sqp :config-task) :instant-config-task-list))
-                           (let* ((kin-task-value
-                                   (send config-task :kinematics-task-value :update? nil))
-                                  (pos-diff-list
-                                   (divide-vector kin-task-value :segment-length 3 :interval-length 3))
-                                  (rot-diff-list
-                                   (divide-vector (subseq kin-task-value 3) :segment-length 3 :interval-length 3))
-                                  (thre
-                                   (send config-task :get :thre))
-                                  (rthre
-                                   (send config-task :get :rthre))
-                                  )
-                             (map
-                              nil
-                              #'(lambda (i pos-diff rot-diff pos-th rot-th)
-                                  (warning-message
-                                   (if (>= (* 1e3 (norm pos-diff)) pos-th) 1 3)
-                                   "pos[~1d]  ~5,3f / ~5,3f  ~a~%" i (* 1e3 (norm pos-diff)) pos-th pos-diff) ;; [mm]
-                                  (warning-message
-                                   (if (>= (rad2deg (norm rot-diff)) rot-th) 1 3)
-                                   "rot[~1d]  ~5,3f / ~5,3f  ~a~%" i (rad2deg (norm rot-diff)) rot-th rot-diff) ;; [deg]
-                                  )
-                              (range (length pos-diff-list))
-                              pos-diff-list
-                              rot-diff-list
-                              thre
-                              rthre
-                              )
-                             ))
-                         )
                      :pre-process-func pre-process-func
                      :post-process-func post-process-func
                      :no-visualize? (not debug-view)
