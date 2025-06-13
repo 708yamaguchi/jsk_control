@@ -14,3 +14,9 @@
         (append
          (send *room610* :objects)
          (list *toshiba-microwave-oven*))))
+
+(defun set-room610-viewpoint ()
+  (send *irtviewer* :viewer :viewing :look
+        #f(-4408.27 -4047.55 7061.9)
+        #f(4884.01 -103.211 1918.36)
+        #f(0.0 0.0 1.0)))
