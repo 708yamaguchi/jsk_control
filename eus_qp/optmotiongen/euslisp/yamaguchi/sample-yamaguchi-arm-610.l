@@ -188,42 +188,40 @@
          (send (instance arrow-object :init) :newcoords
                (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
          ))
-  (setq *robot* (yamaguchi-arm))
 
-  (let* ((task-size (length *task-arrow-list*)) robot robot-list
-         (ret
-          ;; 2. optimization
-          ;; TODO: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
-          (send *robot*
-                :inverse-kinematics-trajectory-optmotiongen
-                (send-all *task-arrow-list* :copy-worldcoords)
-                :move-target-list (send *robot* :end-coords)
-                :translation-axis-list (make-list task-size :initial-element t)
-                :rotation-axis-list (make-list task-size :initial-element nil)
-                :collision-avoidance-link-pair (list
-                                                (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 3))
-                                                (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
-                                                )
-                :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
-                :attachable-plane-list *attachable-plane-list*
-                :debug-view t
-                :adjacent-regular-scale 0.0
-                :pre-process-func pre-process-func
-                :post-process-func post-process-func)))
+  (let* ((task-size (length *task-arrow-list*))
+         (additional-draw-objects
+          (append *room610-model-list*
+                  (send-all *attachable-plane-list* :object)
+                  ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
+                  *task-arrow-list*))
+         ret)
+    ;; 2. Visualize result
+    (unless (boundp '*irtviewer*)
+      (make-irtviewer))
+    (send *irtviewer* :objects additional-draw-objects)
+    (set-room610-viewpoint)
+    (send *irtviewer* :draw-objects)
 
-    ;; 3. Visualize result
-    (when ret
-      (dolist (r ret)
-        (setq robot (copy-object *robot*))
-        (send robot :angle-vector (cadr (car r)))
-        (send robot :newcoords (cadr (cadr r)))
-        (setq robot-list (append robot-list (list robot))))
-      (objects (append *room610-model-list*
-                       (send-all *attachable-plane-list* :object)
-                       ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                       *task-arrow-list*
-                       robot-list))
-      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
-      )
+    ;; 3. optimization
+    ;; TODO: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
+    (setq *robot* (yamaguchi-arm))
+    (setq ret (send *robot*
+                    :inverse-kinematics-trajectory-optmotiongen
+                    (send-all *task-arrow-list* :copy-worldcoords)
+                    :move-target-list (send *robot* :end-coords)
+                    :translation-axis-list (make-list task-size :initial-element t)
+                    :rotation-axis-list (make-list task-size :initial-element nil)
+                    :collision-avoidance-link-pair (list
+                                                    (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 3))
+                                                    (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
+                                                    )
+                    :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
+                    :attachable-plane-list *attachable-plane-list*
+                    :debug-view (list :additional-draw-objects additional-draw-objects)
+                    :adjacent-regular-scale 0.0
+                    :pre-process-func pre-process-func
+                    :post-process-func post-process-func))
+    ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
     ret))
 (warn "(main-with-trajectory)~%")
