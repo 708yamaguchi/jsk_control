@@ -196,15 +196,13 @@
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
                   *task-arrow-list*))
          ret)
-    ;; 2. Visualize result
+    ;; 2. Visualize
     (unless (boundp '*irtviewer*)
       (make-irtviewer))
     (send *irtviewer* :objects additional-draw-objects)
     (set-room610-viewpoint)
     (send *irtviewer* :draw-objects)
-
     ;; 3. optimization
-    ;; TODO: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
     (setq *robot* (yamaguchi-arm))
     (setq ret (send *robot*
                     :inverse-kinematics-trajectory-optmotiongen
