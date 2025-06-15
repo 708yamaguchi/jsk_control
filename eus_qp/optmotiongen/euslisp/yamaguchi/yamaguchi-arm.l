@@ -11,7 +11,7 @@
      (send base-cube :translate (float-vector 0 0 (* 0.5 z-size)))
      (send base-cube :set-color (float-vector 0 1 0 0.3))
      base-cube))
-  )  
+  )
 
 (defun yamaguchi-arm ()
   (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init))

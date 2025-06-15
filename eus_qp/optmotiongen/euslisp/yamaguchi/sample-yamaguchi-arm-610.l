@@ -210,11 +210,14 @@
                     :move-target-list (send *robot* :end-coords)
                     :translation-axis-list (make-list task-size :initial-element t)
                     :rotation-axis-list (make-list task-size :initial-element nil)
-                    :collision-avoidance-link-pair (list
-                                                    (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 3))
-                                                    (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
-                                                    )
-                    :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
+                    :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
+                                                     (send *robot* :assoc base-cube)
+                                                     (list
+                                                      (list base-cube (elt (send *robot* :links) 2))
+                                                      (list base-cube (elt (send *robot* :links) 3))
+                                                      (list base-cube (car (last (send *robot* :links))))
+                                                      ))
+                    :collision-distance-limit 5
                     :attachable-plane-list *attachable-plane-list*
                     :debug-view (list :additional-draw-objects additional-draw-objects)
                     :adjacent-regular-scale 0.0
