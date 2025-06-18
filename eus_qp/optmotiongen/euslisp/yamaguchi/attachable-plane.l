@@ -1,6 +1,6 @@
 (defclass attachable-plane
   :super propertied-object
-  :slots (_min-angle-list _max-angle-list _offset _normal)
+  :slots (_min-angle-list _max-angle-list _offset _normal _obj-width)
   :documentation
   "
 610モデルの中でアームを配置できる平面（長方形）を指定する。例えばXY平面内で、Z軸正方向にロボットアームを置くなら、以下のようにする。angle-listの順番に注意。ZX平面なら、(z, x)の順に与える
@@ -22,6 +22,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
    (setq _min-angle-list min-angle-list)
    (setq _max-angle-list max-angle-list)
    (setq _normal normal)
+   (setq _obj-width 1)
    )
   (:object
    ()
@@ -29,7 +30,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
          (diff (mapcar #'- _max-angle-list  _min-angle-list))
          size pos cube)
      (when (or (eq _normal :z-) (eq _normal :z+))
-       (setq size (list (elt diff 0) (elt diff 1) 1))
+       (setq size (list (elt diff 0) (elt diff 1) _obj-width))
        (setq pos (list (elt mid 0) (elt mid 1) _offset)))
      (when (or (eq _normal :y-) (eq _normal :y+))
        (setq size (list (elt diff 1) 1 (elt diff 0)))
@@ -70,4 +71,37 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
   (:normal
    ()
    _normal)
+  (:face
+   (&optional (margin 0))
+   (let ((obj (send self :object)) f)
+     ;; ;; Move faces to correct position by calling :worldcoords
+     (cond ((eq _normal :x+)
+            (send obj :translate (float-vector (* -0.5 _obj-width) 0 0))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 3)))
+           ((eq _normal :x-)
+            (send obj :translate (float-vector (* 0.5 _obj-width) 0 0))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 5)))
+           ((eq _normal :y+)
+            (send obj :translate (float-vector 0 (* -0.5 _obj-width) 0))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 2)))
+           ((eq _normal :y-)
+            (send obj :translate (float-vector 0 (* 0.5 _obj-width) 0))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 4)))
+           ((eq _normal :z+)
+            (send obj :translate (float-vector 0 0 (* -0.5 _obj-width)))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 1)))
+           ((eq _normal :z-)
+            (send obj :translate (float-vector 0 0 (* 0.5 _obj-width)))
+            (send obj :worldcoords)
+            (setq f (elt (send obj :faces) 0)))
+           )
+     (send f :put :normal-move-target-axis :z)
+     (send f :put :normal-tolerance 0) ;; [deg]
+     (send f :put :margin margin) ;; [mm]
+     f))
   )
