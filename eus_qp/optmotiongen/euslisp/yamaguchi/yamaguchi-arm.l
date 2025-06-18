@@ -1,5 +1,18 @@
 (require "yamaguchi_6axis_arm_with_vacuum_base.l")
-(defmethod yamaguchi_6axis_arm_with_vacuum_base-robot
+
+(defclass yamaguchi-arm-robot
+  :super yamaguchi_6axis_arm_with_vacuum_base-robot
+  :slots ()
+  )
+
+(defmethod yamaguchi-arm-robot
+  (:init
+   ()
+   (send-super :init)
+   ;; (send r :add-vacuum-base-coords)
+   (send self :add-vacuum-base-limbs)
+   (send self :init-ending)
+   )
   (:add-vacuum-base-coords
    ()
    (let ((base-link (find "base_link" (send self :links)
@@ -39,6 +52,7 @@
                                 :init (make-cascoords)
                                 :bodies (list leg)
                                 :name (elt link-names i)))
+       ;; TODO: check robot weight
        (send leg-link :weight 1)
        (send leg-link :inertia-tensor #2f((1 1 1)(1 1 1)(1 1 1)))
        (setq (leg-link . acentroid) (float-vector -2.56219083301764 -36.620809748659596 -0.0050794825177114)) 
@@ -93,10 +107,10 @@
   )
 
 (defun yamaguchi-arm ()
-  (let ((r (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
-    ;; (send r :add-vacuum-base-coords)
-    (send r :add-vacuum-base-limbs)
-    (send r :init-ending)
-    r))
-
-;; TODO: check robot weight
+  ;; (let ((r (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
+  ;;   ;; (send r :add-vacuum-base-coords)
+  ;;   ;; (send r :add-vacuum-base-limbs)
+  ;;   ;; (send r :init-ending)
+  ;;   r))
+  (instance yamaguchi-arm-robot :init)
+  )
