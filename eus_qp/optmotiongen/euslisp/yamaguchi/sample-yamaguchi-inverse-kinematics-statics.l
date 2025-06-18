@@ -91,11 +91,11 @@
             ;; メモ：第一引数target-coords、:move-target、:translation-axis、:rotation-axisは個数と順番を一致させる
             :inverse-kinematics-optmotiongen
             (list (send task-arrow :copy-worldcoords)
-                  (send task-plane :face 0)
-                  (send task-plane :face 0)
-                  (send task-plane :face 0)
-                  (send task-plane :face 0)
-                  (send task-plane :face 0)
+                  (send task-plane :face :margin 0)
+                  (send task-plane :face :margin 0)
+                  (send task-plane :face :margin 0)
+                  (send task-plane :face :margin 0)
+                  (send task-plane :face :margin 0)
                   )
             :move-target
             (list (send robot :end-coords)
@@ -205,7 +205,7 @@
                   (send task-plane :face :margin 0)
                   (send task-plane :face :margin 0)
                   (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
+                  ;; (send task-plane :face :margin 0)
                   )
             :move-target
             (list (send robot :end-coords)
@@ -213,7 +213,7 @@
                   (send robot :get :rigid-leg2-coords)
                   (send robot :get :rigid-leg3-coords)
                   (send robot :get :rigid-leg4-coords)
-                  (send robot :get :vacuum-pad-coords)
+                  ;; (send robot :get :vacuum-pad-coords)
                   )
             ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
             ;; TODO: アームだけでなく、剛体脚と吸着パッドの接触制約も入れないとIKが失敗しそう。
@@ -257,4 +257,3 @@
       ))
   nil)
 (warn "(main-with-loop)~%")
-
