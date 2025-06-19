@@ -722,7 +722,10 @@ Solve inverse kinematics problem with sqp optimization.
                      ))
           )
      (when debug-view
-       (objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view)))))
+       (if (boundp '*irtviewer*)
+           ;; If *irtviewer* already exists, do not change the viewpoint
+           (send *irtviewer* :objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))
+         (objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
      (send-all robot-env-list :dissoc-root-virtual)
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
