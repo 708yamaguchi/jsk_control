@@ -72,7 +72,7 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
    ()
    _normal)
   (:face
-   (&key (margin 0) (normal-tolerance 0))
+   (&key (margin 0) (normal-tolerance 0) (name ""))
    (let ((obj (send self :object)) f)
      ;; ;; Move faces to correct position by calling :worldcoords
      (cond ((eq _normal :x+)
@@ -103,5 +103,6 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
      (send f :put :normal-move-target-axis :z)
      (send f :put :normal-tolerance 0) ;; [deg]
      (send f :put :margin margin) ;; [mm]
+     (send f :put :name name)
      f))
   )

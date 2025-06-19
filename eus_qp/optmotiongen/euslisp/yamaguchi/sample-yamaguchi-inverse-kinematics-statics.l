@@ -170,10 +170,8 @@
                                                (send (elt *attachable-plane-list* i) :face :margin 0))))))
         (setq move-target-list (append move-target-list (list move-target)))
         )
-      ;; TODO: Segmentation faultする。:inverse-kinematics-trajectory-optmotiongenなら動く
       (setq ret (send *robot*
                       :inverse-kinematics-trajectory-optmotiongen
-                      ;; :inverse-kinematics-trajectory-optmotiongen
                       target-coords-list
                       :move-target-list move-target-list
                       :translation-axis-list translation-axis-list
@@ -291,7 +289,6 @@
   nil)
 (warn "(main-with-loop)~%")
 
-;; TODO: contact制約を抜いただけのmain-without-statics-trajectoryはうまく動くが、これは収束しない（なぜ？）
 (defun main-with-trajectory
     (&key
      (pre-process-func)
@@ -313,14 +310,12 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
-    ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられるx
-    ;; TODO 理由不明だが、rigid-legが2個以下だと計算が収束する。
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
-                              ;; (send *robot* :get :rigid-leg3-coords)
-                              ;; (send *robot* :get :rigid-leg4-coords)
-                              ;; (send *robot* :get :vacuum-pad-coords)
+                              (send *robot* :get :rigid-leg3-coords)
+                              (send *robot* :get :rigid-leg4-coords)
+                              (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
            (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
@@ -332,20 +327,26 @@
                                  (append (list nil) (make-list limb-size :initial-element :z))))
            ret target-coords-list move-target-list contact-constraint-list)
       (dotimes (i task-size)
-        (setq target-coords-list
-              (append target-coords-list
-                      (list (append (list (elt task-target-coords i))
-                                    (make-list limb-size :initial-element
-                                               (send (elt *attachable-plane-list* i) :face :margin 0))))))
+        ;; メモ：各平面に固有の名前を付けないと、inverse-kinematics-statics-wrapper.lの以下のコードで除去される
+        ;; (remove-duplicates (flatten target-coords-list) :test #'equal)
+        (let (task-face)
+          (dotimes (j limb-size)
+            (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
+                                                          :face :margin 0 :name (format nil "~A,~A" i j))))))
+          (setq target-coords-list
+                (append target-coords-list
+                        (list (append (list (elt task-target-coords i))
+                                      task-face)))))
         (setq move-target-list (append move-target-list (list move-target)))
+        ;; TODO: 良い感じの制約を入れる
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
                                                      (instance norm-contact-constraint :init :fz)
                                                      (instance norm-contact-constraint :init :fz)
-                                                     ;; (instance norm-contact-constraint :init :fz)
-                                                     ;; (instance norm-contact-constraint :init :fz)
-                                                     ;; (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
                                                      )
                                                )))
         )

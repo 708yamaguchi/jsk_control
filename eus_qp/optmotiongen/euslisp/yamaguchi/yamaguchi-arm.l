@@ -64,7 +64,6 @@
        ;; joints
        ;; TODO: 2 dof joint is necessary
        (setq leg-joint
-             ;; TODO: 4つの脚の位置が全く収束しない。rotational-jointを使うとデバッグができそうな気がする。明らかに設定をミスっている。なんか、ベースの中心位置との位置誤差が出力されてしまっていそう。自分の予想では、face拘束だからXY平面内での位置の誤差はないはずと思っている。位置誤差は以下のような感じ。pos[1]  70.711 / 1.000  #f(-0.049962 -0.050038 2.273737e-16)。しかしstaticsじゃない条件だとちゃんと収束するので、静力学的な拘束が邪魔をしていそう。
              (instance linear-joint :init
              ;; (instance rotational-joint :init
                        :name (elt joint-names i)
