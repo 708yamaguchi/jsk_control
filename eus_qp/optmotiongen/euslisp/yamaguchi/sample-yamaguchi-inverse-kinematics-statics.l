@@ -124,6 +124,79 @@
   nil)
 (warn "(main-without-statics-loop)~%")
 
+(defun main-without-statics-trajectory
+    (&key
+     (pre-process-func)
+     (post-process-func)
+     (visualize-callback-func)
+     &allow-other-keys
+     )
+  (let* ((task-size (length *task-arrow-list*))
+         (additional-draw-objects
+          (append *room610-model-list*
+                  (send-all *attachable-plane-list* :object)
+                  ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
+                  *task-arrow-list*)))
+    ;; 2. Visualize
+    (unless (boundp '*irtviewer*)
+      (make-irtviewer))
+    (send *irtviewer* :objects additional-draw-objects)
+    (set-room610-viewpoint)
+    (send *irtviewer* :draw-objects)
+    ;; 3. optimization
+    (setq *robot* (yamaguchi-arm))
+    (let* ((move-target (list (send *robot* :end-coords)
+                              (send *robot* :get :rigid-leg1-coords)
+                              (send *robot* :get :rigid-leg2-coords)
+                              (send *robot* :get :rigid-leg3-coords)
+                              (send *robot* :get :rigid-leg4-coords)
+                              (send *robot* :get :vacuum-pad-coords)
+                              ))
+           (limb-size (1- (length move-target)))
+           (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
+           (translation-axis-list (make-list task-size :initial-element
+                                             (append (list t) (make-list limb-size :initial-element nil))))
+           ;; (translation-axis-list (make-list task-size :initial-element
+           ;;                                   (append (list nil) (make-list limb-size :initial-element nil))))
+           (rotation-axis-list (make-list task-size :initial-element
+                                 (append (list nil) (make-list limb-size :initial-element nil))))
+           ret target-coords-list move-target-list)
+      (dotimes (i task-size)
+        (setq target-coords-list
+              (append target-coords-list
+                      (list (append (list (elt task-target-coords i))
+                                    (make-list limb-size :initial-element
+                                               (send (elt *attachable-plane-list* i) :face :margin 0))))))
+        (setq move-target-list (append move-target-list (list move-target)))
+        )
+      ;; TODO: Segmentation faultする。:inverse-kinematics-trajectory-optmotiongenなら動く
+      (setq ret (send *robot*
+                      :inverse-kinematics-trajectory-optmotiongen
+                      ;; :inverse-kinematics-trajectory-optmotiongen
+                      target-coords-list
+                      :move-target-list move-target-list
+                      :translation-axis-list translation-axis-list
+                      :rotation-axis-list rotation-axis-list
+                      ;; :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
+                      ;;                                  (send *robot* :assoc base-cube)
+                      ;;                                  (list
+                      ;;                                   (list base-cube (elt (send *robot* :links) 2))
+                      ;;                                   (list base-cube (elt (send *robot* :links) 3))
+                      ;;                                   (list base-cube (car (last (send *robot* :links))))
+                      ;;                                   ))
+                      ;; :collision-distance-limit 5
+                      ;; :attachable-plane-list *attachable-plane-list*
+                      :root-virtual-mode :6dof
+                      :optimize-torque? nil
+                      :debug-view (list :additional-draw-objects additional-draw-objects)
+                      :adjacent-regular-scale 0.0
+                      :pre-process-func pre-process-func
+                      :post-process-func post-process-func))
+      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+      ret)
+    ))
+(warn "(main-without-statics-trajectory)~%")
+
 (defun main-with-loop
     (&key
      (pre-process-func)
@@ -217,6 +290,7 @@
   nil)
 (warn "(main-with-loop)~%")
 
+;; TODO: contact制約を抜いただけのmain-without-statics-trajectoryはうまく動くが、これは収束しない（なぜ？）
 (defun main-with-trajectory
     (&key
      (pre-process-func)
@@ -247,8 +321,8 @@
                               ))
            (limb-size (1- (length move-target)))
            (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
-           (contact-target-coords-list (mapcar #'list task-target-coords))
-           (contact-move-target-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
+           contact-target-coords-list
+           contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
            ;; (translation-axis-list (make-list task-size :initial-element
@@ -263,13 +337,19 @@
                                     (make-list limb-size :initial-element
                                                (send (elt *attachable-plane-list* i) :face :margin 0))))))
         (setq move-target-list (append move-target-list (list move-target)))
-        ;; :initial-elementは同じオブジェクトを複製するだけなので、避けたほうが無難（毎回:initしたほうがいい）
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
-                                               ;; (list (instance no-contact-constraint :init))
-                                               (list (instance norm-contact-constraint :init :fz))
+                                               (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     (instance norm-contact-constraint :init :fz)
+                                                     )
                                                )))
         )
+      (setq contact-target-coords-list target-coords-list)
+      (setq contact-move-target-list move-target-list)
       (print "target-coords-list")
       (print target-coords-list)
       (print "move-target-list")
@@ -284,7 +364,6 @@
       (print translation-axis-list)
       (print "rotation-axis-list")
       (print rotation-axis-list)
-      ;; TODO: Segmentation faultする。:inverse-kinematics-trajectory-optmotiongenなら動く
       (setq ret (send *robot*
                       :inverse-kinematics-statics-trajectory-optmotiongen
                       ;; :inverse-kinematics-trajectory-optmotiongen
@@ -295,8 +374,6 @@
                       :contact-constraint-list contact-constraint-list
                       :translation-axis-list translation-axis-list
                       :rotation-axis-list rotation-axis-list
-                      ;; :translation-axis-list (make-list task-size :initial-element (make-list (+ 1 limb-size)))
-                      ;; :rotation-axis-list (make-list task-size :initial-element (make-list (+ 1 limb-size)))
                       ;; :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
                       ;;                                  (send *robot* :assoc base-cube)
                       ;;                                  (list
@@ -309,8 +386,6 @@
                       :root-virtual-mode :6dof
                       :optimize-torque? nil
                       :debug-view (list :additional-draw-objects additional-draw-objects)
-                      ;; :stop 100
-                      ;; :min-loop 30
                       :adjacent-regular-scale 0.0
                       :pre-process-func pre-process-func
                       :post-process-func post-process-func))
