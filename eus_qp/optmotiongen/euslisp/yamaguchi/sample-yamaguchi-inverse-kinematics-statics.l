@@ -145,6 +145,7 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
+    ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられる
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
@@ -312,12 +313,14 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
+    ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられるx
+    ;; TODO 理由不明だが、rigid-legが2個だと計算が収束する。しかしこの時、片方のlegは平面に拘束を書けられているが、もう片方のlegは拘束をかけられていない。適切なサンプルを探す。
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
-                              (send *robot* :get :rigid-leg3-coords)
-                              (send *robot* :get :rigid-leg4-coords)
-                              (send *robot* :get :vacuum-pad-coords)
+                              ;; (send *robot* :get :rigid-leg3-coords)
+                              ;; (send *robot* :get :rigid-leg4-coords)
+                              ;; (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
            (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
@@ -325,10 +328,6 @@
            contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
-           ;; (translation-axis-list (make-list task-size :initial-element
-           ;;                                   (append (list :z) (make-list limb-size :initial-element nil))))
-           ;; (translation-axis-list (make-list task-size :initial-element
-           ;;                                   (append (list nil) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
                                  (append (list nil) (make-list limb-size :initial-element nil))))
            ret target-coords-list move-target-list contact-constraint-list)
@@ -344,9 +343,9 @@
                                                (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
                                                      (instance norm-contact-constraint :init :fz)
                                                      (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
+                                                     ;; (instance norm-contact-constraint :init :fz)
+                                                     ;; (instance norm-contact-constraint :init :fz)
+                                                     ;; (instance norm-contact-constraint :init :fz)
                                                      )
                                                )))
         )
