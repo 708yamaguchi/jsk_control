@@ -80,15 +80,18 @@
    (setq contact-constraint-list
          (append
           (list
+           ;; (instance default-contact-constraint
+           ;;           :init-from-support-polygon :support-polygon nil)
            ;; cop (Contact at a single point)
-           (instance 2D-cop-contact-constraint :init 0 0 0 0)
+           ;; (instance 2D-cop-contact-constraint :init 0 0 0 0)
+           (instance 2D-cop-contact-constraint :init 1000 -1000 1000 -1000) ;; COP(青い四角)が表示される
            ;; max-fz TODO：符号の向きに注意。最大吸着力も、まともな値を入れる。
-           (instance min-max-contact-constraint :init :fx (* 0.9 (elt torque 0)) :min/max :min)
-           (instance min-max-contact-constraint :init :fx (* 1.1 (elt torque 0)) :min/max :max)
-           (instance min-max-contact-constraint :init :fy (* 0.9 (elt torque 1)) :min/max :min)
-           (instance min-max-contact-constraint :init :fy (* 1.1 (elt torque 1)) :min/max :max)
-           (instance min-max-contact-constraint :init :fz (* 0.9 (elt torque 0)) :min/max :min)
-           (instance min-max-contact-constraint :init :fz (* 1.1 (elt torque 0)) :min/max :max)
+           ;; (instance min-max-contact-constraint :init :fx (* 0.9 (elt torque 0)) :min/max :min)
+           ;; (instance min-max-contact-constraint :init :fx (* 1.1 (elt torque 0)) :min/max :max)
+           ;; (instance min-max-contact-constraint :init :fy (* 0.9 (elt torque 1)) :min/max :min)
+           ;; (instance min-max-contact-constraint :init :fy (* 1.1 (elt torque 1)) :min/max :max)
+           ;; (instance min-max-contact-constraint :init :fz (* 0.9 (elt torque 2)) :min/max :min)
+           ;; (instance min-max-contact-constraint :init :fz (* 1.1 (elt torque 2)) :min/max :max)
            )))
    (send-super :init :name name)
    )

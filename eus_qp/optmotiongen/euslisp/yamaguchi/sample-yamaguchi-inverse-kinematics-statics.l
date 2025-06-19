@@ -170,6 +170,7 @@
                   (send robot :get :vacuum-pad-coords)
                   )
             ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
+            ;; TODO: ハンド以外の接触制約を入れるとSegmentation Faultする
             :contact-target-coords
             (list (send task-arrow :copy-worldcoords)
                   ;; (send task-plane :face :margin 0)
@@ -187,8 +188,8 @@
                   ;; (send robot :get :vacuum-pad-coords)
                   )
             :contact-constraint
-            ;; (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
-            (list (instance norm-contact-constraint :init :fz)
+            (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
+            ;; (list (instance norm-contact-constraint :init :fz)
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
@@ -210,3 +211,73 @@
       ))
   nil)
 (warn "(main-with-loop)~%")
+
+(defun main-with-trajectory
+    (&key
+     (pre-process-func)
+     (post-process-func)
+     (visualize-callback-func)
+     &allow-other-keys
+     )
+  (let* ((task-size (length *task-arrow-list*))
+         (additional-draw-objects
+          (append *room610-model-list*
+                  (send-all *attachable-plane-list* :object)
+                  ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
+                  *task-arrow-list*)))
+    ;; 2. Visualize
+    (unless (boundp '*irtviewer*)
+      (make-irtviewer))
+    (send *irtviewer* :objects additional-draw-objects)
+    (set-room610-viewpoint)
+    (send *irtviewer* :draw-objects)
+    ;; 3. optimization
+    (setq *robot* (yamaguchi-arm))
+    (let (ret target-coords-list move-target-list)
+      (dotimes (i task-size)
+        (setq target-coords-list
+              (append target-coords-list
+                      (list (elt *task-arrow-list* i)
+                            ;; 5 consists of 4 rigid legs and 1 vacuum pad
+                            (make-list 5 :initial-element (send (elt *attachable-plane-list* i) :face :margin 0)))))
+        (setq move-target-list
+              (append move-target-list
+                      (list (send *robot* :end-coords)
+                            (send *robot* :get :rigid-leg1-coords)
+                            (send *robot* :get :rigid-leg2-coords)
+                            (send *robot* :get :rigid-leg3-coords)
+                            (send *robot* :get :rigid-leg4-coords)
+                            (send *robot* :get :vacuum-pad-coords)
+                            ))))
+      ;; TODO: Segmentation faultする
+      (setq ret (send *robot*
+                      :inverse-kinematics-statics-trajectory-optmotiongen
+                      target-coords-list
+                      :move-target-list
+                      move-target-list
+                      :contact-target-coords-list
+                      *task-arrow-list*
+                      :contact-move-target-list
+                      (make-list task-size :initial-element (send *robot* :end-coords))
+                      :contact-constraint-list
+                      (make-list task-size :initial-element (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
+                      :translation-axis-list (make-list task-size :initial-element t)
+                      :rotation-axis-list (make-list task-size :initial-element nil)
+                      :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
+                                                       (send *robot* :assoc base-cube)
+                                                       (list
+                                                        (list base-cube (elt (send *robot* :links) 2))
+                                                        (list base-cube (elt (send *robot* :links) 3))
+                                                        (list base-cube (car (last (send *robot* :links))))
+                                                        ))
+                        :collision-distance-limit 5
+                        ;; :attachable-plane-list *attachable-plane-list*
+                        :root-virtual-mode :6dof
+                        :debug-view (list :additional-draw-objects additional-draw-objects)
+                        :adjacent-regular-scale 0.0
+                        :pre-process-func pre-process-func
+                        :post-process-func post-process-func))
+                      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+      ret)
+    ))
+(warn "(main-with-trajectory)~%")
