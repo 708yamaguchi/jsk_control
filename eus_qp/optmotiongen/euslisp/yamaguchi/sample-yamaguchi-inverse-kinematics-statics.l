@@ -326,6 +326,8 @@
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
            ;; (translation-axis-list (make-list task-size :initial-element
+           ;;                                   (append (list :z) (make-list limb-size :initial-element nil))))
+           ;; (translation-axis-list (make-list task-size :initial-element
            ;;                                   (append (list nil) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
                                  (append (list nil) (make-list limb-size :initial-element nil))))
