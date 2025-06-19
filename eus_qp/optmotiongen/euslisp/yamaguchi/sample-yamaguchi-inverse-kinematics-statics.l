@@ -82,9 +82,10 @@
   (set-room610-viewpoint)
 
   (dotimes (i (length *robot-list*))
-    (let ((robot (elt *robot-list* i))
-          (task-plane (elt *attachable-plane-list* i))
-          (task-arrow (elt *task-arrow-list* i)))
+    (let* ((robot (elt *robot-list* i))
+           (task-plane (elt *attachable-plane-list* i))
+           (task-plane-face (send task-plane :face :margin 0))
+           (task-arrow (elt *task-arrow-list* i)))
       ;; 2. Rotate robot along task-plane
       ;; It is assumed that robot and room610 coords are the same at first.
       (send robot :newcoords (make-coords))
@@ -93,11 +94,11 @@
             ;; メモ：第一引数target-coords、:move-target、:translation-axis、:rotation-axisは個数と順番を一致させる
             :inverse-kinematics-optmotiongen
             (list (send task-arrow :copy-worldcoords)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
                   )
             :move-target
             (list (send robot :end-coords)
