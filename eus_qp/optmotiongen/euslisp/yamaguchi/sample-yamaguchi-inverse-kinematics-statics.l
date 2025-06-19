@@ -170,7 +170,6 @@
                   (send robot :get :vacuum-pad-coords)
                   )
             ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
-            ;; TODO: ハンド以外の接触制約を入れるとSegmentation Faultする
             :contact-target-coords
             (list (send task-arrow :copy-worldcoords)
                   task-plane-face
@@ -187,6 +186,7 @@
                   (send robot :get :rigid-leg4-coords)
                   (send robot :get :vacuum-pad-coords)
                   )
+            ;; TODO: 良い感じの制約を入れる
             :contact-constraint
             (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
                   (instance norm-contact-constraint :init :fz)
@@ -194,7 +194,6 @@
                   (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
-                  ;; (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
@@ -203,11 +202,11 @@
                   )
             :translation-axis (list t nil nil nil nil nil)
             :rotation-axis (list nil nil nil nil nil nil)
-            ;; :collision-avoidance-link-pair (list
-            ;;                                 (list (elt (send robot :links) 0) (elt (send robot :links) 3))
-            ;;                                 (list (elt (send robot :links) 0) (car (last (send robot :links))))
-            ;;                                 )
-            ;; :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
+            :collision-avoidance-link-pair (list
+                                            (list (elt (send robot :links) 0) (elt (send robot :links) 3))
+                                            (list (elt (send robot :links) 0) (car (last (send robot :links))))
+                                            )
+            :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
             :debug-view t
             :root-virtual-mode :6dof
             :optimize-torque? nil
