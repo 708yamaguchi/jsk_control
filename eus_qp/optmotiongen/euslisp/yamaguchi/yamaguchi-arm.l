@@ -89,7 +89,6 @@
           (vacuum-pad (make-cylinder 40 height))
           vacuum-pad-link vacuum-pad-joint vacuum-pad-coords
           )
-     ;; (send vacuum-pad :translate (float-vector 0 0 (* 0.5 height)))
      (send vacuum-pad :set-color #f(0.3 0.3 1))
      (setq vacuum-pad-link (instance bodyset-link
                                      :init (make-cascoords)
