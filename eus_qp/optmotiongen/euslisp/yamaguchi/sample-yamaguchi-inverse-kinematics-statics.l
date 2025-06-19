@@ -238,19 +238,20 @@
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     (let* ((move-target (list (send *robot* :end-coords)
-                             ;; (send *robot* :get :rigid-leg1-coords)
-                             ;; (send *robot* :get :rigid-leg2-coords)
-                             ;; (send *robot* :get :rigid-leg3-coords)
-                             ;; (send *robot* :get :rigid-leg4-coords)
-                             ;; (send *robot* :get :vacuum-pad-coords)
-                             ))
+                              ;; (send *robot* :get :rigid-leg1-coords)
+                              ;; (send *robot* :get :rigid-leg2-coords)
+                              ;; (send *robot* :get :rigid-leg3-coords)
+                              ;; (send *robot* :get :rigid-leg4-coords)
+                              ;; (send *robot* :get :vacuum-pad-coords)
+                              ))
            (limb-size (1- (length move-target)))
-           (contact-target-coords-list (mapcar #'list *task-arrow-list*))
+           (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
+           (contact-target-coords-list (mapcar #'list task-target-coords))
            (contact-move-target-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
            (contact-constraint-list (make-list task-size :initial-element
-                                               ;; (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
+                                               (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
                                                ;; (list (instance norm-contact-constraint :init :fz))
-                                               (list (instance no-contact-constraint :init))
+                                               ;; (list (instance no-contact-constraint :init))
                                                ))
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
@@ -260,7 +261,7 @@
       (dotimes (i task-size)
         (setq target-coords-list
               (append target-coords-list
-                      (list (append (list (elt *task-arrow-list* i))
+                      (list (append (list (elt task-target-coords i))
                                     (make-list limb-size :initial-element
                                                (send (elt *attachable-plane-list* i) :face :margin 0))))))
         (setq move-target-list (append move-target-list (list move-target))))
@@ -303,6 +304,8 @@
                       :root-virtual-mode :6dof
                       :optimize-torque? nil
                       :debug-view (list :additional-draw-objects additional-draw-objects)
+                      ;; :stop 100
+                      ;; :min-loop 30
                       :adjacent-regular-scale 0.0
                       :pre-process-func pre-process-func
                       :post-process-func post-process-func))
