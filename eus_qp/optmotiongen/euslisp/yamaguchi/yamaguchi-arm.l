@@ -48,7 +48,7 @@
      (dotimes (i (length link-names))
        ;; links
        (setq leg (make-cube 30 30 20))
-       (send leg :set-color #f(0.3 1 0.3))
+       (send leg :set-color #f(1 1 0.3))
        (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
        (setq leg-link (instance bodyset-link
                                 :init (make-cascoords)

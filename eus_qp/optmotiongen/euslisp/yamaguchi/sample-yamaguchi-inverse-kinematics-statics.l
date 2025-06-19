@@ -314,7 +314,7 @@
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられるx
-    ;; TODO 理由不明だが、rigid-legが2個だと計算が収束する。しかしこの時、片方のlegは平面に拘束を書けられているが、もう片方のlegは拘束をかけられていない。適切なサンプルを探す。
+    ;; TODO 理由不明だが、rigid-legが2個以下だと計算が収束する。
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
@@ -329,7 +329,7 @@
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
-                                 (append (list nil) (make-list limb-size :initial-element nil))))
+                                 (append (list nil) (make-list limb-size :initial-element :z))))
            ret target-coords-list move-target-list contact-constraint-list)
       (dotimes (i task-size)
         (setq target-coords-list
