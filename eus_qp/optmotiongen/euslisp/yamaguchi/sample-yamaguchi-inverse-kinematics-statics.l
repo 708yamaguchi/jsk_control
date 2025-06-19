@@ -239,33 +239,37 @@
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     (let* ((move-target (list (send *robot* :end-coords)
-                              ;; (send *robot* :get :rigid-leg1-coords)
-                              ;; (send *robot* :get :rigid-leg2-coords)
-                              ;; (send *robot* :get :rigid-leg3-coords)
-                              ;; (send *robot* :get :rigid-leg4-coords)
-                              ;; (send *robot* :get :vacuum-pad-coords)
+                              (send *robot* :get :rigid-leg1-coords)
+                              (send *robot* :get :rigid-leg2-coords)
+                              (send *robot* :get :rigid-leg3-coords)
+                              (send *robot* :get :rigid-leg4-coords)
+                              (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
            (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
            (contact-target-coords-list (mapcar #'list task-target-coords))
            (contact-move-target-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
-           (contact-constraint-list (make-list task-size :initial-element
-                                               (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
-                                               ;; (list (instance norm-contact-constraint :init :fz))
-                                               ;; (list (instance no-contact-constraint :init))
-                                               ))
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
+           ;; (translation-axis-list (make-list task-size :initial-element
+           ;;                                   (append (list nil) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
                                  (append (list nil) (make-list limb-size :initial-element nil))))
-           ret target-coords-list move-target-list)
+           ret target-coords-list move-target-list contact-constraint-list)
       (dotimes (i task-size)
         (setq target-coords-list
               (append target-coords-list
                       (list (append (list (elt task-target-coords i))
                                     (make-list limb-size :initial-element
                                                (send (elt *attachable-plane-list* i) :face :margin 0))))))
-        (setq move-target-list (append move-target-list (list move-target))))
+        (setq move-target-list (append move-target-list (list move-target)))
+        ;; :initial-elementは同じオブジェクトを複製するだけなので、避けたほうが無難（毎回:initしたほうがいい）
+        (setq contact-constraint-list (append contact-constraint-list
+                                              (list
+                                               ;; (list (instance no-contact-constraint :init))
+                                               (list (instance norm-contact-constraint :init :fz))
+                                               )))
+        )
       (print "target-coords-list")
       (print target-coords-list)
       (print "move-target-list")
