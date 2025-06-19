@@ -142,9 +142,10 @@
   (set-room610-viewpoint)
 
   (dotimes (i (length *robot-list*))
-    (let ((robot (elt *robot-list* i))
-          (task-plane (elt *attachable-plane-list* i))
-          (task-arrow (elt *task-arrow-list* i)))
+    (let* ((robot (elt *robot-list* i))
+           (task-plane (elt *attachable-plane-list* i))
+           (task-plane-face (send task-plane :face :margin 0)) ;; Note: we need to the same face object for the arguments
+           (task-arrow (elt *task-arrow-list* i)))
       ;; 2. Rotate robot along task-plane
       ;; It is assumed that robot and room610 coords are the same at first.
       (setq *robot* robot) ;; (draw-force-value) function uses *robot* variable...
@@ -153,13 +154,12 @@
       (send robot
             ;; メモ：第一引数target-coords、:move-target、:translation-axis、:rotation-axisは個数と順番を一致させる
             :inverse-kinematics-statics-optmotiongen
-            ;; :inverse-kinematics-optmotiongen
             (list (send task-arrow :copy-worldcoords)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
-                  (send task-plane :face :margin 0)
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
                   )
             :move-target
             (list (send robot :end-coords)
@@ -173,23 +173,28 @@
             ;; TODO: ハンド以外の接触制約を入れるとSegmentation Faultする
             :contact-target-coords
             (list (send task-arrow :copy-worldcoords)
-                  ;; (send task-plane :face :margin 0)
-                  ;; (send task-plane :face :margin 0)
-                  ;; (send task-plane :face :margin 0)
-                  ;; (send task-plane :face :margin 0)
-                  ;; (send task-plane :face :margin 0)
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
+                  task-plane-face
                   )
             :contact-move-target
             (list (send robot :end-coords)
-                  ;; (send robot :get :rigid-leg1-coords)
-                  ;; (send robot :get :rigid-leg2-coords)
-                  ;; (send robot :get :rigid-leg3-coords)
-                  ;; (send robot :get :rigid-leg4-coords)
-                  ;; (send robot :get :vacuum-pad-coords)
+                  (send robot :get :rigid-leg1-coords)
+                  (send robot :get :rigid-leg2-coords)
+                  (send robot :get :rigid-leg3-coords)
+                  (send robot :get :rigid-leg4-coords)
+                  (send robot :get :vacuum-pad-coords)
                   )
             :contact-constraint
             (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
-            ;; (list (instance norm-contact-constraint :init :fz)
+                  (instance norm-contact-constraint :init :fz)
+                  (instance norm-contact-constraint :init :fz)
+                  (instance norm-contact-constraint :init :fz)
+                  (instance norm-contact-constraint :init :fz)
+                  (instance norm-contact-constraint :init :fz)
+                  ;; (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
                   ;; (instance rigid-leg-contact-constraint :init)
@@ -198,11 +203,11 @@
                   )
             :translation-axis (list t nil nil nil nil nil)
             :rotation-axis (list nil nil nil nil nil nil)
-            :collision-avoidance-link-pair (list
-                                            (list (elt (send robot :links) 0) (elt (send robot :links) 3))
-                                            (list (elt (send robot :links) 0) (car (last (send robot :links))))
-                                            )
-            :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
+            ;; :collision-avoidance-link-pair (list
+            ;;                                 (list (elt (send robot :links) 0) (elt (send robot :links) 3))
+            ;;                                 (list (elt (send robot :links) 0) (car (last (send robot :links))))
+            ;;                                 )
+            ;; :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
             :debug-view t
             :root-virtual-mode :6dof
             :optimize-torque? nil
@@ -233,51 +238,76 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
-    (let (ret target-coords-list move-target-list)
+    (let* ((move-target (list (send *robot* :end-coords)
+                             ;; (send *robot* :get :rigid-leg1-coords)
+                             ;; (send *robot* :get :rigid-leg2-coords)
+                             ;; (send *robot* :get :rigid-leg3-coords)
+                             ;; (send *robot* :get :rigid-leg4-coords)
+                             ;; (send *robot* :get :vacuum-pad-coords)
+                             ))
+           (limb-size (1- (length move-target)))
+           (contact-target-coords-list (mapcar #'list *task-arrow-list*))
+           (contact-move-target-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
+           (contact-constraint-list (make-list task-size :initial-element
+                                               ;; (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
+                                               ;; (list (instance norm-contact-constraint :init :fz))
+                                               (list (instance no-contact-constraint :init))
+                                               ))
+           (translation-axis-list (make-list task-size :initial-element
+                                             (append (list t) (make-list limb-size :initial-element nil))))
+           (rotation-axis-list (make-list task-size :initial-element
+                                 (append (list nil) (make-list limb-size :initial-element nil))))
+           ret target-coords-list move-target-list)
       (dotimes (i task-size)
         (setq target-coords-list
               (append target-coords-list
-                      (list (elt *task-arrow-list* i)
-                            ;; 5 consists of 4 rigid legs and 1 vacuum pad
-                            (make-list 5 :initial-element (send (elt *attachable-plane-list* i) :face :margin 0)))))
-        (setq move-target-list
-              (append move-target-list
-                      (list (send *robot* :end-coords)
-                            (send *robot* :get :rigid-leg1-coords)
-                            (send *robot* :get :rigid-leg2-coords)
-                            (send *robot* :get :rigid-leg3-coords)
-                            (send *robot* :get :rigid-leg4-coords)
-                            (send *robot* :get :vacuum-pad-coords)
-                            ))))
-      ;; TODO: Segmentation faultする
+                      (list (append (list (elt *task-arrow-list* i))
+                                    (make-list limb-size :initial-element
+                                               (send (elt *attachable-plane-list* i) :face :margin 0))))))
+        (setq move-target-list (append move-target-list (list move-target))))
+      (print "target-coords-list")
+      (print target-coords-list)
+      (print "move-target-list")
+      (print move-target-list)
+      (print "contact-target-coords-list")
+      (print contact-target-coords-list)
+      (print "contact-move-target-list")
+      (print contact-move-target-list)
+      (print "contact-constraint-list")
+      (print contact-constraint-list)
+      (print "translation-axis-list")
+      (print translation-axis-list)
+      (print "rotation-axis-list")
+      (print rotation-axis-list)
+      ;; TODO: Segmentation faultする。:inverse-kinematics-trajectory-optmotiongenなら動く
       (setq ret (send *robot*
                       :inverse-kinematics-statics-trajectory-optmotiongen
+                      ;; :inverse-kinematics-trajectory-optmotiongen
                       target-coords-list
-                      :move-target-list
-                      move-target-list
-                      :contact-target-coords-list
-                      *task-arrow-list*
-                      :contact-move-target-list
-                      (make-list task-size :initial-element (send *robot* :end-coords))
-                      :contact-constraint-list
-                      (make-list task-size :initial-element (instance hand-contact-constraint :init :torque (float-vector 0 0 0)))
-                      :translation-axis-list (make-list task-size :initial-element t)
-                      :rotation-axis-list (make-list task-size :initial-element nil)
-                      :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
-                                                       (send *robot* :assoc base-cube)
-                                                       (list
-                                                        (list base-cube (elt (send *robot* :links) 2))
-                                                        (list base-cube (elt (send *robot* :links) 3))
-                                                        (list base-cube (car (last (send *robot* :links))))
-                                                        ))
-                        :collision-distance-limit 5
-                        ;; :attachable-plane-list *attachable-plane-list*
-                        :root-virtual-mode :6dof
-                        :debug-view (list :additional-draw-objects additional-draw-objects)
-                        :adjacent-regular-scale 0.0
-                        :pre-process-func pre-process-func
-                        :post-process-func post-process-func))
-                      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+                      :move-target-list move-target-list
+                      :contact-target-coords-list contact-target-coords-list
+                      :contact-move-target-list contact-move-target-list
+                      :contact-constraint-list contact-constraint-list
+                      :translation-axis-list translation-axis-list
+                      :rotation-axis-list rotation-axis-list
+                      ;; :translation-axis-list (make-list task-size :initial-element (make-list (+ 1 limb-size)))
+                      ;; :rotation-axis-list (make-list task-size :initial-element (make-list (+ 1 limb-size)))
+                      ;; :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
+                      ;;                                  (send *robot* :assoc base-cube)
+                      ;;                                  (list
+                      ;;                                   (list base-cube (elt (send *robot* :links) 2))
+                      ;;                                   (list base-cube (elt (send *robot* :links) 3))
+                      ;;                                   (list base-cube (car (last (send *robot* :links))))
+                      ;;                                   ))
+                      ;; :collision-distance-limit 5
+                      ;; :attachable-plane-list *attachable-plane-list*
+                      :root-virtual-mode :6dof
+                      :optimize-torque? nil
+                      :debug-view (list :additional-draw-objects additional-draw-objects)
+                      :adjacent-regular-scale 0.0
+                      :pre-process-func pre-process-func
+                      :post-process-func post-process-func))
+      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
       ret)
     ))
 (warn "(main-with-trajectory)~%")
