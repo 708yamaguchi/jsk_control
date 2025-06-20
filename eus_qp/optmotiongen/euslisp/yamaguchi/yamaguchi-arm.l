@@ -71,7 +71,9 @@
      (setq links (append links dummy-links leg-links))
      (setq joint-list (append joint-list leg-joint-list))
      (dotimes (i (length coords-names))
-       (setq leg-coords (make-cascoords :coords (send (elt leg-links i) :copy-worldcoords)))
+       (setq leg-coords (make-cascoords
+                         :coords (send (elt leg-links i) :copy-worldcoords)
+                         :name (format nil ":rigid-leg~A-coords" i)))
        (send (elt leg-links i) :assoc leg-coords)
        (send self :put (elt coords-names i) leg-coords)))
    nil)

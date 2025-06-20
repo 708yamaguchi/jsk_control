@@ -750,6 +750,7 @@ Solve inverse kinematics problem with sqp optimization.
              (send-all robot-env-list :robot :angle-vector)
              (send-all robot-env-list :robot :copy-worldcoords)
              )
+            sqp-opt
             ))
      ))
   )
