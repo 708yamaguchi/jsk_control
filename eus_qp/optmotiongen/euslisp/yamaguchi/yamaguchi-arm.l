@@ -135,3 +135,182 @@
 (defun yamaguchi-arm ()
   (instance yamaguchi-arm-robot :init)
   )
+
+;; ;; mimic jonit-version, but may not be available on optmotiongen
+;; (defmethod yamaguchi-arm-robot
+;;   (:add-rigid-legs
+;;    ()
+;;    (let ((base-link (find "base_link" (send self :links)
+;;                           :test #'(lambda (x y) (equal x (send y :name)))))
+;;          leg leg-link leg-joint-x leg-joint-y leg-links leg-joint-list leg-joint-x-list leg-joint-y-list leg-coords
+;;          dummy-link dummy-links leg-mimic-joint-x leg-mimic-joint-y
+;;          (coords-names (list :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :rigid-leg4-coords))
+;;          ;; (initial-leg-positions
+;;          ;;  (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector 50 -50 0) (float-vector -50 -50 0)))
+;;          (min-angle -1e5) (max-angle 1e5)
+;;          )
+;;      ;; base -> x linear joint -> dummy link
+;;      ;; See (:_generate-cascaded-link-with-root-virtual) for reference
+;;      (setq dummy-link (instance bodyset-link
+;;                                 :init (make-cascoords)
+;;                                 :bodies (list (make-cube 1e-3 1e-3 1e-3))
+;;                                 :name (format nil "dummy_rigid_leg2_link")
+;;                                 :weight 0))
+;;      (send base-link :assoc dummy-link)
+;;      (setq dummy-links (append dummy-links (list dummy-link)))
+;;      (setq leg-joint-x
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg2_x_joint")
+;;                      :parent-link base-link :child-link dummy-link
+;;                      :axis (float-vector 1 0 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-x-list (append leg-joint-x-list (list leg-joint-x)))
+;;      (setq dummy-link (instance bodyset-link
+;;                                 :init (make-cascoords)
+;;                                 :bodies (list (make-cube 1e-3 1e-3 1e-3))
+;;                                 :name (format nil "dummy_rigid_leg3_link")
+;;                                 :weight 0))
+;;      (send base-link :assoc dummy-link)
+;;      (setq dummy-links (append dummy-links (list dummy-link)))
+;;      (setq leg-joint-x
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg3_x_joint")
+;;                      :parent-link base-link :child-link dummy-link
+;;                      :axis (float-vector 1 0 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-x-list (append leg-joint-x-list (list leg-joint-x)))
+;;      (setq dummy-link (instance bodyset-link
+;;                                 :init (make-cascoords)
+;;                                 :bodies (list (make-cube 1e-3 1e-3 1e-3))
+;;                                 :name (format nil "dummy_rigid_leg4_link")
+;;                                 :weight 0))
+;;      (send base-link :assoc dummy-link)
+;;      (setq dummy-links (append dummy-links (list dummy-link)))
+;;      (setq leg-joint-x
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg4_x_joint")
+;;                      :parent-link base-link :child-link dummy-link
+;;                      :axis (float-vector 1 0 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-x-list (append leg-joint-x-list (list leg-joint-x)))
+;;      ;; mimic joint
+;;      (setq dummy-link (instance bodyset-link
+;;                                 :init (make-cascoords)
+;;                                 :bodies (list (make-cube 1e-3 1e-3 1e-3))
+;;                                 :name (format nil "dummy_rigid_leg1_link")
+;;                                 :weight 0))
+;;      (send base-link :assoc dummy-link)
+;;      (setq dummy-links (append dummy-links (list dummy-link)))
+;;      (setq leg-mimic-joint-x
+;;            (instance linear-mimic-joint :init
+;;                      :name (format nil "rigid_leg1_x_joint")
+;;                      :parent-link base-link :child-link dummy-link
+;;                      :axis (float-vector 1 0 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq (leg-mimic-joint-x . mimic-joints)
+;;            (list (instance mimic-joint-param :init (elt leg-joint-x-list 0) :multiplier 1 :offset 0.0)
+;;                  (instance mimic-joint-param :init (elt leg-joint-x-list 1) :multiplier -1 :offset 0.0)
+;;                  (instance mimic-joint-param :init (elt leg-joint-x-list 2) :multiplier -1 :offset 0.0)))
+;;      (setq leg-joint-list (append leg-joint-list (append leg-joint-x-list (list leg-mimic-joint-x))))
+;;      ;; dummy-link -> y linear joint -> leg link
+;;      (setq leg (make-cube 30 30 20))
+;;      (send leg :set-color #f(1 1 0.3))
+;;      (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
+;;      (setq leg-link (instance bodyset-link
+;;                               :init (make-cascoords)
+;;                               :bodies (list leg)
+;;                               :name (format nil "rigid_leg2_link")
+;;                               :weight 0))
+;;      (send (elt dummy-links 0) :assoc leg-link)
+;;      (setq leg-links (append leg-links (list leg-link)))
+;;      (setq leg-joint-y
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg2_y_joint")
+;;                      :parent-link (elt dummy-links 0) :child-link leg-link
+;;                      :axis (float-vector 0 1 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-y-list (append leg-joint-y-list (list leg-joint-y)))
+;;      (setq leg (make-cube 30 30 20))
+;;      (send leg :set-color #f(1 1 0.3))
+;;      (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
+;;      (setq leg-link (instance bodyset-link
+;;                               :init (make-cascoords)
+;;                               :bodies (list leg)
+;;                               :name (format nil "rigid_leg3_link")
+;;                               :weight 0))
+;;      (send (elt dummy-links 1) :assoc leg-link)
+;;      (setq leg-links (append leg-links (list leg-link)))
+;;      (setq leg-joint-y
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg3_y_joint")
+;;                      :parent-link (elt dummy-links 1) :child-link leg-link
+;;                      :axis (float-vector 0 1 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-y-list (append leg-joint-y-list (list leg-joint-y)))
+;;      (setq leg (make-cube 30 30 20))
+;;      (send leg :set-color #f(1 1 0.3))
+;;      (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
+;;      (setq leg-link (instance bodyset-link
+;;                               :init (make-cascoords)
+;;                               :bodies (list leg)
+;;                               :name (format nil "rigid_leg4_link")
+;;                               :weight 0))
+;;      (send (elt dummy-links 2) :assoc leg-link)
+;;      (setq leg-links (append leg-links (list leg-link)))
+;;      (setq leg-joint-y
+;;            (instance linear-joint :init
+;;                      :name (format nil "rigid_leg4_y_joint")
+;;                      :parent-link (elt dummy-links 2) :child-link leg-link
+;;                      :axis (float-vector 0 1 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq leg-joint-y-list (append leg-joint-y-list (list leg-joint-y)))
+;;      ;; mimic joints
+;;      (setq leg (make-cube 30 30 20))
+;;      (send leg :set-color #f(1 1 0.3))
+;;      (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
+;;      (setq leg-link (instance bodyset-link
+;;                               :init (make-cascoords)
+;;                               :bodies (list leg)
+;;                               :name (format nil "rigid_leg1_link")
+;;                               :weight 0))
+;;      (send (elt dummy-links 3) :assoc leg-link)
+;;      (setq leg-links (append leg-links (list leg-link)))
+;;      (setq leg-mimic-joint-y
+;;            (instance linear-mimic-joint :init
+;;                      :name (format nil "rigid_leg1_y_joint")
+;;                      :parent-link (elt dummy-links 3) :child-link leg-link
+;;                      :axis (float-vector 0 1 0)
+;;                      :min min-angle :max max-angle
+;;                      :max-joint-velocity 10.0
+;;                      :max-joint-torque 999999.0))
+;;      (setq (leg-mimic-joint-y . mimic-joints)
+;;            (list (instance mimic-joint-param :init (elt leg-joint-y-list 0) :multiplier -1 :offset 0.0)
+;;                  (instance mimic-joint-param :init (elt leg-joint-y-list 1) :multiplier 1 :offset 0.0)
+;;                  (instance mimic-joint-param :init (elt leg-joint-y-list 2) :multiplier -1 :offset 0.0)))
+;;      (setq leg-joint-list (append leg-joint-list (append leg-joint-y-list (list leg-mimic-joint-y))))
+
+;;      ;; Overwrite links and joint-list
+;;      (setq links (append links dummy-links leg-links))
+;;      (setq joint-list (append joint-list leg-joint-list)) ;; TODO
+;;      (dotimes (i (length coords-names))
+;;        (setq leg-coords (make-cascoords
+;;                          :coords (send (elt leg-links i) :copy-worldcoords)
+;;                          :name (format nil ":rigid-leg~A-coords" i)))
+;;        (send (elt leg-links i) :assoc leg-coords)
+;;        (send self :put (elt coords-names i) leg-coords)))
+;;    nil)
+;;   )
