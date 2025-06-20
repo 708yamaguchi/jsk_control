@@ -13,7 +13,7 @@
 
 ;; 1. Prepare task environment
 ;; If you change task configuration, change only this section.
-;; *robot-list*, *attachable-plane-list* and *task-arrow-list* are the same length and correspond in order
+;; The following variables are the same length and correspond in order
 (setq *attachable-plane-list*
       (list
        (instance attachable-plane :init
@@ -42,7 +42,7 @@
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
        ))
-(setq *task-arrow-list*
+(setq *task-coords-list*
       (list
        ;; 蛇口
        (send (instance arrow-object :init) :newcoords
@@ -60,6 +60,18 @@
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
+(setq *task-wrench-list*
+      (list
+       (float-vector 0.1 0 0 0 0 0)
+       (float-vector 0.1 0 0 0 0 0)
+       (float-vector 0.1 0 0 0 0 0)
+       (float-vector 0.1 0 0 0 0 0)
+       (float-vector 0.1 0 0 0 0 0)
+       ))
+(unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
+             (eq (length *task-coords-list*) (length *task-wrench-list*)))
+  (error "Task definition is wrong.")
+  (exit))
 
 ;; 前までは、virtual linkへの制約によって脱着ベースと壁面を平行にしていた。
 ;; この例では、脱着ベースの剛体脚と吸着パッドが壁面上にあるという制約をかけることで、脱着ベースと壁面を平行にしている
@@ -77,7 +89,7 @@
   (objects (append *room610-model-list*
                    (send-all *attachable-plane-list* :object)
                    ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                   *task-arrow-list*
+                   *task-coords-list*
                    *robot-list*))
   (set-room610-viewpoint)
 
@@ -85,7 +97,7 @@
     (let* ((robot (elt *robot-list* i))
            (task-plane (elt *attachable-plane-list* i))
            (task-plane-face (send task-plane :face :margin 0))
-           (task-arrow (elt *task-arrow-list* i)))
+           (task-arrow (elt *task-coords-list* i)))
       ;; 2. Rotate robot along task-plane
       ;; It is assumed that robot and room610 coords are the same at first.
       (send robot :newcoords (make-coords))
@@ -131,12 +143,12 @@
      (visualize-callback-func)
      &allow-other-keys
      )
-  (let* ((task-size (length *task-arrow-list*))
+  (let* ((task-size (length *task-coords-list*))
          (additional-draw-objects
           (append *room610-model-list*
                   (send-all *attachable-plane-list* :object)
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                  *task-arrow-list*)))
+                  *task-coords-list*)))
     ;; 2. Visualize
     (unless (boundp '*irtviewer*)
       (make-irtviewer))
@@ -154,7 +166,7 @@
                               (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
-           (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
+           (task-target-coords (send-all *task-coords-list* :copy-worldcoords))
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
            ;; (translation-axis-list (make-list task-size :initial-element
@@ -210,7 +222,7 @@
   (objects (append *room610-model-list*
                    (send-all *attachable-plane-list* :object)
                    ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                   *task-arrow-list*
+                   *task-coords-list*
                    *robot-list*))
   (set-room610-viewpoint)
 
@@ -218,7 +230,7 @@
     (let* ((robot (elt *robot-list* i))
            (task-plane (elt *attachable-plane-list* i))
            (task-plane-face (send task-plane :face :margin 0)) ;; Note: we need to the same face object for the arguments
-           (task-arrow (elt *task-arrow-list* i)))
+           (task-arrow (elt *task-coords-list* i)))
       ;; 2. Rotate robot along task-plane
       ;; It is assumed that robot and room610 coords are the same at first.
       (setq *robot* robot) ;; (draw-force-value) function uses *robot* variable...
@@ -300,7 +312,7 @@
           (append *room610-model-list*
                   (send-all *attachable-plane-list* :object)
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                  *task-arrow-list*)))
+                  *task-coords-list*)))
     ;; 2. Visualize
     (unless (boundp '*irtviewer*)
       (make-irtviewer))
@@ -309,7 +321,7 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
-    (let* ((task-size (length *task-arrow-list*))
+    (let* ((task-size (length *task-coords-list*))
            (move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
@@ -318,7 +330,7 @@
                               (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
-           (task-target-coords (send-all *task-arrow-list* :copy-worldcoords))
+           (task-target-coords (send-all *task-coords-list* :copy-worldcoords))
            contact-target-coords-list
            contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
@@ -334,6 +346,7 @@
                                              )))
            sqp-opt target-coords-list move-target-list contact-constraint-list
            (external-coords-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
+           (external-wrench-list (mapcar #'list *task-wrench-list*))
            )
       (dotimes (i task-size)
         ;; メモ：各平面に固有の名前を付けないと、inverse-kinematics-statics-wrapper.lの以下のコードで除去される
@@ -372,7 +385,7 @@
                           :contact-constraint-list contact-constraint-list
                           ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。visualizeもする
                           ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
-                          :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
+                          :external-wrench-list external-wrench-list
                           :external-coords-list external-coords-list
                           :translation-axis-list translation-axis-list
                           :rotation-axis-list rotation-axis-list
