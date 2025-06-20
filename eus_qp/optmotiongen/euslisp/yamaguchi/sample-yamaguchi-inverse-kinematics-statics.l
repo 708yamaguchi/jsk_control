@@ -384,6 +384,7 @@
                       :contact-move-target-list contact-move-target-list
                       :contact-constraint-list contact-constraint-list
                       ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。
+                      ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
                       :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
                       :external-coords-list external-coords-list
                       :translation-axis-list translation-axis-list
@@ -402,7 +403,6 @@
       ;; 4. Print result
       (let* ((traj-config-task (send sqp-opt :config-task))
              (instant-config-task-list (send traj-config-task :instant-config-task-list)))
-        ;; TODO: 上のIK部分でexternal forceを与えられるようにする
         (dotimes (i (length instant-config-task-list))
           (format t "task~A~%" i)
           (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
@@ -411,19 +411,21 @@
                 (format t "[N]~%"))
             (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
                 (format t "[Nm]~%"))
-            ;; TODO 複雑なのでletを使って書き直す
-            (if (send (elt instant-config-task-list i) force-type)
-                (progn
-                  (when (or (eq force-type :force-list) (eq force-type :moment-list))
-                    (dotimes (j (length (send (elt instant-config-task-list i) :contact-attention-coords-list)))
-                      (format t "   ~A: ~A~%" (elt (send-all (send (elt instant-config-task-list i) :contact-attention-coords-list) :name) j)
-                              (elt (send (elt instant-config-task-list i) force-type) j))))
-                  (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
-                    (dotimes (j (length (send (elt instant-config-task-list i) :external-coords-list)))
-                      (format t "   ~A: ~A~%" (send (elt (send (elt instant-config-task-list i) :external-coords-list) j) :name)
-                              (elt (send (elt instant-config-task-list i) force-type) j))
-                      )))
-              (format t "   nil~%")))
+            (let* ((config-task (elt instant-config-task-list i))
+                   (attention-coords-list (send config-task :contact-attention-coords-list))
+                   (force-value (send config-task force-type)))
+              (if force-value
+                  (progn
+                    (when (or (eq force-type :force-list) (eq force-type :moment-list))
+                      (dotimes (j (length attention-coords-list))
+                        (format t "   ~A: ~A~%" (elt (send-all attention-coords-list :name) j)
+                                (elt force-value j))))
+                    (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
+                      (dotimes (j (length (send config-task :external-coords-list)))
+                        (format t "   ~A: ~A~%" (send (elt (send config-task :external-coords-list) j) :name)
+                                (elt force-value j))
+                        )))
+                (format t "   nil~%"))))
           (format t "~%")))
       sqp-opt)))
 (warn "(main-with-trajectory)~%")
