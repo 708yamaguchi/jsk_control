@@ -296,8 +296,7 @@
      (visualize-callback-func)
      &allow-other-keys
      )
-  (let* ((task-size (length *task-arrow-list*))
-         (additional-draw-objects
+  (let* ((additional-draw-objects
           (append *room610-model-list*
                   (send-all *attachable-plane-list* :object)
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
@@ -310,7 +309,8 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
-    (let* ((move-target (list (send *robot* :end-coords)
+    (let* ((task-size (length *task-arrow-list*))
+           (move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
                               (send *robot* :get :rigid-leg3-coords)
@@ -324,8 +324,17 @@
            (translation-axis-list (make-list task-size :initial-element
                                              (append (list t) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
-                                 (append (list nil) (make-list limb-size :initial-element :z))))
-           sqp-opt target-coords-list move-target-list contact-constraint-list)
+                                          (append (list nil) (make-list limb-size :initial-element :z))))
+           (collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
+                                            (send *robot* :assoc base-cube)
+                                            (list
+                                             (list base-cube (elt (send *robot* :links) 2))
+                                             (list base-cube (elt (send *robot* :links) 3))
+                                             (list base-cube (car (last (send *robot* :links))))
+                                             )))
+           sqp-opt target-coords-list move-target-list contact-constraint-list
+           (external-coords-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
+           )
       (dotimes (i task-size)
         ;; メモ：各平面に固有の名前を付けないと、inverse-kinematics-statics-wrapper.lの以下のコードで除去される
         ;; (remove-duplicates (flatten target-coords-list) :test #'equal)
@@ -374,15 +383,12 @@
                       :contact-target-coords-list contact-target-coords-list
                       :contact-move-target-list contact-move-target-list
                       :contact-constraint-list contact-constraint-list
+                      ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。
+                      :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
+                      :external-coords-list external-coords-list
                       :translation-axis-list translation-axis-list
                       :rotation-axis-list rotation-axis-list
-                      :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
-                                                       (send *robot* :assoc base-cube)
-                                                       (list
-                                                        (list base-cube (elt (send *robot* :links) 2))
-                                                        (list base-cube (elt (send *robot* :links) 3))
-                                                        (list base-cube (car (last (send *robot* :links))))
-                                                        ))
+                      :collision-avoidance-link-pair collision-avoidance-link-pair
                       :collision-distance-limit -10
                       :invariant-joint-list (send *robot* :invariant-joint-list)
                       :root-virtual-mode :6dof
@@ -396,9 +402,6 @@
       ;; 4. Print result
       (let* ((traj-config-task (send sqp-opt :config-task))
              (instant-config-task-list (send traj-config-task :instant-config-task-list)))
-        (print sqp-opt)
-        (print traj-config-task)
-        (print instant-config-task-list)
         ;; TODO: 上のIK部分でexternal forceを与えられるようにする
         (dotimes (i (length instant-config-task-list))
           (format t "task~A~%" i)
@@ -408,10 +411,18 @@
                 (format t "[N]~%"))
             (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
                 (format t "[Nm]~%"))
+            ;; TODO 複雑なのでletを使って書き直す
             (if (send (elt instant-config-task-list i) force-type)
-                (dotimes (j (length (send (elt instant-config-task-list i) :contact-attention-coords-list)))
-                  (format t "   ~A: ~A~%" (elt (send-all (send (elt instant-config-task-list i) :contact-attention-coords-list) :name) j)
-                          (elt (send (elt instant-config-task-list i) force-type) j)))
+                (progn
+                  (when (or (eq force-type :force-list) (eq force-type :moment-list))
+                    (dotimes (j (length (send (elt instant-config-task-list i) :contact-attention-coords-list)))
+                      (format t "   ~A: ~A~%" (elt (send-all (send (elt instant-config-task-list i) :contact-attention-coords-list) :name) j)
+                              (elt (send (elt instant-config-task-list i) force-type) j))))
+                  (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
+                    (dotimes (j (length (send (elt instant-config-task-list i) :external-coords-list)))
+                      (format t "   ~A: ~A~%" (send (elt (send (elt instant-config-task-list i) :external-coords-list) j) :name)
+                              (elt (send (elt instant-config-task-list i) force-type) j))
+                      )))
               (format t "   nil~%")))
           (format t "~%")))
       sqp-opt)))

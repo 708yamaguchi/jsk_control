@@ -725,6 +725,10 @@ return $\{ \bm{f}_1^{\mathit{ex}}, \bm{f}_2^{\mathit{ex}}, \cdots, \bm{f}_{N_{\m
 "
    (mapcar #'(lambda (w) (subseq w 0 3)) _external-wrench-list)
    )
+  (:external-coords-list
+   ()
+   _external-coords-list
+   )
   (:external-moment-list
    ()
 "

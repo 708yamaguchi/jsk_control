@@ -101,7 +101,9 @@
                      :max-joint-torque 0))
      (setq links (append links (list vacuum-pad-link)))
      (setq joint-list (append joint-list (list vacuum-pad-joint)))
-     (setq vacuum-pad-coords (make-cascoords :coords (send vacuum-pad-link :copy-worldcoords)))
+     (setq vacuum-pad-coords (make-cascoords
+                              :coords (send vacuum-pad-link :copy-worldcoords)
+                              :name ":vacuum-pad-coords"))
      (send vacuum-pad-link :assoc vacuum-pad-coords)
      (send self :put :vacuum-pad-coords vacuum-pad-coords)
      )

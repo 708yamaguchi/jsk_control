@@ -329,6 +329,8 @@ Solve inverse kinematics problem with sqp optimization.
      (make-list (length target-coords-list) :initial-element nil))
     (optimize-torque?)
     (optimize-start-end-torque?)
+    (external-wrench-list)
+    (external-coords-list)
     (eom-trans-thre 1e-1)
     (eom-rot-thre 1e-1)
     (torque-thre 1e-1)
@@ -540,7 +542,10 @@ Solve inverse kinematics problem with sqp optimization.
                  contact-target-coords
                  contact-constraint
                  posture-jl
-                 posture-jal)
+                 posture-jal
+                 external-wrench
+                 external-coords
+                 )
                 (let* ((config-task
                         (instance instant-configuration-task :init
                                   :robot-env robot-env
@@ -556,6 +561,8 @@ Solve inverse kinematics problem with sqp optimization.
                                       (send robot-env :drive-joint-list))
                                   :posture-joint-list posture-jl
                                   :posture-joint-angle-list posture-jal
+                                  :external-wrench-list external-wrench
+                                  :external-coords-list external-coords
                                   :kin-target-coords-list
                                   (mapcar
                                    #'(lambda (tc)
@@ -617,6 +624,8 @@ Solve inverse kinematics problem with sqp optimization.
             contact-constraint-list
             posture-joint-list
             posture-joint-angle-list
+            (if external-wrench-list external-wrench-list (make-list (length target-coords-list) :initial-element nil))
+            (if external-coords-list external-coords-list (make-list (length target-coords-list) :initial-element nil))
             ))
           (trajectory-config-task
            (instance trajectory-configuration-task :init
