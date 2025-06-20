@@ -317,6 +317,7 @@ Solve inverse kinematics problem with sqp optimization.
     (contact-target-coords-list)
     (contact-move-target-list)
     (contact-constraint-list)
+    (invariant-joint-list)
     (root-virtual-mode :fix)
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
@@ -503,6 +504,13 @@ Solve inverse kinematics problem with sqp optimization.
                               #'(lambda (c) (numberp (send (send c :get :target-coords) :get :physical-id)))
                               contact-list)
                              :joint-list))
+                           ;; robotは(copy-object self)なので、jointの名前で一致をかける必要がある
+                           (if invariant-joint-list
+                               (let ((names (send-all invariant-joint-list :name)))
+                                 (mapcar #'(lambda (name)
+                                             (find-if #'(lambda (x) (equal (send x :name) name))
+                                                      (send robot :joint-list)))
+                                         names)))
                            (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
                            ))
                     (send robot-env :variant-joint-list

@@ -385,6 +385,7 @@
                       ;;                                   ))
                       ;; :collision-distance-limit 5
                       ;; :attachable-plane-list *attachable-plane-list*
+                      :invariant-joint-list (send *robot* :invariant-joint-list)
                       :root-virtual-mode :6dof
                       :optimize-torque? nil
                       :debug-view (list :additional-draw-objects additional-draw-objects)

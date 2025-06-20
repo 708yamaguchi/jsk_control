@@ -110,6 +110,16 @@
      (send self :put :vacuum-pad-coords vacuum-pad-coords)
      )
    nil)
+  (:invariant-joint-list
+   ()
+   ;; 可能であれば、各limbに対して再帰的にjoint-listを取得できるようにする
+   (list (send (send (send self :get :rigid-leg1-coords) :parent) :joint)
+         (send (send (send self :get :rigid-leg2-coords) :parent) :joint)
+         (send (send (send self :get :rigid-leg3-coords) :parent) :joint)
+         (send (send (send self :get :rigid-leg4-coords) :parent) :joint)
+         (send (send (send self :get :vacuum-pad-coords) :parent) :joint)
+         )
+   )
   (:end-coords
    ()
    (send self :rarm :end-coords))
