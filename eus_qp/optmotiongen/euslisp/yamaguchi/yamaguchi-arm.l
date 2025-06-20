@@ -5,6 +5,7 @@
   :slots ()
   )
 
+;; TODO: check robot weight (each link weight)
 (defmethod yamaguchi-arm-robot
   (:init
    ()
@@ -53,9 +54,6 @@
                                 :name (format nil "rigid_leg~A_link" i)
                                 :weight 0))
        (send leg-link :translate (elt initial-leg-positions i))
-       ;; TODO: check robot weight。たぶん要らない。
-       ;; (send leg-link :inertia-tensor #2f((1 1 1)(1 1 1)(1 1 1)))
-       ;; (setq (leg-link . acentroid) (float-vector -2.56219083301764 -36.620809748659596 -0.0050794825177114)) 
        (send dummy-link :assoc leg-link)
        (setq leg-links (append leg-links (list leg-link)))
        (setq leg-joint-y

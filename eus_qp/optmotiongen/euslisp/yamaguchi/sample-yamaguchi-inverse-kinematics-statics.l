@@ -60,6 +60,7 @@
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
+;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
 (setq *task-wrench-list*
       (list
        (float-vector 0.1 0 0 0 0 0)
@@ -337,13 +338,11 @@
                                              (append (list t) (make-list limb-size :initial-element :z))))
            (rotation-axis-list (make-list task-size :initial-element
                                           (append (list nil) (make-list limb-size :initial-element :z))))
-           (collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
-                                            (send *robot* :assoc base-cube)
-                                            (list
-                                             (list base-cube (elt (send *robot* :links) 2))
-                                             (list base-cube (elt (send *robot* :links) 3))
-                                             (list base-cube (car (last (send *robot* :links))))
-                                             )))
+           (collision-avoidance-link-pair (list
+                                             (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 2))
+                                             (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 3))
+                                             (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
+                                             ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
            (external-coords-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
            (external-wrench-list (mapcar #'list *task-wrench-list*))
@@ -390,7 +389,6 @@
         )
       (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
       (setq contact-move-target-list (mapcar #'cdr move-target-list))
-      ;; TODO: move-targetはアームだけで、contact-move-targetは4つの脚+吸着パッドな気がする。それぞれの引数を直す
       (setq sqp-opt (send *robot*
                           :inverse-kinematics-statics-trajectory-optmotiongen
                           target-coords-list
@@ -398,14 +396,13 @@
                           :contact-target-coords-list contact-target-coords-list
                           :contact-move-target-list contact-move-target-list
                           :contact-constraint-list contact-constraint-list
-                          ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。visualizeもする
                           ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
                           :external-wrench-list external-wrench-list
                           :external-coords-list external-coords-list
                           :translation-axis-list translation-axis-list
                           :rotation-axis-list rotation-axis-list
                           :collision-avoidance-link-pair collision-avoidance-link-pair
-                          :collision-distance-limit -10
+                          :collision-distance-limit -0.5
                           :invariant-joint-list (send *robot* :invariant-joint-list)
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
