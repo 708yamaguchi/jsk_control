@@ -14,26 +14,6 @@
    (send self :add-vacuum-pad)
    (send self :init-ending)
    )
-  ;; 剛体脚にジョイントが付いていないバージョン。staticsの方でIKが解けないので、:add-vacuum-base-limbsが上位互換
-  (:add-vacuum-base-coords
-   ()
-   (let ((base-link (find "base_link" (send self :links)
-                          :test #'(lambda (x y) (equal x (send y :name)))))
-         (rigid-leg-names (list :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :rigid-leg4-coords))
-         (rigid-leg-positions (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector -50 50 0) (float-vector -50 -50 0))))
-     ;; Define rigid legs fixed to base_link
-     (dotimes (i (length rigid-leg-names))
-       (send self :put (elt rigid-leg-names i)
-             (make-cascoords
-              :coords (send (send self :copy-worldcoords) :translate (elt rigid-leg-positions i))
-              :parent base-link)))
-     ;; Defind vacuum pad fixed to base_link
-     (send self :put :vacuum-pad-coords
-           (make-cascoords
-            :coords (send self :copy-worldcoords)
-            :parent base-link))
-     )
-   )
   (:add-rigid-legs
    ()
    (let ((base-link (find "base_link" (send self :links)
@@ -62,7 +42,7 @@
        (send base-link :assoc leg-link)
        (setq leg-links (append leg-links (list leg-link)))
        ;; joints
-       ;; TODO: 2 dof joint is necessary
+       ;; TODO: 2 dof joint is necessary。ダミーのbodyset-linkが必要か、virtual joint listの方を参考にする
        (setq leg-joint
              (instance linear-joint :init
              ;; (instance rotational-joint :init
@@ -112,7 +92,7 @@
    nil)
   (:invariant-joint-list
    ()
-   ;; 可能であれば、各limbに対して再帰的にjoint-listを取得できるようにする
+   ;; TODO: 各limbに対して再帰的にjoint-listを取得できるようにする
    (list (send (send (send self :get :rigid-leg1-coords) :parent) :joint)
          (send (send (send self :get :rigid-leg2-coords) :parent) :joint)
          (send (send (send self :get :rigid-leg3-coords) :parent) :joint)
