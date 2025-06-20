@@ -22,8 +22,8 @@
            (instance rotational-friction-contact-constraint :init 0 :fz)
            ;; cop (Contact at a single point)
            (instance 2D-cop-contact-constraint :init 0 0 0 0)
-           ;; fz
-           ;; (instance norm-contact-constraint :init :-fz)
+           ;; fz 吸着パッドが発生する力は常に負という制約（下の制約の方が正確なので、下だけでいいかも）
+           ;; (instance norm-contact-constraint :init :fz :norm -1)
            ;; max-fz 最大吸着力をfpとして、fz+fp>=0、すなわちfz>=-fp=suction-force。符号の向きに注意。
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
            )))
