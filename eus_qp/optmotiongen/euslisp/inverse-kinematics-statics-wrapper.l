@@ -748,7 +748,7 @@ Solve inverse kinematics problem with sqp optimization.
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
             (send self :angle-vector (send (car robot-env-list) :robot :angle-vector))

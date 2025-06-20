@@ -70,7 +70,7 @@
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
-  (error "Task definition is wrong.")
+  (print "Task definition is wrong.")
   (exit))
 
 ;; 前までは、virtual linkへの制約によって脱着ベースと壁面を平行にしていた。
@@ -364,12 +364,27 @@
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list
-                                                ;; (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
-                                                (instance norm-contact-constraint :init :fz)
-                                                (instance norm-contact-constraint :init :fz)
-                                                (instance norm-contact-constraint :init :fz)
-                                                (instance norm-contact-constraint :init :fz)
-                                                (instance norm-contact-constraint :init :-fz)
+                                                (instance default-contact-constraint
+                                                          :init-from-support-polygon
+                                                          :support-polygon nil
+                                                          :mu-trans 0.2
+                                                          :mu-rot 0.002)
+                                                (instance default-contact-constraint
+                                                          :init-from-support-polygon
+                                                          :support-polygon nil
+                                                          :mu-trans 0.2
+                                                          :mu-rot 0.002)
+                                                (instance default-contact-constraint
+                                                          :init-from-support-polygon
+                                                          :support-polygon nil
+                                                          :mu-trans 0.2
+                                                          :mu-rot 0.002)
+                                                (instance default-contact-constraint
+                                                          :init-from-support-polygon
+                                                          :support-polygon nil
+                                                          :mu-trans 0.2
+                                                          :mu-rot 0.002)
+                                                (instance vacuum-pad-contact-constraint :init)
                                                 )
                                                )))
         )
@@ -403,7 +418,7 @@
       ;; 4. Print result
       (let* ((traj-config-task (send sqp-opt :config-task))
              (instant-config-task-list (send traj-config-task :instant-config-task-list)))
-        (format t "~%")
+        (format t "~%===== Result (in world coords) =====~%")
         (dotimes (i (length instant-config-task-list))
           (format t "task~A~%" i)
           (let* ((config-task (elt instant-config-task-list i))
@@ -433,5 +448,6 @@
                         )))
                 (format t "   nil~%"))))
           (format t "~%")))
+      (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
       sqp-opt)))
 (warn "(main-with-trajectory)~%")
