@@ -364,53 +364,59 @@
       (setq contact-move-target-list (mapcar #'cdr move-target-list))
       ;; TODO: move-targetはアームだけで、contact-move-targetは4つの脚+吸着パッドな気がする。それぞれの引数を直す
       (setq sqp-opt (send *robot*
-                      :inverse-kinematics-statics-trajectory-optmotiongen
-                      target-coords-list
-                      :move-target-list move-target-list
-                      :contact-target-coords-list contact-target-coords-list
-                      :contact-move-target-list contact-move-target-list
-                      :contact-constraint-list contact-constraint-list
-                      ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。visualizeもする
-                      ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
-                      :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
-                      :external-coords-list external-coords-list
-                      :translation-axis-list translation-axis-list
-                      :rotation-axis-list rotation-axis-list
-                      :collision-avoidance-link-pair collision-avoidance-link-pair
-                      :collision-distance-limit -10
-                      :invariant-joint-list (send *robot* :invariant-joint-list)
-                      :root-virtual-mode :6dof
-                      :optimize-torque? nil
-                      :debug-view (list :additional-draw-objects additional-draw-objects)
-                      :adjacent-regular-scale 0.0
-                      :pre-process-func pre-process-func
-                      :post-process-func post-process-func))
+                          :inverse-kinematics-statics-trajectory-optmotiongen
+                          target-coords-list
+                          :move-target-list move-target-list
+                          :contact-target-coords-list contact-target-coords-list
+                          :contact-move-target-list contact-move-target-list
+                          :contact-constraint-list contact-constraint-list
+                          ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。visualizeもする
+                          ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
+                          :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
+                          :external-coords-list external-coords-list
+                          :translation-axis-list translation-axis-list
+                          :rotation-axis-list rotation-axis-list
+                          :collision-avoidance-link-pair collision-avoidance-link-pair
+                          :collision-distance-limit -10
+                          :invariant-joint-list (send *robot* :invariant-joint-list)
+                          :root-virtual-mode :6dof
+                          :optimize-torque? nil
+                          :debug-view (list :additional-draw-objects additional-draw-objects)
+                          :adjacent-regular-scale 0.0
+                          :pre-process-func pre-process-func
+                          :post-process-func post-process-func))
       ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
 
       ;; 4. Print result
       (let* ((traj-config-task (send sqp-opt :config-task))
              (instant-config-task-list (send traj-config-task :instant-config-task-list)))
+        (format t "~%")
         (dotimes (i (length instant-config-task-list))
           (format t "task~A~%" i)
-          (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
-            (format t " ~A " force-type)
-            (if (or (eq force-type :force-list) (eq force-type :external-force-list))
-                (format t "[N]~%"))
-            (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
-                (format t "[Nm]~%"))
-            (let* ((config-task (elt instant-config-task-list i))
-                   (attention-coords-list (send config-task :contact-attention-coords-list))
-                   (force-value (send config-task force-type)))
-              (if force-value
+          (let* ((config-task (elt instant-config-task-list i))
+                 (contact-attention-coords-list (send config-task :contact-attention-coords-list))
+                 (contact-target-coords-list (send config-task :contact-target-coords-list)))
+            ;; Print contact coords
+            (format t "Contact coords~%")
+            (dolist (contact-target-coords contact-target-coords-list)
+              (format t " ~A~%" contact-target-coords))
+            ;; Print wrench
+            (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
+              (format t " ~A " force-type)
+              (if (or (eq force-type :force-list) (eq force-type :external-force-list))
+                  (format t "[N]~%"))
+              (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
+                  (format t "[Nm]~%"))
+              (if (send config-task force-type)
                   (progn
                     (when (or (eq force-type :force-list) (eq force-type :moment-list))
-                      (dotimes (j (length attention-coords-list))
-                        (format t "   ~A: ~A~%" (elt (send-all attention-coords-list :name) j)
-                                (elt force-value j))))
+                      (dotimes (j (length contact-attention-coords-list))
+                        (format t "   ~A: ~A~%" (elt (send-all contact-attention-coords-list :name) j)
+                                (elt (send config-task force-type) j))))
                     (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
                       (dotimes (j (length (send config-task :external-coords-list)))
                         (format t "   ~A: ~A~%" (send (elt (send config-task :external-coords-list) j) :name)
-                                (elt force-value j))
+                                (elt (send config-task force-type) j))
                         )))
                 (format t "   nil~%"))))
           (format t "~%")))
