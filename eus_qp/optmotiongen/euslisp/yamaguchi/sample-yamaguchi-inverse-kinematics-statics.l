@@ -322,7 +322,7 @@
            contact-target-coords-list
            contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
-                                             (append (list t) (make-list limb-size :initial-element nil))))
+                                             (append (list t) (make-list limb-size :initial-element :z))))
            (rotation-axis-list (make-list task-size :initial-element
                                           (append (list nil) (make-list limb-size :initial-element :z))))
            (collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
@@ -350,32 +350,19 @@
         ;; TODO: 良い感じの制約を入れる
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
-                                               (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     (instance norm-contact-constraint :init :fz)
-                                                     )
+                                               (list
+                                                ;; (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
+                                                (instance norm-contact-constraint :init :fz)
+                                                (instance norm-contact-constraint :init :fz)
+                                                (instance norm-contact-constraint :init :fz)
+                                                (instance norm-contact-constraint :init :fz)
+                                                (instance norm-contact-constraint :init :-fz)
+                                                )
                                                )))
         )
-      (setq contact-target-coords-list target-coords-list)
-      (setq contact-move-target-list move-target-list)
-      ;; for debug
-      ;; (print "target-coords-list")
-      ;; (print target-coords-list)
-      ;; (print "move-target-list")
-      ;; (print move-target-list)
-      ;; (print "contact-target-coords-list")
-      ;; (print contact-target-coords-list)
-      ;; (print "contact-move-target-list")
-      ;; (print contact-move-target-list)
-      ;; (print "contact-constraint-list")
-      ;; (print contact-constraint-list)
-      ;; (print "translation-axis-list")
-      ;; (print translation-axis-list)
-      ;; (print "rotation-axis-list")
-      ;; (print rotation-axis-list)
+      (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
+      (setq contact-move-target-list (mapcar #'cdr move-target-list))
+      ;; TODO: move-targetはアームだけで、contact-move-targetは4つの脚+吸着パッドな気がする。それぞれの引数を直す
       (setq sqp-opt (send *robot*
                       :inverse-kinematics-statics-trajectory-optmotiongen
                       target-coords-list
@@ -383,7 +370,7 @@
                       :contact-target-coords-list contact-target-coords-list
                       :contact-move-target-list contact-move-target-list
                       :contact-constraint-list contact-constraint-list
-                      ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。
+                      ;; TODO: external-wrench-listはタスク情報なので、グローバル変数として定義する。visualizeもする
                       ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
                       :external-wrench-list (make-list task-size :initial-element (list (float-vector 0 0 9 0 0 0)))
                       :external-coords-list external-coords-list
