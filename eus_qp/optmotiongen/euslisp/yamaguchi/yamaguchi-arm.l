@@ -9,7 +9,6 @@
   (:init
    ()
    (send-super :init)
-   ;; (send r :add-vacuum-base-coords)
    (send self :add-rigid-legs)
    (send self :add-vacuum-pad)
    (send self :init-ending)
@@ -18,43 +17,58 @@
    ()
    (let ((base-link (find "base_link" (send self :links)
                           :test #'(lambda (x y) (equal x (send y :name)))))
-         leg leg-link leg-joint leg-links leg-joint-list leg-coords leg-coords-list
-         (link-names (list "rigid_leg1" "rigid_leg2" "rigid_leg3" "rigid_leg4"))
-         (joint-names (list "rigid_leg_joint1" "rigid_leg_joint2" "rigid_leg_joint3" "rigid_leg_joint4"))
+         leg leg-link leg-joint-x leg-joint-y leg-links leg-joint-list leg-coords
+         dummy-link dummy-links
          (coords-names (list :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :rigid-leg4-coords))
-         (positions (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector 50 -50 0) (float-vector -50 -50 0)))
-         (min-max (list (list -100000 100000) (list -100000 10000) (list -100000 100000) (list -100000 100000)))
+         (initial-leg-positions
+          (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector 50 -50 0) (float-vector -50 -50 0)))
+         (min-angle -1e5) (max-angle 1e5)
          )
-     (dotimes (i (length link-names))
-       ;; links
+     (dotimes (i (length coords-names))
+       ;; base -> x linear joint -> dummy link
+       ;; See (:_generate-cascaded-link-with-root-virtual) for reference
+       (setq dummy-link (instance bodyset-link
+                                  :init (make-cascoords)
+                                  :bodies (list (make-cube 1e-3 1e-3 1e-3))
+                                  :name (format nil "dummy_rigid_leg~A_link" i)
+                                  :weight 0))
+       (send base-link :assoc dummy-link)
+       (setq dummy-links (append dummy-links (list dummy-link)))
+       (setq leg-joint-x
+             (instance linear-joint :init
+                       :name (format nil "rigid_leg~A_x_joint" i)
+                       :parent-link base-link :child-link dummy-link
+                       :axis (float-vector 1 0 0)
+                       :min min-angle :max max-angle
+                       :max-joint-velocity 10.0
+                       :max-joint-torque 999999.0))
+       (setq leg-joint-list (append leg-joint-list (list leg-joint-x)))
+       ;; dummy-link -> y linear joint -> leg link
        (setq leg (make-cube 30 30 20))
        (send leg :set-color #f(1 1 0.3))
        (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
        (setq leg-link (instance bodyset-link
                                 :init (make-cascoords)
                                 :bodies (list leg)
-                                :name (elt link-names i)))
-       ;; TODO: check robot weight
-       ;; (send leg-link :weight 1)
+                                :name (format nil "rigid_leg~A_link" i)
+                                :weight 0))
+       (send leg-link :translate (elt initial-leg-positions i))
+       ;; TODO: check robot weight。たぶん要らない。
        ;; (send leg-link :inertia-tensor #2f((1 1 1)(1 1 1)(1 1 1)))
        ;; (setq (leg-link . acentroid) (float-vector -2.56219083301764 -36.620809748659596 -0.0050794825177114)) 
-       (send leg-link :translate (elt positions i))
-       (send base-link :assoc leg-link)
+       (send dummy-link :assoc leg-link)
        (setq leg-links (append leg-links (list leg-link)))
-       ;; joints
-       ;; TODO: 2 dof joint is necessary。ダミーのbodyset-linkが必要か、virtual joint listの方を参考にする
-       (setq leg-joint
+       (setq leg-joint-y
              (instance linear-joint :init
-             ;; (instance rotational-joint :init
-                       :name (elt joint-names i)
-                       :parent-link base-link :child-link (elt leg-links i)
-                       :axis (float-vector 1 0 0)
-                       :min (car (elt min-max i)) :max (cadr (elt min-max i))
+                       :name (format nil "rigid_leg~A_y_joint" i)
+                       :parent-link dummy-link :child-link leg-link
+                       :axis (float-vector 0 1 0)
+                       :min min-angle :max max-angle
                        :max-joint-velocity 10.0
                        :max-joint-torque 999999.0))
-       (setq leg-joint-list (append leg-joint-list (list leg-joint))))
+       (setq leg-joint-list (append leg-joint-list (list leg-joint-y))))
      ;; Overwrite links and joint-list
-     (setq links (append links leg-links))
+     (setq links (append links dummy-links leg-links))
      (setq joint-list (append joint-list leg-joint-list))
      (dotimes (i (length coords-names))
        (setq leg-coords (make-cascoords :coords (send (elt leg-links i) :copy-worldcoords)))
@@ -92,14 +106,15 @@
    nil)
   (:invariant-joint-list
    ()
-   ;; TODO: 各limbに対して再帰的にjoint-listを取得できるようにする
-   (list (send (send (send self :get :rigid-leg1-coords) :parent) :joint)
-         (send (send (send self :get :rigid-leg2-coords) :parent) :joint)
-         (send (send (send self :get :rigid-leg3-coords) :parent) :joint)
-         (send (send (send self :get :rigid-leg4-coords) :parent) :joint)
-         (send (send (send self :get :vacuum-pad-coords) :parent) :joint)
-         )
-   )
+   (let (end-coords-list invariant-joint-list)
+     (dolist (coords-name (list :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :rigid-leg4-coords :vacuum-pad-coords))
+       (setq end-coords-list (append end-coords-list (list (send self :get coords-name)))))
+     (dolist (ec end-coords-list)
+       (let ((target-link (send ec :parent)))
+         (while (send target-link :joint)
+           (setq invariant-joint-list (append invariant-joint-list (list (send target-link :joint))))
+           (setq target-link (send (send target-link :joint) :parent-link)))))
+     invariant-joint-list))
   (:end-coords
    ()
    (send self :rarm :end-coords))
@@ -114,10 +129,5 @@
   )
 
 (defun yamaguchi-arm ()
-  ;; (let ((r (instance yamaguchi_6axis_arm_with_vacuum_base-robot :init)))
-  ;;   ;; (send r :add-vacuum-base-coords)
-  ;;   ;; (send r :add-vacuum-base-limbs)
-  ;;   ;; (send r :init-ending)
-  ;;   r))
   (instance yamaguchi-arm-robot :init)
   )
