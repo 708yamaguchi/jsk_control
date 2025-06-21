@@ -258,16 +258,14 @@
                   )
             ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
             :contact-target-coords
-            (list (send task-arrow :copy-worldcoords)
-                  task-plane-face
+            (list task-plane-face
                   task-plane-face
                   task-plane-face
                   task-plane-face
                   task-plane-face
                   )
             :contact-move-target
-            (list (send robot :end-coords)
-                  (send robot :get :rigid-leg1-coords)
+            (list (send robot :get :rigid-leg1-coords)
                   (send robot :get :rigid-leg2-coords)
                   (send robot :get :rigid-leg3-coords)
                   (send robot :get :rigid-leg4-coords)
@@ -275,8 +273,7 @@
                   )
             ;; TODO: 良い感じの制約を入れる
             :contact-constraint
-            (list (instance hand-contact-constraint :init :torque (float-vector 0 0 0))
-                  (instance norm-contact-constraint :init :fz)
+            (list (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
