@@ -8,7 +8,7 @@
 (load "attachable-plane.l")
 (load "yamaguchi-arm.l") ;; Define (yamaguchi-arm) function
 (load "contact-constrant-models.l")
-(load "equality-constraint.l") ;; Add equality constraint for base shape
+(load "base-shape-constraint.l") ;; Add equality constraint for base shape
 
 ;; TODO: Create edge case test function
 
