@@ -55,101 +55,10 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
      ;; default value
      (return-from :invariant-config-equality-constraint-vector (float-vector)))
    (float-vector 0 0 0 0))
-;;   ;; 各剛体脚の座標系に大小を付ける。rigid_leg0がX座標Y座標ともに大きくて、rigid_leg2はその反対側の頂点。
-;;   ;; 不等式制約に入れなくても、辺の長さの二乗和を目的関数とすればいい気がする
-;;   (:phi-inequality-constraint-matrix
-;;    (&key (update? nil))
-;;    "
-;; \begin{eqnarray}
-;; && \left\{ \begin{array}{ll}
-;; \bm{\phi}_{\mathit{min}} \leq \bm{\phi} + \Delta \bm{\phi} \leq \bm{\phi}_{\mathit{max}} & \\
-;; - \Delta \bm{\phi}_{\mathit{limit}} \leq \Delta \bm{\phi} \leq \Delta \bm{\phi}_{\mathit{limit}} & ({\rm if} \ \ \Delta \bm{\phi}_{\mathit{limit}} \ \ {\rm is \ set})
-;; \end{array} \right. \\
-;; \Leftrightarrow&&\begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \Delta \bm{\phi}
-;; \geq \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \\
-;; \Leftrightarrow&&\bm{C_{\phi}} \Delta \bm{\phi} \geq \bm{d_{\phi}}
-;; \end{eqnarray}
-
-;; return $\bm{C_{\phi}} := \begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}} \times N_{\mathit{invar\mathchar`-joint}}}$
-;;    "
-;;    (when (or update? (not (send self :get :phi-inequality-constraint-matrix)))
-;;      (send self :put :phi-inequality-constraint-matrix
-;;            (apply
-;;             #'concatenate-matrix-column
-;;             (remove
-;;              nil
-;;              (list
-;;               (unit-matrix _dim-phi)
-;;               (scale-matrix -1 (unit-matrix _dim-phi))
-;;               (if (send self :delta-phi-limit-vector)
-;;                   (unit-matrix _dim-phi))
-;;               (if (send self :delta-phi-limit-vector)
-;;                   (scale-matrix -1 (unit-matrix _dim-phi)))
-;;               )))
-;;            )
-;;      )
-;;    (unless (rigid-legs-invariant? _invariant-joint-list)
-;;      ;; default value
-;;      (return-from :phi-inequality-constraint-matrix (send self :get :phi-inequality-constraint-matrix)))
-;;    ;; Add constraint to original one
-;;    (let* ((orig-matrix (send self :get :phi-inequality-constraint-matrix))
-;;           (num-constraint (send orig-matrix :get-val 'dim0)) ;; 元々の不等式制約の数
-;;           (new-matrix (make-matrix (+ num-constraint 2) _dim-invariant-config))
-;;           vec)
-;;      ;; Copy original constraint matrix
-;;      (dotimes (i num-constraint)
-;;        (setf (matrix-row new-matrix i) (matrix-row orig-matrix i)))
-;;      ;; Add base shape constraint
-;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
-;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))) 1)
-;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))) -1)
-;;      (setf (matrix-row new-matrix num-constraint) (coerce vec float-vector))
-;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
-;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))) 1)
-;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))) -1)
-;;      (setf (matrix-row new-matrix (+ num-constraint 1)) (coerce vec float-vector))
-;;      new-matrix)
-;;    )
-;;   (:phi-inequality-constraint-vector
-;;    (&key (update? t))
-;;    "
-;; return $\bm{d_{\phi}} := \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}}}$
-;;    "
-;;    (when (or update? (not (send self :get :phi-inequality-constraint-vector)))
-;;      (send self :put :phi-inequality-constraint-vector
-;;            (apply
-;;             #'concatenate
-;;             float-vector
-;;             (remove
-;;              nil
-;;              (list
-;;               (v- (send self :phi-min-vector) _phi-vector)
-;;               (v- _phi-vector (send self :phi-max-vector))
-;;               (if (send self :delta-phi-limit-vector)
-;;                   (scale -1 (send self :delta-phi-limit-vector)))
-;;               (if (send self :delta-phi-limit-vector)
-;;                   (scale -1 (send self :delta-phi-limit-vector)))
-;;               )))
-;;            )
-;;      )
-;;    (unless (rigid-legs-invariant? _invariant-joint-list)
-;;      ;; default value
-;;      (return-from :phi-inequality-constraint-vector (send self :get :phi-inequality-constraint-vector)))
-;;    ;; Add constraint to original one
-;;    (let* ((orig-vector (send self :get :phi-inequality-constraint-vector))
-;;           (num-constraint (length orig-vector)) ;; 元々の不等式制約の数
-;;           (new-vector (coerce (make-list (+ num-constraint 2) :initial-element 0) float-vector)))
-;;      ;; Copy original constraint vector
-;;      (dotimes (i num-constraint)
-;;        (setf (elt new-vector i) (elt orig-vector i)))
-;;      ;; Add base shape constraint
-;;      (setf (elt new-vector num-constraint) 0)
-;;      (setf (elt new-vector (+ num-constraint 1)) 0)
-;;      new-vector)
-;;    )
 )
 
 (setq *base-size-scale* 1e-7) ;; TODO: チューニングが必要
+
 ;; ベースのサイズを小さくするための目的関数の設定
 (defmethod instant-configuration-task
   (:_initialize-dimension
@@ -176,36 +85,20 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
    "
 ベースのサイズを小さくするための制約
    "
-   ;; leg0(X0, Y0)とleg2(X2, Y2)の位置関係（すなわちX0とX2、Y0とY2の大小関係）は、制約関数で指定できない。
+   ;; leg0=(X0, Y0)とleg2=(X2, Y2)の位置関係（すなわちX0とX2、Y0とY2の大小関係）は、制約関数で指定できない。
    ;; そのため、ベースサイズを小さくするための目的関数として、辺の長さの二乗和を採用する。
-   ;; e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )
+   ;; タスク関数e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )
    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
-   (let* ((leg0-x-joint (find-joint "rigid_leg0_x_joint" _invariant-joint-list))
-          (leg0-y-joint (find-joint "rigid_leg0_y_joint" _invariant-joint-list))
-          (leg2-x-joint (find-joint "rigid_leg2_x_joint" _invariant-joint-list))
-          (leg2-y-joint (find-joint "rigid_leg2_y_joint" _invariant-joint-list))
-          ;; (leg0-y-joint
-          ;;  (find-if #'(lambda (x) (equal "rigid_leg0_y_joint" (send x :name))) _invariant-joint-list))
-          ;; (leg2-x-joint
-          ;;  (find-if #'(lambda (x) (equal "rigid_leg2_x_joint" (send x :name))) _invariant-joint-list))
-          ;; (leg2-y-joint
-          ;;  (find-if #'(lambda (x) (equal "rigid_leg2_y_joint" (send x :name))) _invariant-joint-list))
-          ;; (leg0-y-joint
-          ;;  (find-if "rigid_leg0_y_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
-          ;; (leg2-x-joint
-          ;;  (find-if "rigid_leg2_x_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
-          ;; (leg2-y-joint
-          ;;  (find-if "rigid_leg2_y_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
-          (x0 (send leg0-x-joint :joint-angle))
-          (y0 (send leg0-y-joint :joint-angle))
-          (x2 (send leg2-x-joint :joint-angle))
-          (y2 (send leg2-y-joint :joint-angle))
+   (let* ((x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+          (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+          (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+          (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
           )
      (float-vector (* *base-size-scale* (+ (* (- x0 x2) (- x0 x2)) (* (- y0 y2) (- y0 y2))))))
    )
   (:base-size-task-jacobian-with-phi
    (&key (update? t))
-   ;; e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )をX0, Y0, ..., X3, Y3で微分したものがヤコビアン。
+   ;; ヤコビアンは、タスク関数e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )をX0, Y0, ..., X3, Y3で微分したもの
    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
    (let* ((jac (make-matrix 1 _num-invariant-joint))
           (vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))

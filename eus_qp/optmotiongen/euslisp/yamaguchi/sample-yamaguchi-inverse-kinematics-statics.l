@@ -116,10 +116,10 @@
                   )
             :move-target
             (list (send robot :end-coords)
+                  (send robot :get :rigid-leg0-coords)
                   (send robot :get :rigid-leg1-coords)
                   (send robot :get :rigid-leg2-coords)
                   (send robot :get :rigid-leg3-coords)
-                  (send robot :get :rigid-leg4-coords)
                   (send robot :get :vacuum-pad-coords)
                   )
             :translation-axis (list t nil nil nil nil nil)
@@ -161,10 +161,10 @@
     (setq *robot* (yamaguchi-arm))
     ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられる
     (let* ((move-target (list (send *robot* :end-coords)
+                              (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
                               (send *robot* :get :rigid-leg3-coords)
-                              (send *robot* :get :rigid-leg4-coords)
                               (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
@@ -250,10 +250,10 @@
                   )
             :move-target
             (list (send robot :end-coords)
+                  (send robot :get :rigid-leg0-coords)
                   (send robot :get :rigid-leg1-coords)
                   (send robot :get :rigid-leg2-coords)
                   (send robot :get :rigid-leg3-coords)
-                  (send robot :get :rigid-leg4-coords)
                   (send robot :get :vacuum-pad-coords)
                   )
             ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
@@ -265,10 +265,10 @@
                   task-plane-face
                   )
             :contact-move-target
-            (list (send robot :get :rigid-leg1-coords)
+            (list (send robot :get :rigid-leg0-coords)
+                  (send robot :get :rigid-leg1-coords)
                   (send robot :get :rigid-leg2-coords)
                   (send robot :get :rigid-leg3-coords)
-                  (send robot :get :rigid-leg4-coords)
                   (send robot :get :vacuum-pad-coords)
                   )
             ;; TODO: 良い感じの制約を入れる
@@ -323,10 +323,10 @@
     (setq *robot* (yamaguchi-arm))
     (let* ((task-size (length *task-coords-list*))
            (move-target (list (send *robot* :end-coords)
+                              (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
                               (send *robot* :get :rigid-leg3-coords)
-                              (send *robot* :get :rigid-leg4-coords)
                               (send *robot* :get :vacuum-pad-coords)
                               ))
            (limb-size (1- (length move-target)))
@@ -422,6 +422,20 @@
                  (contact-target-coords-list (send config-task :contact-target-coords-list)))
             (format t "angle vector~%")
             (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+            (format t "base size~%")
+            (let* ((leg0-link (send (send (send config-task :robot-env) :robot :get :rigid-leg0-coords) :parent))
+                   (leg0-y-joint (send leg0-link :joint))
+                   (leg0-x-joint (send (send leg0-y-joint :parent-link) :joint))
+                   (x0 (send leg0-x-joint :joint-angle))
+                   (y0 (send leg0-y-joint :joint-angle))
+                   (leg2-link (send (send (send config-task :robot-env) :robot :get :rigid-leg2-coords) :parent))
+                   (leg2-y-joint (send leg2-link :joint))
+                   (leg2-x-joint (send (send leg2-y-joint :parent-link) :joint))
+                   (x2 (send leg2-x-joint :joint-angle))
+                   (y2 (send leg2-y-joint :joint-angle)))
+              ;; TODO
+              (format t " X size: ~A~%" (+ (abs (- x0 x2)) 100)) ;; because initial leg position is -50mm/50mm
+              (format t " Y size: ~A~%" (+ (abs (- y0 y2)) 100))) ;; because initial leg position is -50mm/50mm
             (format t "worldcoords~%")
             (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
             ;; Print contact coords
