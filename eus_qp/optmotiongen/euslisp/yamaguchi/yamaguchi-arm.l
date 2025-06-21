@@ -24,8 +24,6 @@
          ;; leg1 leg0        |
          ;; leg2 leg3        -> x
          (coords-names (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords))
-         (initial-leg-positions
-          (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector -50 -50 0) (float-vector 50 -50 0)))
          (min-angle -1e5) (max-angle 1e5)
          )
      (dotimes (i (length coords-names))
@@ -56,7 +54,6 @@
                                 :bodies (list leg)
                                 :name (format nil "rigid_leg~A_link" i)
                                 :weight 0))
-       (send leg-link :translate (elt initial-leg-positions i))
        (send dummy-link :assoc leg-link)
        (setq leg-links (append leg-links (list leg-link)))
        (setq leg-joint-y
@@ -133,6 +130,18 @@
        (return-from :leg-joint leg-y-joint))
      )
    nil)
+  ;; By setting leg initial pose, optmotiongen calculation is likely to succeed
+  (:leg-init
+   (&key (pos 50)) ;; [mm]
+   (send (send self :leg-joint 0 :x) :joint-angle 50)
+   (send (send self :leg-joint 0 :y) :joint-angle 50)
+   (send (send self :leg-joint 1 :x) :joint-angle -50)
+   (send (send self :leg-joint 1 :y) :joint-angle 50)
+   (send (send self :leg-joint 2 :x) :joint-angle -50)
+   (send (send self :leg-joint 2 :y) :joint-angle -50)
+   (send (send self :leg-joint 3 :x) :joint-angle 50)
+   (send (send self :leg-joint 3 :y) :joint-angle -50)
+   )
   (:end-coords
    ()
    (send self :rarm :end-coords))

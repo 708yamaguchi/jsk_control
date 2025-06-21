@@ -53,7 +53,7 @@
              (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
        ;; 中央の机
        (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 4600 350 720) :rpy (list 0 0 0)))
+             (make-coords :pos (float-vector 4600 300 720) :rpy (list 0 0 0)))
        ;; 電子レンジ
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
@@ -321,6 +321,7 @@
     (send *irtviewer* :draw-objects)
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
+    (send *robot* :leg-init :pos 50)
     (let* ((task-size (length *task-coords-list*))
            (move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
@@ -405,6 +406,8 @@
                           :invariant-joint-list (send *robot* :invariant-joint-list)
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
+                          :stop 50
+                          :min-loop 30
                           :debug-view (list :additional-draw-objects additional-draw-objects)
                           :adjacent-regular-scale 0.0
                           :pre-process-func pre-process-func
@@ -428,9 +431,8 @@
                    (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
                    (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
                    (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
-              ;; TODO
-              (format t " X size: ~A~%" (+ (abs (- x0 x2)) 100)) ;; because initial leg position is -50mm/50mm
-              (format t " Y size: ~A~%" (+ (abs (- y0 y2)) 100))) ;; because initial leg position is -50mm/50mm
+              (format t " X size: ~A~%" (abs (- x0 x2)))
+              (format t " Y size: ~A~%" (abs (- y0 y2))))
             (format t "worldcoords~%")
             (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
             ;; Print contact coords
