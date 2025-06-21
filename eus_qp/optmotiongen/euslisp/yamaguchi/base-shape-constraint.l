@@ -2,6 +2,9 @@
 (defun joint-index-func (name joint-list)
   (position name joint-list :test #'(lambda (x y) (equal x (send y :name)))))
 
+(defun find-joint (name joint-list)
+  (find-if #'(lambda (x) (equal name (send x :name))) joint-list))
+
 (defun rigid-legs-invariant? (invariant-joint-list)
   (let* ((invariant-leg-index-list
           (mapcar #'(lambda (leg-joint)
@@ -52,121 +55,351 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
      ;; default value
      (return-from :invariant-config-equality-constraint-vector (float-vector)))
    (float-vector 0 0 0 0))
-  ;; 各剛体脚の座標系に大小を付ける。rigid_leg0がX座標Y座標ともに大きくて、rigid_leg2はその反対側の頂点。
-  (:phi-inequality-constraint-matrix
-   (&key (update? nil))
-   "
-\begin{eqnarray}
-&& \left\{ \begin{array}{ll}
-\bm{\phi}_{\mathit{min}} \leq \bm{\phi} + \Delta \bm{\phi} \leq \bm{\phi}_{\mathit{max}} & \\
-- \Delta \bm{\phi}_{\mathit{limit}} \leq \Delta \bm{\phi} \leq \Delta \bm{\phi}_{\mathit{limit}} & ({\rm if} \ \ \Delta \bm{\phi}_{\mathit{limit}} \ \ {\rm is \ set})
-\end{array} \right. \\
-\Leftrightarrow&&\begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \Delta \bm{\phi}
-\geq \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \\
-\Leftrightarrow&&\bm{C_{\phi}} \Delta \bm{\phi} \geq \bm{d_{\phi}}
-\end{eqnarray}
+;;   ;; 各剛体脚の座標系に大小を付ける。rigid_leg0がX座標Y座標ともに大きくて、rigid_leg2はその反対側の頂点。
+;;   ;; 不等式制約に入れなくても、辺の長さの二乗和を目的関数とすればいい気がする
+;;   (:phi-inequality-constraint-matrix
+;;    (&key (update? nil))
+;;    "
+;; \begin{eqnarray}
+;; && \left\{ \begin{array}{ll}
+;; \bm{\phi}_{\mathit{min}} \leq \bm{\phi} + \Delta \bm{\phi} \leq \bm{\phi}_{\mathit{max}} & \\
+;; - \Delta \bm{\phi}_{\mathit{limit}} \leq \Delta \bm{\phi} \leq \Delta \bm{\phi}_{\mathit{limit}} & ({\rm if} \ \ \Delta \bm{\phi}_{\mathit{limit}} \ \ {\rm is \ set})
+;; \end{array} \right. \\
+;; \Leftrightarrow&&\begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \Delta \bm{\phi}
+;; \geq \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \\
+;; \Leftrightarrow&&\bm{C_{\phi}} \Delta \bm{\phi} \geq \bm{d_{\phi}}
+;; \end{eqnarray}
 
-return $\bm{C_{\phi}} := \begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}} \times N_{\mathit{invar\mathchar`-joint}}}$
-   "
-   (when (or update? (not (send self :get :phi-inequality-constraint-matrix)))
-     (send self :put :phi-inequality-constraint-matrix
-           (apply
-            #'concatenate-matrix-column
-            (remove
-             nil
-             (list
-              (unit-matrix _dim-phi)
-              (scale-matrix -1 (unit-matrix _dim-phi))
-              (if (send self :delta-phi-limit-vector)
-                  (unit-matrix _dim-phi))
-              (if (send self :delta-phi-limit-vector)
-                  (scale-matrix -1 (unit-matrix _dim-phi)))
-              )))
-           )
-     )
-   (unless (rigid-legs-invariant? _invariant-joint-list)
-     ;; default value
-     (return-from :phi-inequality-constraint-matrix (send self :get :phi-inequality-constraint-matrix)))
-   ;; Add constraint to original one
-   (let* ((orig-matrix (send self :get :phi-inequality-constraint-matrix))
-          (new-matrix (make-matrix (+ (send orig-matrix :get-val 'dim0) 2) (send orig-matrix :get-val 'dim1))))
-     ;; Copy original constraint matrix
-     (dotimes (i (send orig-matrix :get-val 'dim0))
-       (setf (matrix-row new-matrix i) (matrix-row orig-matrix i)))
-     ;; Add base shape constraint
-     ;; TODO
-     new-matrix)
-   )
-  (:phi-inequality-constraint-vector
-   (&key (update? t))
-   "
-return $\bm{d_{\phi}} := \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}}}$
-   "
-   (when (or update? (not (send self :get :phi-inequality-constraint-vector)))
-     (send self :put :phi-inequality-constraint-vector
-           (apply
-            #'concatenate
-            float-vector
-            (remove
-             nil
-             (list
-              (v- (send self :phi-min-vector) _phi-vector)
-              (v- _phi-vector (send self :phi-max-vector))
-              (if (send self :delta-phi-limit-vector)
-                  (scale -1 (send self :delta-phi-limit-vector)))
-              (if (send self :delta-phi-limit-vector)
-                  (scale -1 (send self :delta-phi-limit-vector)))
-              )))
-           )
-     )
-   (unless (rigid-legs-invariant? _invariant-joint-list)
-     ;; default value
-     (return-from :phi-inequality-constraint-vector (send self :get :phi-inequality-constraint-vector)))
-   ;; Add constraint to original one
-   (let* ((orig-vector (send self :get :phi-inequality-constraint-vector))
-          (new-vector (coerce (make-list (+ (length orig-vector) 2) :initial-element 0) float-vector)))
-     ;; Copy original constraint vector
-     (dotimes (i (length orig-vector))
-       (setf (elt new-vector i) (elt orig-vector i)))
-     ;; Add base shape constraint
-     ;; TODO
-     new-vector)
-   )
+;; return $\bm{C_{\phi}} := \begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I}\end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}} \times N_{\mathit{invar\mathchar`-joint}}}$
+;;    "
+;;    (when (or update? (not (send self :get :phi-inequality-constraint-matrix)))
+;;      (send self :put :phi-inequality-constraint-matrix
+;;            (apply
+;;             #'concatenate-matrix-column
+;;             (remove
+;;              nil
+;;              (list
+;;               (unit-matrix _dim-phi)
+;;               (scale-matrix -1 (unit-matrix _dim-phi))
+;;               (if (send self :delta-phi-limit-vector)
+;;                   (unit-matrix _dim-phi))
+;;               (if (send self :delta-phi-limit-vector)
+;;                   (scale-matrix -1 (unit-matrix _dim-phi)))
+;;               )))
+;;            )
+;;      )
+;;    (unless (rigid-legs-invariant? _invariant-joint-list)
+;;      ;; default value
+;;      (return-from :phi-inequality-constraint-matrix (send self :get :phi-inequality-constraint-matrix)))
+;;    ;; Add constraint to original one
+;;    (let* ((orig-matrix (send self :get :phi-inequality-constraint-matrix))
+;;           (num-constraint (send orig-matrix :get-val 'dim0)) ;; 元々の不等式制約の数
+;;           (new-matrix (make-matrix (+ num-constraint 2) _dim-invariant-config))
+;;           vec)
+;;      ;; Copy original constraint matrix
+;;      (dotimes (i num-constraint)
+;;        (setf (matrix-row new-matrix i) (matrix-row orig-matrix i)))
+;;      ;; Add base shape constraint
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row new-matrix num-constraint) (coerce vec float-vector))
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row new-matrix (+ num-constraint 1)) (coerce vec float-vector))
+;;      new-matrix)
+;;    )
+;;   (:phi-inequality-constraint-vector
+;;    (&key (update? t))
+;;    "
+;; return $\bm{d_{\phi}} := \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\ - (\bm{\phi}_{\mathit{max}} - \bm{\phi}) \\ - \Delta \bm{\phi}_{\mathit{limit}} \\ - \Delta \bm{\phi}_{\mathit{limit}} \end{pmatrix} \in \mathbb{R}^{4 N_{\mathit{invar\mathchar`-joint}}}$
+;;    "
+;;    (when (or update? (not (send self :get :phi-inequality-constraint-vector)))
+;;      (send self :put :phi-inequality-constraint-vector
+;;            (apply
+;;             #'concatenate
+;;             float-vector
+;;             (remove
+;;              nil
+;;              (list
+;;               (v- (send self :phi-min-vector) _phi-vector)
+;;               (v- _phi-vector (send self :phi-max-vector))
+;;               (if (send self :delta-phi-limit-vector)
+;;                   (scale -1 (send self :delta-phi-limit-vector)))
+;;               (if (send self :delta-phi-limit-vector)
+;;                   (scale -1 (send self :delta-phi-limit-vector)))
+;;               )))
+;;            )
+;;      )
+;;    (unless (rigid-legs-invariant? _invariant-joint-list)
+;;      ;; default value
+;;      (return-from :phi-inequality-constraint-vector (send self :get :phi-inequality-constraint-vector)))
+;;    ;; Add constraint to original one
+;;    (let* ((orig-vector (send self :get :phi-inequality-constraint-vector))
+;;           (num-constraint (length orig-vector)) ;; 元々の不等式制約の数
+;;           (new-vector (coerce (make-list (+ num-constraint 2) :initial-element 0) float-vector)))
+;;      ;; Copy original constraint vector
+;;      (dotimes (i num-constraint)
+;;        (setf (elt new-vector i) (elt orig-vector i)))
+;;      ;; Add base shape constraint
+;;      (setf (elt new-vector num-constraint) 0)
+;;      (setf (elt new-vector (+ num-constraint 1)) 0)
+;;      new-vector)
+;;    )
 )
 
-
+(setq *base-size-scale* 1e-7) ;; TODO: チューニングが必要
 ;; ベースのサイズを小さくするための目的関数の設定
-;; (defmethod instant-configuration-task
-;;   (:posture-task-value
-;;    (&key (update? t))
-;;    "
-;; ベースのサイズを小さくするための制約
-;;    "
-;;    (map float-vector
-;;         #'(lambda (j a sc)
-;;             (* sc (send j :angle-to-speed (- a (send j :joint-angle)))))
-;;         _posture-joint-list
-;;         _posture-joint-angle-list
-;;         _target-posture-scale-list
-;;         )
-;;    )
-;;   (:task-value
-;;    (&key (update? t))
-;;    "
-;; return $\bm{e}(\bm{q})
-;; := \begin{pmatrix} \bm{e}^{\mathit{kin}}(\bm{q}) \\ \bm{e}^{\mathit{eom\mathchar`-trans}}(\bm{q}) \\ \bm{e}^{\mathit{eom\mathchar`-rot}}(\bm{q}) \\ \bm{e}^{\mathit{trq}}(\bm{q}) \\ \bm{e}^{\mathit{posture}}(\bm{q}) \end{pmatrix}
-;; = \begin{pmatrix} \bm{e}^{\mathit{kin}}(\bm{\theta}, \bm{\phi}) \\ \bm{e}^{\mathit{eom\mathchar`-trans}}(\bm{\hat{w}}) \\ \bm{e}^{\mathit{eom\mathchar`-rot}}(\bm{\theta}, \bm{\hat{w}}, \bm{\phi}) \\ \bm{e}^{\mathit{trq}}(\bm{\theta}, \bm{\hat{w}}, \bm{\tau}, \bm{\phi}) \\ \bm{e}^{\mathit{posture}}(\bm{\theta}) \end{pmatrix}$
-;;    "
-;;    (concatenate
-;;     float-vector
-;;     (send self :kinematics-task-value :update? update?)
-;;     (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
-;;     (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
-;;     (if (and (not _only-kinematics?) (> _num-drive-joint 0))
-;;         (send self :torque-task-value :update? update?))
-;;     (if (> _num-posture-joint 0)
-;;         (send self :posture-task-value :update? update?))
-;;     (send self :base-size-task-value :update? update?)
-;;     )
-;;    )
-;; )
+(defmethod instant-configuration-task
+  (:_initialize-dimension
+   ()
+   (setq _dim-theta _num-variant-joint)
+   (setq _dim-wrench (* 6 _num-contact))
+   (setq _dim-torque _num-drive-joint)
+   (setq _dim-phi _num-invariant-joint)
+   (setq _dim-variant-config (+ _dim-theta _dim-wrench _dim-torque))
+   (setq _dim-invariant-config _dim-phi)
+   (setq _dim-config (+ _dim-variant-config _dim-invariant-config))
+   (cond (_only-kinematics?
+          (setq _dim-task (+ (* 6 _num-kin) _num-posture-joint))
+          )
+         ;; base size task is added
+         ((rigid-legs-invariant? _invariant-joint-list)
+          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint 1)))
+         (t
+          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
+          ))
+   )
+  (:base-size-task-value
+   (&key (update? t))
+   "
+ベースのサイズを小さくするための制約
+   "
+   ;; leg0(X0, Y0)とleg2(X2, Y2)の位置関係（すなわちX0とX2、Y0とY2の大小関係）は、制約関数で指定できない。
+   ;; そのため、ベースサイズを小さくするための目的関数として、辺の長さの二乗和を採用する。
+   ;; e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )
+   ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
+   (let* ((leg0-x-joint (find-joint "rigid_leg0_x_joint" _invariant-joint-list))
+          (leg0-y-joint (find-joint "rigid_leg0_y_joint" _invariant-joint-list))
+          (leg2-x-joint (find-joint "rigid_leg2_x_joint" _invariant-joint-list))
+          (leg2-y-joint (find-joint "rigid_leg2_y_joint" _invariant-joint-list))
+          ;; (leg0-y-joint
+          ;;  (find-if #'(lambda (x) (equal "rigid_leg0_y_joint" (send x :name))) _invariant-joint-list))
+          ;; (leg2-x-joint
+          ;;  (find-if #'(lambda (x) (equal "rigid_leg2_x_joint" (send x :name))) _invariant-joint-list))
+          ;; (leg2-y-joint
+          ;;  (find-if #'(lambda (x) (equal "rigid_leg2_y_joint" (send x :name))) _invariant-joint-list))
+          ;; (leg0-y-joint
+          ;;  (find-if "rigid_leg0_y_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
+          ;; (leg2-x-joint
+          ;;  (find-if "rigid_leg2_x_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
+          ;; (leg2-y-joint
+          ;;  (find-if "rigid_leg2_y_joint" _invariant-joint-list :test #'(lambda (x y) (equal x (send y :name)))))
+          (x0 (send leg0-x-joint :joint-angle))
+          (y0 (send leg0-y-joint :joint-angle))
+          (x2 (send leg2-x-joint :joint-angle))
+          (y2 (send leg2-y-joint :joint-angle))
+          )
+     (float-vector (* *base-size-scale* (+ (* (- x0 x2) (- x0 x2)) (* (- y0 y2) (- y0 y2))))))
+   )
+  (:base-size-task-jacobian-with-phi
+   (&key (update? t))
+   ;; e = *base-size-scale* * ( (X0-X2)*(X0-X2) + (Y0-Y2)*(Y0-Y2) )をX0, Y0, ..., X3, Y3で微分したものがヤコビアン。
+   ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
+   (let* ((jac (make-matrix 1 _num-invariant-joint))
+          (vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+          (leg0-x-joint (find-joint "rigid_leg0_x_joint" _invariant-joint-list))
+          (x0 (send leg0-x-joint :joint-angle))
+          (leg0-y-joint (find-joint "rigid_leg0_y_joint" _invariant-joint-list))
+          (y0 (send leg0-y-joint :joint-angle))
+          (leg2-x-joint (find-joint "rigid_leg2_x_joint" _invariant-joint-list))
+          (x2 (send leg2-x-joint :joint-angle))
+          (leg2-y-joint (find-joint "rigid_leg2_y_joint" _invariant-joint-list))
+          (y2 (send leg2-y-joint :joint-angle))
+          )
+     (setf (elt vec (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
+           (* 2  (- x0 x2))) ;; X0で微分
+     (setf (elt vec (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))
+           (* 2  (- y0 y2))) ;; Y0で微分
+     (setf (elt vec (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))
+           (* 2  (- x2 x0))) ;; X1=X2で微分
+     (setf (elt vec (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))
+           (* 2  (- y0 y2))) ;; Y1=Y0で微分
+     (setf (elt vec (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))
+           (* 2  (- x2 x0))) ;; X2で微分
+     (setf (elt vec (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))
+           (* 2  (- y2 y0))) ;; Y2で微分
+     (setf (elt vec (joint-index-func "rigid_leg3_x_joint" _invariant-joint-list))
+           (* 2  (- x0 x2))) ;; X3=X0で微分
+     (setf (elt vec (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))
+           (* 2  (- y2 y0))) ;; Y3=Y2で微分
+     (setf (matrix-row jac 0) (scale *base-size-scale* vec))
+     jac)
+   )
+  (:task-value
+   (&key (update? t))
+   "
+return $\bm{e}(\bm{q})
+:= \begin{pmatrix} \bm{e}^{\mathit{kin}}(\bm{q}) \\ \bm{e}^{\mathit{eom\mathchar`-trans}}(\bm{q}) \\ \bm{e}^{\mathit{eom\mathchar`-rot}}(\bm{q}) \\ \bm{e}^{\mathit{trq}}(\bm{q}) \\ \bm{e}^{\mathit{posture}}(\bm{q}) \end{pmatrix}
+= \begin{pmatrix} \bm{e}^{\mathit{kin}}(\bm{\theta}, \bm{\phi}) \\ \bm{e}^{\mathit{eom\mathchar`-trans}}(\bm{\hat{w}}) \\ \bm{e}^{\mathit{eom\mathchar`-rot}}(\bm{\theta}, \bm{\hat{w}}, \bm{\phi}) \\ \bm{e}^{\mathit{trq}}(\bm{\theta}, \bm{\hat{w}}, \bm{\tau}, \bm{\phi}) \\ \bm{e}^{\mathit{posture}}(\bm{\theta}) \end{pmatrix}$
+   "
+   (concatenate
+    float-vector
+    (send self :kinematics-task-value :update? update?)
+    (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
+    (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
+    (if (and (not _only-kinematics?) (> _num-drive-joint 0))
+        (send self :torque-task-value :update? update?))
+    (if (> _num-posture-joint 0)
+        (send self :posture-task-value :update? update?))
+    ;; base size task added
+    (when (rigid-legs-invariant? _invariant-joint-list)
+      (send self :base-size-task-value :update? update?))
+    )
+   )
+  (:variant-task-jacobian
+   ()
+   "
+\begin{eqnarray}
+  \frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}}
+  &=&
+  \bordermatrix{
+    & N_{\mathit{var\mathchar`-joint}} & 6 N_{\mathit{cnt}} & N_{\mathit{drive\mathchar`-joint}} \cr
+    6 N_{\mathit{kin}} & \frac{\partial \bm{e}^{\mathit{kin}}}{\partial \bm{\theta}} & & \cr
+    3 & & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-trans}}}{\partial \bm{\hat{w}}} & & \cr
+    3 & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\hat{w}}} & & \cr
+    N_{\mathit{drive\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\hat{w}}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\tau}} \cr
+    N_{\mathit{posture\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{posture}}}{\partial \bm{\theta}} & &
+  }
+\end{eqnarray}
+
+return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}} \in \mathbb{R}^{(6 N_{\mathit{kin}} + 3 + 3 + N_{\mathit{drive\mathchar`-joint}} + N_{\mathit{posture\mathchar`-joint}}) \times (N_{\mathit{var\mathchar`-joint}} + 6 N_{\mathit{cnt}} + N_{\mathit{drive\mathchar`-joint}})}$
+   "
+   (cond (_variant-task-jacobi
+          (fill (array-entity _variant-task-jacobi) 0)
+          )
+         (t
+          (setq _variant-task-jacobi (make-matrix _dim-task _dim-variant-config))
+          ))
+   (when (= _dim-task 0)
+     (return-from :variant-task-jacobian _variant-task-jacobi))
+   (copy-block-matrix _variant-task-jacobi
+                      (send self :kinematics-task-jacobian-with-theta)
+                      0 0)
+   (unless _only-kinematics?
+     (copy-block-matrix _variant-task-jacobi
+                        (send self :eom-trans-task-jacobian-with-wrench)
+                        (* 6 _num-kin) _num-variant-joint)
+     (copy-block-matrix _variant-task-jacobi
+                        (send self :eom-rot-task-jacobian-with-theta)
+                        (+ (* 6 _num-kin) 3) 0)
+     (copy-block-matrix _variant-task-jacobi
+                        (send self :eom-rot-task-jacobian-with-wrench)
+                        (+ (* 6 _num-kin) 3) _num-variant-joint)
+     (when (> _num-drive-joint 0)
+       (copy-block-matrix _variant-task-jacobi
+                          (send self :torque-task-jacobian-with-theta)
+                          (+ (* 6 _num-kin) 3 3) 0)
+       (copy-block-matrix _variant-task-jacobi
+                          (send self :torque-task-jacobian-with-wrench)
+                          (+ (* 6 _num-kin) 3 3) _num-variant-joint)
+       (copy-block-matrix _variant-task-jacobi
+                          (send self :torque-task-jacobian-with-torque)
+                          (+ (* 6 _num-kin) 3 3) (+ _num-variant-joint (* 6 _num-contact)))
+       )
+     )
+   (when (> _num-posture-joint 0)
+     (copy-block-matrix _variant-task-jacobi
+                        (send self :posture-task-jacobian-with-theta)
+                        (if _only-kinematics?
+                            (* 6 _num-kin)
+                          (+ (* 6 _num-kin) 3 3 _num-drive-joint))
+                        0)
+     )
+   ;; base-size-task added
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (copy-block-matrix _variant-task-jacobi
+                        (make-matrix 1 _dim-variant-config)
+                        (if _only-kinematics?
+                            (* 6 _num-kin)
+                          (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint)) ;; 36+3+3+0+0=42。最後の要素を置き換え
+                        0)
+     )
+   _variant-task-jacobi
+   )
+  (:invariant-task-jacobian
+   ()
+   "
+\begin{eqnarray}
+  \frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{invar}}}
+  &=&
+  \bordermatrix{
+    & N_{\mathit{invar\mathchar`-joint}} \cr
+    6 N_{\mathit{kin}} & \frac{\partial \bm{e}^{\mathit{kin}}}{\partial \bm{\phi}} \cr
+    3 & \cr
+    3 & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\phi}} \cr
+    N_{\mathit{drive\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\phi}} \cr
+    N_{\mathit{posture\mathchar`-joint}} &
+  }
+\end{eqnarray}
+
+return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{invar}}} \in \mathbb{R}^{(6 N_{\mathit{kin}} + 3 + 3 + N_{\mathit{drive\mathchar`-joint}} + N_{\mathit{posture\mathchar`-joint}}) \times N_{\mathit{invar\mathchar`-joint}}}$
+   "
+   (cond (_invariant-task-jacobi
+          (fill (array-entity _invariant-task-jacobi) 0)
+          )
+         (t
+          (setq _invariant-task-jacobi (make-matrix _dim-task _dim-invariant-config))
+          ))
+   (when (= _dim-task 0)
+     (return-from :invariant-task-jacobian _invariant-task-jacobi))
+   (copy-block-matrix _invariant-task-jacobi
+                      (send self :kinematics-task-jacobian-with-phi)
+                      0 0)
+   (unless _only-kinematics?
+     (copy-block-matrix _invariant-task-jacobi
+                        (send self :eom-rot-task-jacobian-with-phi)
+                        (+ (* 6 _num-kin) 3) 0)
+     (when (> _num-drive-joint 0)
+       (copy-block-matrix _invariant-task-jacobi
+                          (send self :torque-task-jacobian-with-phi)
+                          (+ (* 6 _num-kin) 3 3) 0)
+       )
+     )
+   ;; base-size-task added
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (copy-block-matrix _invariant-task-jacobi
+                        (send self :base-size-task-jacobian-with-phi)
+                        (if _only-kinematics?
+                            (* 6 _num-kin)
+                          (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
+                        0)
+     )
+   _invariant-task-jacobi
+   )
+  (:print-status
+   ()
+   "
+Print status.
+   "
+   (when (= _dim-task 0)
+     (return-from :print-status nil))
+   (warning-message 9 "|task|=~a~%" (norm (send self :task-value :update? nil)))
+   (warning-message 9 "|kin-task|=~a:~%" (norm (send self :kinematics-task-value :update? nil)))
+   (mapcar
+    #'(lambda (kin-task-i)
+        (warning-message 9 "  |kin-task-i|=~a~%" (norm kin-task-i)))
+    (divide-vector (send self :kinematics-task-value :update? nil) :segment-length 6)
+    )
+   (unless _only-kinematics?
+     (warning-message 9 "|eom-trans-task|=~a~%" (norm (send self :eom-trans-task-value :update? nil)))
+     (warning-message 9 "|eom-rot-task|=~a~%" (norm (send self :eom-rot-task-value :update? nil)))
+     (warning-message 9 "|torque-task|=~a~%" (norm (send self :torque-task-value :update? nil)))
+     )
+   (warning-message 9 "|posture-task|=~a~%" (norm (send self :posture-task-value :update? nil)))
+   ;; base-size-task added
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (warning-message 9 "|base-size-task|=~a~%" (norm (send self :base-size-task-value :update? nil)))
+   )
+)
