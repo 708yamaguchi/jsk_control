@@ -120,6 +120,19 @@
            (setq invariant-joint-list (append invariant-joint-list (list (send target-link :joint))))
            (setq target-link (send (send target-link :joint) :parent-link)))))
      invariant-joint-list))
+  (:leg-joint
+   (index axis) ;; axis is :x or :y
+   (let* ((coords-name
+           (elt (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords) index))
+          (leg-link (send (send self :get coords-name) :parent))
+          (leg-y-joint (send leg-link :joint))
+          (leg-x-joint (send (send leg-y-joint :parent-link) :joint)))
+     (when (eq axis :x)
+       (return-from :leg-joint leg-x-joint))
+     (when (eq axis :y)
+       (return-from :leg-joint leg-y-joint))
+     )
+   nil)
   (:end-coords
    ()
    (send self :rarm :end-coords))

@@ -423,16 +423,11 @@
             (format t "angle vector~%")
             (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
             (format t "base size~%")
-            (let* ((leg0-link (send (send (send config-task :robot-env) :robot :get :rigid-leg0-coords) :parent))
-                   (leg0-y-joint (send leg0-link :joint))
-                   (leg0-x-joint (send (send leg0-y-joint :parent-link) :joint))
-                   (x0 (send leg0-x-joint :joint-angle))
-                   (y0 (send leg0-y-joint :joint-angle))
-                   (leg2-link (send (send (send config-task :robot-env) :robot :get :rigid-leg2-coords) :parent))
-                   (leg2-y-joint (send leg2-link :joint))
-                   (leg2-x-joint (send (send leg2-y-joint :parent-link) :joint))
-                   (x2 (send leg2-x-joint :joint-angle))
-                   (y2 (send leg2-y-joint :joint-angle)))
+            (let* ((robot (send (send config-task :robot-env) :robot))
+                   (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
+                   (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
+                   (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
+                   (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
               ;; TODO
               (format t " X size: ~A~%" (+ (abs (- x0 x2)) 100)) ;; because initial leg position is -50mm/50mm
               (format t " Y size: ~A~%" (+ (abs (- y0 y2)) 100))) ;; because initial leg position is -50mm/50mm
