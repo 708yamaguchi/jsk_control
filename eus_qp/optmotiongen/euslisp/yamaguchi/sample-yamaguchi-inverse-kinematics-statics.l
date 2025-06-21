@@ -300,6 +300,7 @@
   nil)
 (warn "(main-with-loop)~%")
 
+;; これが研究で使う関数。吸着ベースの設計パラメータを時不変変数として扱っている。
 (defun main-with-trajectory
     (&key
      (pre-process-func)

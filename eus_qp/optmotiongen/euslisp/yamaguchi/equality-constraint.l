@@ -11,7 +11,7 @@
     invariant?))
 
 (defmethod instant-configuration-task
-  ;; Add equality constraint for base shape
+  ;; Add equality constraint for rectangle base shape
   (:invariant-config-equality-constraint-matrix
    (&key (update? nil))
    "
