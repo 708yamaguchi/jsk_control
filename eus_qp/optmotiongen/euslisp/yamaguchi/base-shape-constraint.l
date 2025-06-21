@@ -84,6 +84,9 @@ return $\bm{C_{\phi}} := \begin{pmatrix} \bm{I} \\ - \bm{I} \\ \bm{I} \\ - \bm{I
               )))
            )
      )
+   (unless (rigid-legs-invariant? _invariant-joint-list)
+     ;; default value
+     (return-from :phi-inequality-constraint-matrix (send self :get :phi-inequality-constraint-matrix)))
    ;; Add constraint to original one
    (let* ((orig-matrix (send self :get :phi-inequality-constraint-matrix))
           (new-matrix (make-matrix (+ (send orig-matrix :get-val 'dim0) 2) (send orig-matrix :get-val 'dim1))))
@@ -116,6 +119,9 @@ return $\bm{d_{\phi}} := \begin{pmatrix} \bm{\phi}_{\mathit{min}} - \bm{\phi} \\
               )))
            )
      )
+   (unless (rigid-legs-invariant? _invariant-joint-list)
+     ;; default value
+     (return-from :phi-inequality-constraint-vector (send self :get :phi-inequality-constraint-vector)))
    ;; Add constraint to original one
    (let* ((orig-vector (send self :get :phi-inequality-constraint-vector))
           (new-vector (coerce (make-list (+ (length orig-vector) 2) :initial-element 0) float-vector)))
