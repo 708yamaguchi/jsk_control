@@ -271,7 +271,7 @@
                   (send robot :get :rigid-leg3-coords)
                   (send robot :get :vacuum-pad-coords)
                   )
-            ;; TODO: 良い感じの制約を入れる
+            ;; NOTE: 制約を入れて動くことを確認。ただし制約がすごく緩いので、あまり意味はない
             :contact-constraint
             (list (instance norm-contact-constraint :init :fz)
                   (instance norm-contact-constraint :init :fz)
@@ -359,7 +359,6 @@
                         (list (append (list (elt task-target-coords i))
                                       task-face)))))
         (setq move-target-list (append move-target-list (list move-target)))
-        ;; TODO: 良い感じの制約を入れる
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list

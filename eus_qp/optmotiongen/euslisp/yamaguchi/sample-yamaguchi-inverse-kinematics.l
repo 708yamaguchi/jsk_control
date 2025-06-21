@@ -102,7 +102,7 @@
           (send robot :locate (float-vector 0 0 offset) :world)))
 
       ;; 3. optimization
-      ;; TODO: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
+      ;; NOTE: dotimesで他のタスクがあるかどうかで、:inverse-kinematics-optmotiongenの成否が変わる
       (send robot
             :inverse-kinematics-optmotiongen
             (send task-arrow :copy-worldcoords)
