@@ -22,7 +22,7 @@
          dummy-link dummy-links
          (coords-names (list :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :rigid-leg4-coords))
          (initial-leg-positions
-          (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector 50 -50 0) (float-vector -50 -50 0)))
+          (list (float-vector 50 50 0) (float-vector -50 50 0) (float-vector -50 -50 0) (float-vector 50 -50 0)))
          (min-angle -1e5) (max-angle 1e5)
          )
      (dotimes (i (length coords-names))

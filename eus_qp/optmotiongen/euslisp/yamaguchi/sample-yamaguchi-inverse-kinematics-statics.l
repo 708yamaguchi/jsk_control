@@ -8,6 +8,7 @@
 (load "attachable-plane.l")
 (load "yamaguchi-arm.l") ;; Define (yamaguchi-arm) function
 (load "contact-constrant-models.l")
+(load "equality-constraint.l") ;; Add equality constraint for base shape
 
 ;; TODO: Create edge case test function
 
@@ -421,6 +422,10 @@
           (let* ((config-task (elt instant-config-task-list i))
                  (contact-attention-coords-list (send config-task :contact-attention-coords-list))
                  (contact-target-coords-list (send config-task :contact-target-coords-list)))
+            (format t "angle vector~%")
+            (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+            (format t "worldcoords~%")
+            (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
             ;; Print contact coords
             (format t "Contact coords~%")
             (dolist (contact-target-coords contact-target-coords-list)
