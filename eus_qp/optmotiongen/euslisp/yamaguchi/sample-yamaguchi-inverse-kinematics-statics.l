@@ -353,7 +353,7 @@
         (let (task-face)
           (dotimes (j limb-size)
             (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
-                                                          :face :margin 0 :name (format nil "~A,~A" i j))))))
+                                                          :face :margin 20 :name (format nil "~A,~A" i j))))))
           (setq target-coords-list
                 (append target-coords-list
                         (list (append (list (elt task-target-coords i))
