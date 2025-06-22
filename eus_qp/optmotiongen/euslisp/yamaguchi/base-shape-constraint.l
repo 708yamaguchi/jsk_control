@@ -61,7 +61,8 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
 ;; このパラメータを大きくすると、ベースが小さくなる。今以上の値にすると収束しなくなる。
 ;; パラメータが小さいと細長いベース形状が出やすいが、
 ;; 収束可能なギリギリまで大きくすると正方形に近い形状（目的関数を満たす形状）が出やすくなる
-(defconstant *default-base-size-task-scale* (* 1.1 1e-3))
+;; (defconstant *default-base-size-task-scale* (* 0.5 1e-3))
+(defconstant *default-base-size-task-scale* 0)
 (unless (boundp '*base-size-task-scale*)
   (setq *base-size-task-scale* *default-base-size-task-scale*))
 
@@ -82,7 +83,7 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
          ;; base size task is added
          ;; 最後に足した数字が、新しく追加する目的関数の要素数
          ((rigid-legs-invariant? _invariant-joint-list)
-          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint 6)))
+          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint 2)))
          (t
           (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
           ))
@@ -102,13 +103,15 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
           (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
           (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
           )
-     (scale *base-size-task-scale* (float-vector x0 x2 y0 y2 (- x0 x2) (- y0 y2))))
+     ;; (scale *base-size-task-scale* (float-vector x0 x2 y0 y2 (- x0 x2) (- y0 y2))))
+     ;; (scale *base-size-task-scale* (float-vector (- x0 30) (- x2 -30) (- y0 30) (- y2 -30))))
+     (scale *base-size-task-scale* (float-vector (- x0 x2) (- y0 y2))))
    )
   (:base-size-task-jacobian-with-phi
    (&key (update? t))
    ;; ヤコビアンは、タスク関数e = *base-size-task-scale* * (X0, X2, Y0, Y2, (X0-X2) , (Y0-Y2))をX0, Y0, ..., X3, Y3で微分したもの
    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
-   (let* ((jac (make-matrix 6 _num-invariant-joint)) vec
+   (let* ((jac (make-matrix 2 _num-invariant-joint)) vec
           (x0-index (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
           (x1-index (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))
           (x2-index (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))
@@ -118,40 +121,55 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
           (y2-index (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))
           (y3-index (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))
           )
-     ;; X0の微分
-     (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-     (setf (elt vec x0-index) 1) ;; X0で微分
-     (setf (elt vec x3-index) 1) ;; X3=X0で微分
-     (setf (matrix-row jac 0) (scale *base-size-task-scale* vec))
-     ;; X2の微分
-     (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-     (setf (elt vec x1-index) 1) ;; X1=X2で微分
-     (setf (elt vec x2-index) 1) ;; X2で微分
-     (setf (matrix-row jac 1) (scale *base-size-task-scale* vec))
-     ;; Y0の微分
-     (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-     (setf (elt vec y0-index) 1) ;; Y0で微分
-     (setf (elt vec y1-index) 1) ;; Y1=Y0で微分
-     (setf (matrix-row jac 2) (scale *base-size-task-scale* vec))
-     ;; Y2の微分
-     (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-     (setf (elt vec y2-index) 1) ;; Y2で微分
-     (setf (elt vec y3-index) 1) ;; Y3=Y2で微分
-     (setf (matrix-row jac 3) (scale *base-size-task-scale* vec))
+     ;; ;; X0の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec x0-index) 1) ;; X0で微分
+     ;; (setf (elt vec x3-index) 1) ;; X3=X0で微分
+     ;; (setf (matrix-row jac 0) (scale *base-size-task-scale* vec))
+     ;; ;; X2の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec x1-index) 1) ;; X1=X2で微分
+     ;; (setf (elt vec x2-index) 1) ;; X2で微分
+     ;; (setf (matrix-row jac 1) (scale *base-size-task-scale* vec))
+     ;; ;; Y0の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec y0-index) 1) ;; Y0で微分
+     ;; (setf (elt vec y1-index) 1) ;; Y1=Y0で微分
+     ;; (setf (matrix-row jac 2) (scale *base-size-task-scale* vec))
+     ;; ;; Y2の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec y2-index) 1) ;; Y2で微分
+     ;; (setf (elt vec y3-index) 1) ;; Y3=Y2で微分
+     ;; (setf (matrix-row jac 3) (scale *base-size-task-scale* vec))
+     ;; ;; (X0-X2)の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec x0-index) 1) ;; X0で微分
+     ;; (setf (elt vec x1-index) -1) ;; X1=X2で微分
+     ;; (setf (elt vec x2-index) -1) ;; X2で微分
+     ;; (setf (elt vec x3-index) 1) ;; X3=X0で微分
+     ;; (setf (matrix-row jac 4) (scale *base-size-task-scale* vec))
+     ;; ;; (Y0-Y2)の微分
+     ;; (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+     ;; (setf (elt vec y0-index) 1) ;; Y0で微分
+     ;; (setf (elt vec y1-index) 1) ;; Y1=Y0で微分
+     ;; (setf (elt vec y2-index) -1) ;; Y2で微分
+     ;; (setf (elt vec y3-index) -1) ;; Y3=Y2で微分
+     ;; (setf (matrix-row jac 5) (scale *base-size-task-scale* vec))
+
      ;; (X0-X2)の微分
      (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
      (setf (elt vec x0-index) 1) ;; X0で微分
      (setf (elt vec x1-index) -1) ;; X1=X2で微分
      (setf (elt vec x2-index) -1) ;; X2で微分
      (setf (elt vec x3-index) 1) ;; X3=X0で微分
-     (setf (matrix-row jac 4) (scale *base-size-task-scale* vec))
+     (setf (matrix-row jac 0) (scale *base-size-task-scale* vec))
      ;; (Y0-Y2)の微分
      (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
      (setf (elt vec y0-index) 1) ;; Y0で微分
      (setf (elt vec y1-index) 1) ;; Y1=Y0で微分
      (setf (elt vec y2-index) -1) ;; Y2で微分
      (setf (elt vec y3-index) -1) ;; Y3=Y2で微分
-     (setf (matrix-row jac 5) (scale *base-size-task-scale* vec))
+     (setf (matrix-row jac 1) (scale *base-size-task-scale* vec))
      jac)
    )
   (:task-value

@@ -63,11 +63,11 @@
 ;; TODO: タスクに合っている力の制約を入れる。
 (setq *task-wrench-list*
       (list
-       (float-vector 0.1 0 -5 0 0 0)
-       (float-vector 0.1 0 -5 0 0 0)
-       (float-vector 0.1 0 -5 0 0 0)
-       (float-vector 0.1 0 -5 0 0 0)
-       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
@@ -121,9 +121,9 @@
            contact-target-coords-list
            contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
-                                             (append (list t) (make-list limb-size :initial-element :z))))
+                                             (append (list t) (make-list limb-size :initial-element nil))))
            (rotation-axis-list (make-list task-size :initial-element
-                                          (append (list nil) (make-list limb-size :initial-element :z))))
+                                          (append (list nil) (make-list limb-size :initial-element nil))))
            (collision-avoidance-link-pair (list
                                              (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 2))
                                              (list (elt (send *robot* :links) 0) (elt (send *robot* :links) 3))
@@ -148,27 +148,16 @@
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list
-                                                (instance default-contact-constraint
-                                                          :init-from-support-polygon
-                                                          :support-polygon nil
-                                                          :mu-trans 0.8
-                                                          :mu-rot 0.002)
-                                                (instance default-contact-constraint
-                                                          :init-from-support-polygon
-                                                          :support-polygon nil
-                                                          :mu-trans 0.8
-                                                          :mu-rot 0.002)
-                                                (instance default-contact-constraint
-                                                          :init-from-support-polygon
-                                                          :support-polygon nil
-                                                          :mu-trans 0.8
-                                                          :mu-rot 0.002)
-                                                (instance default-contact-constraint
-                                                          :init-from-support-polygon
-                                                          :support-polygon nil
-                                                          :mu-trans 0.8
-                                                          :mu-rot 0.002)
-                                                (instance vacuum-pad-contact-constraint :init)
+                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg0-coords) :worldcoords))
+                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg1-coords) :worldcoords))
+                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg2-coords) :worldcoords))
+                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg3-coords) :worldcoords))
+                                                (instance vacuum-pad-contact-constraint :init-from-coords (send (send *robot* :get :vacuum-pad-coords) :worldcoords))
+                                                ;; (instance rigid-leg-contact-constraint :init)
+                                                ;; (instance rigid-leg-contact-constraint :init)
+                                                ;; (instance rigid-leg-contact-constraint :init)
+                                                ;; (instance rigid-leg-contact-constraint :init)
+                                                ;; (instance vacuum-pad-contact-constraint :init)
                                                 )
                                                )))
         )
