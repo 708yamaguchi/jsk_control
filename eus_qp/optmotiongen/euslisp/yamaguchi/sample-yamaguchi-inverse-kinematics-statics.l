@@ -353,7 +353,7 @@
         (let (task-face)
           (dotimes (j limb-size)
             (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
-                                                          :face :margin 20 :name (format nil "~A,~A" i j))))))
+                                                          :face :margin 10 :name (format nil "~A,~A" i j))))))
           (setq target-coords-list
                 (append target-coords-list
                         (list (append (list (elt task-target-coords i))
@@ -400,13 +400,15 @@
                           :external-coords-list external-coords-list
                           :translation-axis-list translation-axis-list
                           :rotation-axis-list rotation-axis-list
-                          :collision-avoidance-link-pair collision-avoidance-link-pair
-                          :collision-distance-limit -0.5
+                          ;; :collision-avoidance-link-pair collision-avoidance-link-pair
+                          ;; :collision-distance-limit -0.5
                           :invariant-joint-list (send *robot* :invariant-joint-list)
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
                           :stop 50
                           :min-loop 30
+                          ;; :stop 100
+                          ;; :min-loop 100
                           :debug-view (list :additional-draw-objects additional-draw-objects)
                           :adjacent-regular-scale 0.0
                           :pre-process-func pre-process-func

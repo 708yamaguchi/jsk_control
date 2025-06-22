@@ -57,7 +57,13 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
    (float-vector 0 0 0 0))
 )
 
-(setq *base-size-scale* 1e-7) ;; TODO: チューニングが必要
+ ;; TODO: チューニングが必要
+;; (setq *base-size-scale* 1e-7)
+;; (setq *base-size-scale* (* -1 1e-7))
+;; (setq *base-size-scale* (* 3 1e-7))
+(setq *base-size-scale* (* 10 1e-7))
+;; (setq *base-size-scale* (* 100 1e-7))
+;; (setq *base-size-scale* 0)
 
 ;; ベースのサイズを小さくするための目的関数の設定
 (defmethod instant-configuration-task
@@ -102,14 +108,10 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
    (let* ((jac (make-matrix 1 _num-invariant-joint))
           (vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-          (leg0-x-joint (find-joint "rigid_leg0_x_joint" _invariant-joint-list))
-          (x0 (send leg0-x-joint :joint-angle))
-          (leg0-y-joint (find-joint "rigid_leg0_y_joint" _invariant-joint-list))
-          (y0 (send leg0-y-joint :joint-angle))
-          (leg2-x-joint (find-joint "rigid_leg2_x_joint" _invariant-joint-list))
-          (x2 (send leg2-x-joint :joint-angle))
-          (leg2-y-joint (find-joint "rigid_leg2_y_joint" _invariant-joint-list))
-          (y2 (send leg2-y-joint :joint-angle))
+          (x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+          (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+          (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+          (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
           )
      (setf (elt vec (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
            (* 2  (- x0 x2))) ;; X0で微分
@@ -130,6 +132,50 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
      (setf (matrix-row jac 0) (scale *base-size-scale* vec))
      jac)
    )
+;;   (:base-size-task-value
+;;    (&key (update? t))
+;;    "
+;; ベースのサイズを小さくするための制約
+;;    "
+;;    ;; タスク関数eはベースサイズを表しており、e = *base-size-scale* * ( (X0-X2) * (Y0-Y2) )
+;;    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
+;;    (let* ((x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+;;           (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+;;           (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+;;           (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
+;;           )
+;;      (float-vector (* *base-size-scale* (* (- x0 x2) (- y0 y2)))))
+;;    )
+;;   (:base-size-task-jacobian-with-phi
+;;    (&key (update? t))
+;;    ;; ヤコビアンは、タスク関数e = *base-size-scale* * ( (X0-X2) * (Y0-Y2) )をX0, Y0, ..., X3, Y3で微分したもの
+;;    ;; なお等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。
+;;    (let* ((jac (make-matrix 1 _num-invariant-joint))
+;;           (vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+;;           (x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+;;           (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+;;           (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+;;           (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
+;;           )
+;;      (setf (elt vec (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
+;;            (- y0 y2)) ;; X0で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))
+;;            (- x0 x2)) ;; Y0で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))
+;;            (- y2 y0)) ;; X1=X2で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))
+;;            (- x0 x2)) ;; Y1=Y0で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))
+;;            (- y2 y0)) ;; X2で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))
+;;            (- x2 x0)) ;; Y2で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg3_x_joint" _invariant-joint-list))
+;;            (- y0 y2)) ;; X3=X0で微分
+;;      (setf (elt vec (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))
+;;            (- x2 x0)) ;; Y3=Y2で微分
+;;      (setf (matrix-row jac 0) (scale *base-size-scale* vec))
+;;      jac)
+;;    )
   (:task-value
    (&key (update? t))
    "
