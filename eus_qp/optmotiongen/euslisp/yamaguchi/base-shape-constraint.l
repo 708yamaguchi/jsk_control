@@ -25,21 +25,22 @@ return $\bm{A}_{\mathit{invar}} \in \mathbb{R}^{0 \times \mathit{dim}(\bm{q}_{\m
      ;; default value
      (return-from :invariant-config-equality-constraint-matrix (make-matrix 0 _dim-invariant-config)))
    (let ((m (make-matrix 4 _dim-invariant-config)) vec)
+     ;; X1 - X2 = 0
      (setq vec (make-list _dim-invariant-config :initial-element 0))
      (setf (elt vec (eval (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))) 1)
      (setf (elt vec (eval (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))) -1)
      (setf (matrix-row m 0) (coerce vec float-vector))
-     ;;
+     ;; X3 - X0 = 0
      (setq vec (make-list _dim-invariant-config :initial-element 0))
      (setf (elt vec (eval (joint-index-func "rigid_leg3_x_joint" _invariant-joint-list))) 1)
      (setf (elt vec (eval (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))) -1)
      (setf (matrix-row m 1) (coerce vec float-vector))
-     ;;
+     ;; Y0 - Y1 = 0
      (setq vec (make-list _dim-invariant-config :initial-element 0))
      (setf (elt vec (eval (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))) 1)
      (setf (elt vec (eval (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))) -1)
      (setf (matrix-row m 2) (coerce vec float-vector))
-     ;;
+     ;; Y2 - Y3 = 0
      (setq vec (make-list _dim-invariant-config :initial-element 0))
      (setf (elt vec (eval (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))) 1)
      (setf (elt vec (eval (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))) -1)
@@ -89,9 +90,9 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
   (:base-size-task-value
    (&key (update? t))
    "
-ベースのサイズを小さくするための制約
+ベースのサイズを小さくする+剛体脚の配置を吸着パッドに寄せるための目的関数
 "
-   ;; ベースサイズを小さくするタスク関数eは2次元ベクトルで、e = *base-size-task-scale* * (X0, X2, Y0, Y2, (X0-X2) , (Y0-Y2))
+   ;; ベースサイズを小さくする+剛体脚の配置を吸着パッドに寄せるタスク関数eは6次元ベクトルで、e = *base-size-task-scale* * (X0, X2, Y0, Y2, (X0-X2) , (Y0-Y2))
    ;; なおベースを長方形にするための等式制約により、X0=X3, X2=X1, Y0=Y1, Y2=Y3であることに注意。（8 -> 4変数に削減）
    ;; X0, X2, Y0, Y2は、剛体脚がベース中心から離れすぎないようにするための要素
    ;; (X0-X2), (Y0 - Y2)は、4つの剛体脚が構成する長方形を小さくするための要素

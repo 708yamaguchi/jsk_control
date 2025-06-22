@@ -63,11 +63,11 @@
 ;; TODO: タスクに合っている力の制約を入れる。
 (setq *task-wrench-list*
       (list
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
@@ -151,22 +151,22 @@
                                                 (instance default-contact-constraint
                                                           :init-from-support-polygon
                                                           :support-polygon nil
-                                                          :mu-trans 0.2
+                                                          :mu-trans 0.8
                                                           :mu-rot 0.002)
                                                 (instance default-contact-constraint
                                                           :init-from-support-polygon
                                                           :support-polygon nil
-                                                          :mu-trans 0.2
+                                                          :mu-trans 0.8
                                                           :mu-rot 0.002)
                                                 (instance default-contact-constraint
                                                           :init-from-support-polygon
                                                           :support-polygon nil
-                                                          :mu-trans 0.2
+                                                          :mu-trans 0.8
                                                           :mu-rot 0.002)
                                                 (instance default-contact-constraint
                                                           :init-from-support-polygon
                                                           :support-polygon nil
-                                                          :mu-trans 0.2
+                                                          :mu-trans 0.8
                                                           :mu-rot 0.002)
                                                 (instance vacuum-pad-contact-constraint :init)
                                                 )
