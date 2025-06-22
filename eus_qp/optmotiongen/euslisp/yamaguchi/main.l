@@ -59,6 +59,8 @@
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
+;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
+;; TODO: タスクに合っている力の制約を入れる。
 (setq *task-wrench-list*
       (list
        (float-vector 0.1 0 -1 0 0 0)
@@ -72,238 +74,21 @@
   (print "Task definition is wrong.")
   (exit))
 
-;; 前までは、virtual linkへの制約によって脱着ベースと壁面を平行にしていた。
-;; この例では、脱着ベースの剛体脚と吸着パッドが壁面上にあるという制約をかけることで、脱着ベースと壁面を平行にしている
-(defun main-without-statics-loop
-    (&key
-     (pre-process-func)
-     (post-process-func)
-     &allow-other-keys
-     )
-  (setq *robot-list* nil)
-  (let ((robot (yamaguchi-arm)))
-    (dotimes (i (length *attachable-plane-list*))
-      (setq *robot-list* (append *robot-list*
-                                 (list (copy-object robot))))))
-  (objects (append *room610-model-list*
-                   (send-all *attachable-plane-list* :object)
-                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                   *task-coords-list*
-                   *robot-list*))
-  (set-room610-viewpoint)
 
-  (dotimes (i (length *robot-list*))
-    (let* ((robot (elt *robot-list* i))
-           (task-plane (elt *attachable-plane-list* i))
-           (task-plane-face (send task-plane :face :margin 0))
-           (task-arrow (elt *task-coords-list* i)))
-      ;; 2. Rotate robot along task-plane
-      ;; It is assumed that robot and room610 coords are the same at first.
-      (send robot :newcoords (make-coords))
-      ;; 3. optimization
-      (send robot
-            ;; メモ：第一引数target-coords、:move-target、:translation-axis、:rotation-axisは個数と順番を一致させる
-            :inverse-kinematics-optmotiongen
-            (list (send task-arrow :copy-worldcoords)
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  )
-            :move-target
-            (list (send robot :end-coords)
-                  (send robot :get :rigid-leg0-coords)
-                  (send robot :get :rigid-leg1-coords)
-                  (send robot :get :rigid-leg2-coords)
-                  (send robot :get :rigid-leg3-coords)
-                  (send robot :get :vacuum-pad-coords)
-                  )
-            :translation-axis (list t nil nil nil nil nil)
-            :rotation-axis (list nil nil nil nil nil nil)
-            :collision-avoidance-link-pair (list
-                                            (list (elt (send robot :links) 0) (elt (send robot :links) 3))
-                                            (list (elt (send robot :links) 0) (car (last (send robot :links))))
-                                            )
-            :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
-            :debug-view t
-            :root-virtual-mode :6dof
-            :optimize-torque? nil
-            :pre-process-func pre-process-func
-            :post-process-func post-process-func)
-      ))
-  nil)
-(warn "(main-without-statics-loop)~%")
+;; TODO: Create edge case test functions
 
-(defun main-without-statics-trajectory
+;;このテストから、 ベースサイズタスクの重みが小さいほど、大きな形状のベースが出力されることが分かる。
+(defun test-low-base-size-task-scale ()
+  (main :base-size-task-scale (* 0.01 *default-base-size-task-scale*))
+  )
+
+;; 研究で使うメイン関数。吸着ベースの設計パラメータを時不変変数として扱っているのが特徴。
+(defun main
     (&key
      (pre-process-func)
      (post-process-func)
      (visualize-callback-func)
-     &allow-other-keys
-     )
-  (let* ((task-size (length *task-coords-list*))
-         (additional-draw-objects
-          (append *room610-model-list*
-                  (send-all *attachable-plane-list* :object)
-                  ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                  *task-coords-list*)))
-    ;; 2. Visualize
-    (unless (boundp '*irtviewer*)
-      (make-irtviewer))
-    (send *irtviewer* :objects additional-draw-objects)
-    (set-room610-viewpoint)
-    (send *irtviewer* :draw-objects)
-    ;; 3. optimization
-    (setq *robot* (yamaguchi-arm))
-    ;; 2個以上のrigid-legに対してtarget-coordsをfaceで指定することで、平面に拘束を書けられる
-    (let* ((move-target (list (send *robot* :end-coords)
-                              (send *robot* :get :rigid-leg0-coords)
-                              (send *robot* :get :rigid-leg1-coords)
-                              (send *robot* :get :rigid-leg2-coords)
-                              (send *robot* :get :rigid-leg3-coords)
-                              (send *robot* :get :vacuum-pad-coords)
-                              ))
-           (limb-size (1- (length move-target)))
-           (task-target-coords (send-all *task-coords-list* :copy-worldcoords))
-           (translation-axis-list (make-list task-size :initial-element
-                                             (append (list t) (make-list limb-size :initial-element nil))))
-           ;; (translation-axis-list (make-list task-size :initial-element
-           ;;                                   (append (list nil) (make-list limb-size :initial-element nil))))
-           (rotation-axis-list (make-list task-size :initial-element
-                                 (append (list nil) (make-list limb-size :initial-element nil))))
-           ret target-coords-list move-target-list)
-      (dotimes (i task-size)
-        (setq target-coords-list
-              (append target-coords-list
-                      (list (append (list (elt task-target-coords i))
-                                    (make-list limb-size :initial-element
-                                               (send (elt *attachable-plane-list* i) :face :margin 0))))))
-        (setq move-target-list (append move-target-list (list move-target)))
-        )
-      (setq ret (send *robot*
-                      :inverse-kinematics-trajectory-optmotiongen
-                      target-coords-list
-                      :move-target-list move-target-list
-                      :translation-axis-list translation-axis-list
-                      :rotation-axis-list rotation-axis-list
-                      ;; :collision-avoidance-link-pair (let ((base-cube (send *robot* :base-cube)))
-                      ;;                                  (send *robot* :assoc base-cube)
-                      ;;                                  (list
-                      ;;                                   (list base-cube (elt (send *robot* :links) 2))
-                      ;;                                   (list base-cube (elt (send *robot* :links) 3))
-                      ;;                                   (list base-cube (car (last (send *robot* :links))))
-                      ;;                                   ))
-                      ;; :collision-distance-limit 5
-                      ;; :attachable-plane-list *attachable-plane-list*
-                      :root-virtual-mode :6dof
-                      :optimize-torque? nil
-                      :debug-view (list :additional-draw-objects additional-draw-objects)
-                      :adjacent-regular-scale 0.0
-                      :pre-process-func pre-process-func
-                      :post-process-func post-process-func))
-      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
-      ret)
-    ))
-(warn "(main-without-statics-trajectory)~%")
-
-(defun main-with-loop
-    (&key
-     (pre-process-func)
-     (post-process-func)
-     &allow-other-keys
-     )
-  (setq *robot-list* nil)
-  (let ((robot (yamaguchi-arm)))
-    (dotimes (i (length *attachable-plane-list*))
-      (setq *robot-list* (append *robot-list*
-                                 (list (copy-object robot))))))
-  (objects (append *room610-model-list*
-                   (send-all *attachable-plane-list* :object)
-                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                   *task-coords-list*
-                   *robot-list*))
-  (set-room610-viewpoint)
-
-  (dotimes (i (length *robot-list*))
-    (let* ((robot (elt *robot-list* i))
-           (task-plane (elt *attachable-plane-list* i))
-           (task-plane-face (send task-plane :face :margin 0)) ;; Note: we need to the same face object for the arguments
-           (task-arrow (elt *task-coords-list* i)))
-      ;; 2. Rotate robot along task-plane
-      ;; It is assumed that robot and room610 coords are the same at first.
-      (setq *robot* robot) ;; (draw-force-value) function uses *robot* variable...
-      (send robot :newcoords (make-coords))
-      ;; 3. optimization
-      (send robot
-            ;; メモ：第一引数target-coords、:move-target、:translation-axis、:rotation-axisは個数と順番を一致させる
-            :inverse-kinematics-statics-optmotiongen
-            (list (send task-arrow :copy-worldcoords)
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  )
-            :move-target
-            (list (send robot :end-coords)
-                  (send robot :get :rigid-leg0-coords)
-                  (send robot :get :rigid-leg1-coords)
-                  (send robot :get :rigid-leg2-coords)
-                  (send robot :get :rigid-leg3-coords)
-                  (send robot :get :vacuum-pad-coords)
-                  )
-            ;; メモ：引数:contact-target-coords、:contact-move-target、:contact-constraintも個数と順番を一致させる
-            :contact-target-coords
-            (list task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  task-plane-face
-                  )
-            :contact-move-target
-            (list (send robot :get :rigid-leg0-coords)
-                  (send robot :get :rigid-leg1-coords)
-                  (send robot :get :rigid-leg2-coords)
-                  (send robot :get :rigid-leg3-coords)
-                  (send robot :get :vacuum-pad-coords)
-                  )
-            ;; NOTE: 制約を入れて動くことを確認。ただし制約がすごく緩いので、あまり意味はない
-            :contact-constraint
-            (list (instance norm-contact-constraint :init :fz)
-                  (instance norm-contact-constraint :init :fz)
-                  (instance norm-contact-constraint :init :fz)
-                  (instance norm-contact-constraint :init :fz)
-                  (instance norm-contact-constraint :init :fz)
-                  ;; (instance rigid-leg-contact-constraint :init)
-                  ;; (instance rigid-leg-contact-constraint :init)
-                  ;; (instance rigid-leg-contact-constraint :init)
-                  ;; (instance rigid-leg-contact-constraint :init)
-                  ;; (instance vacuum-pad-contact-constraint :init)
-                  )
-            :translation-axis (list t nil nil nil nil nil)
-            :rotation-axis (list nil nil nil nil nil nil)
-            :collision-avoidance-link-pair (list
-                                            (list (elt (send robot :links) 0) (elt (send robot :links) 3))
-                                            (list (elt (send robot :links) 0) (car (last (send robot :links))))
-                                            )
-            :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
-            :debug-view t
-            :root-virtual-mode :6dof
-            :optimize-torque? nil
-            :pre-process-func pre-process-func
-            :post-process-func post-process-func)
-      ))
-  nil)
-(warn "(main-with-loop)~%")
-
-;; これが研究で使う関数のサンプル。吸着ベースの設計パラメータを時不変変数として扱っている。
-(setq *base-size-task-scale* 1e-3)
-(defun main-with-trajectory
-    (&key
-     (pre-process-func)
-     (post-process-func)
-     (visualize-callback-func)
+     (base-size-task-scale)
      &allow-other-keys
      )
   (let* ((additional-draw-objects
@@ -320,6 +105,9 @@
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     (send *robot* :leg-init :pos 50)
+    (if base-size-task-scale
+        (setq *base-size-task-scale* base-size-task-scale) ;; overwrite
+      (setq *base-size-task-scale* *default-base-size-task-scale*)) ;; reset
     (let* ((task-size (length *task-coords-list*))
            (move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
@@ -460,4 +248,4 @@
           (format t "~%")))
       (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
       sqp-opt)))
-(warn "(main-with-trajectory)~%")
+(warn "(main)~%")
