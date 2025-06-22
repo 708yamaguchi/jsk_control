@@ -64,7 +64,8 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
 ;; (setq *base-size-scale* (* 10 1e-7))
 ;; (setq *base-size-scale* (* 100 1e-7))
 ;; (setq *base-size-scale* (* 1000 1e-7))
-(setq *base-size-scale* (* 3000 1e-7))
+;; (setq *base-size-scale* (* 3000 1e-7))
+(setq *base-size-scale* (* 10000 1e-7))
 ;; (setq *base-size-scale* 0)
 
 ;; ベースのサイズを小さくするための目的関数の設定

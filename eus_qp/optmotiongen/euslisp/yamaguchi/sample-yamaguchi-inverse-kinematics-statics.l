@@ -64,11 +64,11 @@
 ;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
 (setq *task-wrench-list*
       (list
-       (float-vector 0.1 0 0 0 0 0)
-       (float-vector 0.1 0 0 0 0 0)
-       (float-vector 0.1 0 0 0 0 0)
-       (float-vector 0.1 0 0 0 0 0)
-       (float-vector 0.1 0 0 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -1 0 0 0)
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
