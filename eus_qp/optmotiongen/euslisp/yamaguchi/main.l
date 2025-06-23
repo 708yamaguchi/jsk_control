@@ -30,16 +30,16 @@
                  :min-angle-list (list 4300 -700)
                  :max-angle-list (list 5000 150)
                  :normal :z+)
-       (instance attachable-plane :init
-                 :offset 1200
-                 :min-angle-list (list 6050 1870)
-                 :max-angle-list (list 6450 2150)
-                 :normal :z+)
-       (instance attachable-plane :init
-                 :offset 1850
-                 :min-angle-list (list 6720 2010)
-                 :max-angle-list (list 7300 2520)
-                 :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 1200
+       ;;           :min-angle-list (list 6050 1870)
+       ;;           :max-angle-list (list 6450 2150)
+       ;;           :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 1850
+       ;;           :min-angle-list (list 6720 2010)
+       ;;           :max-angle-list (list 7300 2520)
+       ;;           :normal :z+)
        ))
 (setq *task-coords-list*
       (list
@@ -48,16 +48,16 @@
              (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
        ;; IH
        (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
+             (make-coords :pos (float-vector 8400 -800 1000) :rpy (list 0 0 0)))
        ;; 中央の机
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 4600 300 720) :rpy (list 0 0 0)))
-       ;; 電子レンジ
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
-       ;; 冷蔵庫
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
+       ;; ;; 電子レンジ
+       ;; (send (instance arrow-object :init) :newcoords
+       ;;       (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
+       ;; ;; 冷蔵庫
+       ;; (send (instance arrow-object :init) :newcoords
+       ;;       (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
 ;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
 ;; TODO: タスクに合っている力の制約を入れる。
@@ -66,8 +66,8 @@
        (float-vector 0.1 0 -1 0 0 0)
        (float-vector 0.1 0 -1 0 0 0)
        (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
+       ;; (float-vector 0.1 0 -1 0 0 0)
+       ;; (float-vector 0.1 0 -1 0 0 0)
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
@@ -139,7 +139,9 @@
         (let (task-face)
           (dotimes (j limb-size)
             (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
-                                                          :face :margin 10 :name (format nil "~A,~A" i j))))))
+                                                          :face :margin 0
+                                                          :name (format nil "~A," j) ;; (format nil "~A,~A" i j)
+                                                          )))))
           (setq target-coords-list
                 (append target-coords-list
                         (list (append (list (elt task-target-coords i))
@@ -148,16 +150,16 @@
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list
-                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg0-coords) :worldcoords))
-                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg1-coords) :worldcoords))
-                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg2-coords) :worldcoords))
-                                                (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg3-coords) :worldcoords))
-                                                (instance vacuum-pad-contact-constraint :init-from-coords (send (send *robot* :get :vacuum-pad-coords) :worldcoords))
-                                                ;; (instance rigid-leg-contact-constraint :init)
-                                                ;; (instance rigid-leg-contact-constraint :init)
-                                                ;; (instance rigid-leg-contact-constraint :init)
-                                                ;; (instance rigid-leg-contact-constraint :init)
-                                                ;; (instance vacuum-pad-contact-constraint :init)
+                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg0-coords) :worldcoords))
+                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg1-coords) :worldcoords))
+                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg2-coords) :worldcoords))
+                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg3-coords) :worldcoords))
+                                                ;; (instance vacuum-pad-contact-constraint :init-from-coords (send (send *robot* :get :vacuum-pad-coords) :worldcoords))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 0, ~A" i))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 1, ~A" i))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 2, ~A" i))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 3, ~A" i))
+                                                (instance vacuum-pad-contact-constraint :init :name (format nil "vacuum-pad ~A" i))
                                                 )
                                                )))
         )
