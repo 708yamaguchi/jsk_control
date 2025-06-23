@@ -20,11 +20,11 @@
                  :min-angle-list (list 7800 -250)
                  :max-angle-list (list 8300 600)
                  :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 8500
-       ;;           :min-angle-list (list -1250 1100)
-       ;;           :max-angle-list (list 1600 2000)
-       ;;           :normal :x-)
+       (instance attachable-plane :init
+                 :offset 8500
+                 :min-angle-list (list -1250 1100)
+                 :max-angle-list (list 1600 2000)
+                 :normal :x-)
        (instance attachable-plane :init
                  :offset 720
                  :min-angle-list (list 4300 -700)
@@ -46,9 +46,9 @@
        ;; 蛇口
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
-       ;; ;; IH
-       ;; (send (instance arrow-object :init) :newcoords
-       ;;       (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
+       ;; IH
+       (send (instance arrow-object :init) :newcoords
+             (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
        ;; 中央の机
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 4600 300 720) :rpy (list 0 0 0)))
@@ -64,7 +64,7 @@
 (setq *task-wrench-list*
       (list
        (float-vector 0.1 0 -5 0 0 0)
-       ;; (float-vector 0 0 0 0 0 0)
+       (float-vector 0 0 0 0 0 0)
        (float-vector 0.1 0 -5 0 0 0)
        (float-vector 0.1 0 -5 0 0 0)
        (float-vector 0.1 0 -5 0 0 0)
