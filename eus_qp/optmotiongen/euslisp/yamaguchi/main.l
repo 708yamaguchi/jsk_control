@@ -228,11 +228,13 @@
                   (progn
                     (when (or (eq force-type :force-list) (eq force-type :moment-list))
                       (dotimes (j (length contact-attention-coords-list))
-                        (format t "   ~A: ~A~%" (elt (send-all contact-attention-coords-list :name) j)
+                        (format t "   At ~A, ~A~%"
+                                (elt (send-all contact-attention-coords-list :name) j)
                                 (elt (send config-task force-type) j))))
                     (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
                       (dotimes (j (length (send config-task :external-coords-list)))
-                        (format t "   ~A: ~A~%" (send (elt (send config-task :external-coords-list) j) :name)
+                        (format t "   At ~A, ~A~%"
+                                (send (elt (send config-task :external-coords-list) j) :worldcoords)
                                 (elt (send config-task force-type) j))
                         )))
                 (format t "   nil~%"))))
