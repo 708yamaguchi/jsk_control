@@ -22,6 +22,8 @@
           (_torque-regular-scale "$k_{\mathit{trq}}$")
           ;; buffer
           (_task-jacobi "buffer for $\frac{\partial \bm{e}}{\partial \bm{q}}$")
+          ;; Added
+          (_temporary-invariant-index-list)
           )
   :documentation
   "
@@ -71,6 +73,11 @@ $\bm{e}^{(l)}(\bm{q}_{\mathit{var}}^{(l)}, \bm{q}_{\mathit{invar}}) \ (l=1,2,\cd
    (&key
     (name)
     (instant-config-task-list)
+    ;; temporary-invariant-joint-listを(list (list "joint0" 0 1) (list "joint1" 4 5))とすると、以下の効果がある
+    ;; 時変変数"joint0"の角度は、instant-config-task-listの0,1番目で不変
+    ;; 時変変数"joint1"の角度は、instant-config-task-listの4,5番目で不変
+    ;; 注意：現状では、(JOINT_NAME index1 index2)という形式しか対応しておらず、3つ以上のインデックスは渡せない
+    (temporary-invariant-joint-list)
     (norm-regular-scale-max 1e-4)
     (norm-regular-scale-offset 1e-7)
     (adjacent-regular-scale 5e-3)
@@ -95,6 +102,23 @@ Initialize instance
    ;; sub methods
    (send self :_initialize-number)
    (send self :_initialize-dimension)
+   ;; Added
+   ;; _temporary-invariant-index-listは、((0 18) (1 19) ... (4 22))のような、trajectory-configuration-taskクラスの:dim-configにおけるindexのペアのリスト
+   (when temporary-invariant-joint-list
+     (defun joint-index-func (name joint-list)
+       (position name joint-list :test #'(lambda (x y) (equal x (send y :name)))))
+     (let* ((instant-config-task (car _instant-config-task-list))
+            (variant-joint-list (send instant-config-task :variant-joint-list))
+            (dim-variant-config (send instant-config-task :dim-variant-config))
+            target-joint-index target-joint-index-list)
+       (dolist (l temporary-invariant-joint-list)
+         (setq target-joint-index (joint-index-func (car l) variant-joint-list))
+         (setq target-joint-index-list
+               (mapcar #'(lambda (x) (+ (* x dim-variant-config) target-joint-index))
+                       (cdr l)))
+         (setq _temporary-invariant-index-list (append _temporary-invariant-index-list
+                                                       (list target-joint-index-list))))
+       ))
    )
   (:_initialize-number
    ()
@@ -459,10 +483,23 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{N_{\mathit{invar\mathchar`-eq}}}
 
 return $\bm{A} \in \mathbb{R}^{N_{\mathit{eq}} \times \mathit{dim}(\bm{q})}$
    "
-   (concatenate-matrix-diagonal
-    (send self :variant-config-equality-constraint-matrix :update? update?)
-    (send self :invariant-config-equality-constraint-matrix :update? update?))
-   )
+   (let* ((orig-mat (concatenate-matrix-diagonal
+                     (send self :variant-config-equality-constraint-matrix :update? update?)
+                     (send self :invariant-config-equality-constraint-matrix :update? update?)))
+          (dim (send orig-mat :get-val 'dim1))
+          (ret orig-mat)
+          added-mat)
+     ;; Add temporary-invariant-constraint
+     (dolist (index-pair _temporary-invariant-index-list)
+       (setq added-mat (make-matrix 1 dim))
+       (setf (matrix-column added-mat (elt index-pair 0)) (float-vector 1))
+       (setf (matrix-column added-mat (elt index-pair 1)) (float-vector -1))
+       (setq ret
+             (concatenate-matrix-column
+              ret
+              added-mat)))
+     ret
+     ))
   (:config-equality-constraint-vector
    (&key (update? t))
    "
@@ -476,6 +513,7 @@ return $\bm{b} \in \mathbb{R}^{N_{\mathit{eq}}}$
     float-vector
     (send self :variant-config-equality-constraint-vector :update? update?)
     (send self :invariant-config-equality-constraint-vector :update? update?)
+    (coerce (make-list (length _temporary-invariant-index-list) :initial-element 0) float-vector)
     ))
   )
 
