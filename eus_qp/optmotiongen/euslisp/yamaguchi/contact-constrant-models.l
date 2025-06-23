@@ -92,7 +92,7 @@
            ;; friction
            ;; (instance 2D-translational-friction-contact-constraint :init 0.8)
            ;; (instance rotational-friction-contact-constraint :init 0.02 :fz)
-           ;; (instance no-friction-constraint :init)
+           (instance no-friction-constraint :init)
            (instance no-moment-constraint :init)
            ;; (instance norm-contact-constraint :init :fz :norm -1)
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
