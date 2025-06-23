@@ -20,54 +20,54 @@
                  :min-angle-list (list 7800 -250)
                  :max-angle-list (list 8300 600)
                  :normal :z+)
-       (instance attachable-plane :init
-                 :offset 8500
-                 :min-angle-list (list -1250 1100)
-                 :max-angle-list (list 1600 2000)
-                 :normal :x-)
+       ;; (instance attachable-plane :init
+       ;;           :offset 8500
+       ;;           :min-angle-list (list -1250 1100)
+       ;;           :max-angle-list (list 1600 2000)
+       ;;           :normal :x-)
        (instance attachable-plane :init
                  :offset 720
                  :min-angle-list (list 4300 -700)
                  :max-angle-list (list 5000 150)
                  :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 1200
-       ;;           :min-angle-list (list 6050 1870)
-       ;;           :max-angle-list (list 6450 2150)
-       ;;           :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 1850
-       ;;           :min-angle-list (list 6720 2010)
-       ;;           :max-angle-list (list 7300 2520)
-       ;;           :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1200
+                 :min-angle-list (list 6050 1870)
+                 :max-angle-list (list 6450 2150)
+                 :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1850
+                 :min-angle-list (list 6720 2010)
+                 :max-angle-list (list 7300 2520)
+                 :normal :z+)
        ))
 (setq *task-coords-list*
       (list
        ;; 蛇口
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 8200 800 1000) :rpy (list (deg2rad 60) 0 0)))
-       ;; IH
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 8400 -800 1000) :rpy (list 0 0 0)))
+       ;; ;; IH
+       ;; (send (instance arrow-object :init) :newcoords
+       ;;       (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
        ;; 中央の机
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 4600 300 720) :rpy (list 0 0 0)))
-       ;; ;; 電子レンジ
-       ;; (send (instance arrow-object :init) :newcoords
-       ;;       (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
-       ;; ;; 冷蔵庫
-       ;; (send (instance arrow-object :init) :newcoords
-       ;;       (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
+       ;; 電子レンジ
+       (send (instance arrow-object :init) :newcoords
+             (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
+       ;; 冷蔵庫
+       (send (instance arrow-object :init) :newcoords
+             (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
 ;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
 ;; TODO: タスクに合っている力の制約を入れる。
 (setq *task-wrench-list*
       (list
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       (float-vector 0.1 0 -1 0 0 0)
-       ;; (float-vector 0.1 0 -1 0 0 0)
-       ;; (float-vector 0.1 0 -1 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       ;; (float-vector 0 0 0 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
+       (float-vector 0.1 0 -5 0 0 0)
        ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
@@ -130,7 +130,7 @@
                                              (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
                                              ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
-           (external-coords-list (make-list task-size :initial-element (list (send *robot* :end-coords))))
+           (external-coords-list (mapcar #'list *task-coords-list*))
            (external-wrench-list (mapcar #'list *task-wrench-list*))
            )
       (dotimes (i task-size)
