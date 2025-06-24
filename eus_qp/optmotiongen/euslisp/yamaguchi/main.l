@@ -284,12 +284,13 @@
             ;; Look at vacuum base shape
             (when (and debug-view (eq i 0))
               (let ((robot (copy-object *robot*))
-                    (v (make-irtviewer))) ;; Note that *irtviewer* is overwritten
+                    (v (send-lexpr (instantiate x::irtviewer) :create nil)))
+                (send robot :newcoords (make-coords))
                 (send robot :angle-vector
                       (send (send config-task :robot-env) :robot :angle-vector))
                 (send v :objects (list robot))
-                (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 0.0 -1.0))
-                (send v :draw-objects))))
+                (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
+                (send v :draw-objects)))
             (format t "base size~%")
             (let* ((robot (send (send config-task :robot-env) :robot))
                    (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
