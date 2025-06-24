@@ -20,12 +20,12 @@
                  :max-angle-list (list 8300 600)
                  :normal :z+)
        (instance attachable-plane :init
-                 :offset 900.1
+                 :offset 900.001
                  :min-angle-list (list 7800 -250)
                  :max-angle-list (list 8300 600)
                  :normal :z+)
        (instance attachable-plane :init
-                 :offset 900.2
+                 :offset 900.002
                  :min-angle-list (list 7800 -250)
                  :max-angle-list (list 8300 600)
                  :normal :z+)
@@ -50,7 +50,22 @@
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
        (instance attachable-plane :init
-                 :offset 1850.1
+                 :offset 1850.001
+                 :min-angle-list (list 6720 2010)
+                 :max-angle-list (list 7300 2520)
+                 :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1850.002
+                 :min-angle-list (list 6720 2010)
+                 :max-angle-list (list 7300 2520)
+                 :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1850.003
+                 :min-angle-list (list 6720 2010)
+                 :max-angle-list (list 7300 2520)
+                 :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1850.004
                  :min-angle-list (list 6720 2010)
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
@@ -62,32 +77,46 @@
 (setq *task-coords-list*
       (list
        (make-cascoords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0)
-                    :name "faucet")
+                       :name "faucet")
        (make-cascoords :pos (float-vector 8000 600 1000) :rpy (list (deg2rad 60) 0 0)
-                    :name "faucet")
+                       :name "faucet")
        (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)
-                    :name "faucet")
+                       :name "faucet")
        (make-cascoords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)
-                    :name "IH")
+                       :name "IH")
        (make-cascoords :pos (float-vector 4600 200 720) :rpy (list 0 0 0)
-                    :name "table")
+                       :name "table")
        (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)
-                    :name "microwave")
-       (make-cascoords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)
-                    :name "fridge")
-       (make-cascoords :pos (float-vector 7000 2500 1850) :rpy (list 0 0 0)
-                    :name "fridge")
+                       :name "microwave")
+       (make-cascoords :pos (float-vector 6900 2400 1850) :rpy (list 0 0 0)
+                       :name "fridge")
+       (make-cascoords :pos (float-vector 6850 2325 1850) :rpy (list 0 0 0)
+                       :name "fridge")
+       (make-cascoords :pos (float-vector 6800 2250 1850) :rpy (list 0 0 0)
+                       :name "fridge")
+       (make-cascoords :pos (float-vector 6850 2175 1850) :rpy (list 0 0 0)
+                       :name "fridge")
+       (make-cascoords :pos (float-vector 6900 2100 1850) :rpy (list 0 0 0)
+                       :name "fridge")
        ))
 ;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
 (setq *task-wrench-list*
       (list
+       ;; faucet
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
+       ;; IH
        (float-vector 0 0 -1 0 0 0)
+       ;; table
+       (float-vector 0 0 1 0 0 0)
+       ;; microwave
        (float-vector 0 0 -1 0 0 0)
-       (float-vector 0 0 -1 0 0 0)
+       ;; fridge
+       (float-vector 0 0 1 0 0 0)
+       (float-vector 0 0 1 0 0 0)
+       (float-vector 0 0 1 0 0 0)
        (float-vector 0 0 1 0 0 0)
        (float-vector 0 0 1 0 0 0)
        ))
@@ -96,7 +125,7 @@
       (mapcar #'(lambda (coords wrench)
                   (if (equal (subseq wrench 0 3) (float-vector 0 0 0))
                       nil
-                    (make-single-arrow :length 300
+                    (make-single-arrow :length 200
                                        :pos (send coords :worldpos)
                                        :axis (subseq wrench 0 3)
                                        :color #f(1 0.3 1))))
@@ -123,6 +152,7 @@
      (post-process-func)
      (visualize-callback-func)
      (base-size-task-scale)
+     (debug-view t)
      &allow-other-keys
      )
   (let* ((additional-draw-objects
@@ -131,11 +161,12 @@
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
                   *task-arrow-list*)))
     ;; 2. Visualize
-    (unless (boundp '*irtviewer*)
-      (make-irtviewer))
-    (send *irtviewer* :objects additional-draw-objects)
-    (set-room610-viewpoint)
-    (send *irtviewer* :draw-objects)
+    (when debug-view
+      (unless (boundp '*irtviewer*)
+        (make-irtviewer))
+      (send *irtviewer* :objects additional-draw-objects)
+      (set-room610-viewpoint)
+      (send *irtviewer* :draw-objects))
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     (send *robot* :leg-init :pos 50)
@@ -233,7 +264,7 @@
                           :min-loop 30
                           ;; :stop 100
                           ;; :min-loop 100
-                          :debug-view (list :additional-draw-objects additional-draw-objects)
+                          :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                           :adjacent-regular-scale 0.0
                           :pre-process-func pre-process-func
                           :post-process-func post-process-func))
@@ -250,6 +281,15 @@
                  (contact-target-coords-list (send config-task :contact-target-coords-list)))
             (format t "angle vector~%")
             (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+            ;; Look at vacuum base shape
+            (when (and debug-view (eq i 0))
+              (let ((robot (copy-object *robot*))
+                    (v (make-irtviewer))) ;; Note that *irtviewer* is overwritten
+                (send robot :angle-vector
+                      (send (send config-task :robot-env) :robot :angle-vector))
+                (send v :objects (list robot))
+                (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 0.0 -1.0))
+                (send v :draw-objects))))
             (format t "base size~%")
             (let* ((robot (send (send config-task :robot-env) :robot))
                    (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
