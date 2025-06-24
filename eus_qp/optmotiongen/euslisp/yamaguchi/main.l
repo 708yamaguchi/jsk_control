@@ -11,6 +11,7 @@
 ;; 1. Prepare task environment
 ;; If you change task configuration, change only this section.
 ;; The following variables are the same length and correspond in order
+;; 全く同じ位置の平面は与えられなかったので、同じ場所で複数タスクを行う場合は微小量だけ動かした平面を利用
 (setq *attachable-plane-list*
       (list
        (instance attachable-plane :init
@@ -48,7 +49,15 @@
                  :min-angle-list (list 6720 2010)
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
+       (instance attachable-plane :init
+                 :offset 1850.1
+                 :min-angle-list (list 6720 2010)
+                 :max-angle-list (list 7300 2520)
+                 :normal :z+)
        ))
+;; TODO ただのcoordsを使う
+;; タスク名を付けて、同じタスク名だと同じ場所ということにする。
+;; *same-position-task-index*をグローバルに与えずに、関数内部で計算できるようになる。
 (setq *task-coords-list*
       (list
        ;; 蛇口
@@ -72,6 +81,9 @@
        ;; 冷蔵庫
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
+       ;; 冷蔵庫
+       (send (instance arrow-object :init) :newcoords
+             (make-coords :pos (float-vector 7000 2500 1850) :rpy (list 0 0 0)))
        ))
 ;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
@@ -83,7 +95,8 @@
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
-       (float-vector 0 0 -1 0 0 0)
+       (float-vector 0 0 1 0 0 0)
+       (float-vector 0 0 1 0 0 0)
        ))
 ;; 可視化用オブジェクト。(send-all *task-arrow-list* :worldcoords)などはしない。
 (setq *task-arrow-list*
@@ -96,6 +109,11 @@
                                        :color #f(1 0.3 1))))
               *task-coords-list* *task-wrench-list*))
 (setq *task-arrow-list* (remove nil *task-arrow-list*))
+;; (list i j)は、i, i+1, j, j+1番目のタスクが同じ場所で実行されるという意味
+(setq *same-position-task-index*
+      (list (list 0 1)
+            (list 6)
+            ))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
   (print "Task definition is wrong.")
@@ -157,6 +175,7 @@
                                              (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
                                              ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
+           temporary-invariant-joint-list adjacent-regular-scale-list
            (external-coords-list (mapcar #'list *task-coords-list*))
            (external-wrench-list (mapcar #'list *task-wrench-list*))
            )
@@ -167,7 +186,7 @@
           (dotimes (j limb-size)
             (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
                                                           :face :margin 0
-                                                          :name (format nil "~A," j) ;; (format nil "~A,~A" i j)
+                                                          :name (format nil "~A,~A" i j)
                                                           )))))
           (setq target-coords-list
                 (append target-coords-list
@@ -177,11 +196,6 @@
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list
-                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg0-coords) :worldcoords))
-                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg1-coords) :worldcoords))
-                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg2-coords) :worldcoords))
-                                                ;; (instance rigid-leg-contact-constraint :init-from-coords (send (send *robot* :get :rigid-leg3-coords) :worldcoords))
-                                                ;; (instance vacuum-pad-contact-constraint :init-from-coords (send (send *robot* :get :vacuum-pad-coords) :worldcoords))
                                                 (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 0, ~A" i))
                                                 (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 1, ~A" i))
                                                 (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 2, ~A" i))
@@ -192,6 +206,16 @@
         )
       (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
       (setq contact-move-target-list (mapcar #'cdr move-target-list))
+      (dolist (j (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x
+                       :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y
+                       :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x
+                       :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y
+                       :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z))
+        (dolist (i *same-position-task-index*)
+          (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (append (list j) i))))))
+      (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
+      (dolist (l (flatten *same-position-task-index*))
+        (setf (elt adjacent-regular-scale-list l) 5e-4))
       (setq sqp-opt (send *robot*
                           :inverse-kinematics-statics-trajectory-optmotiongen
                           target-coords-list
@@ -207,16 +231,8 @@
                           ;; :collision-avoidance-link-pair collision-avoidance-link-pair
                           ;; :collision-distance-limit -0.5
                           :invariant-joint-list (send *robot* :invariant-joint-list)
-                          :temporary-invariant-joint-list
-                          ;; TODO: 関節名を自動的に与える。ロボットモデルのクラスを使う？
-                          (list (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x 0 1 2)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y 0 1 2)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x 0 1 2)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y 0 1 2)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z 0 1 2)
-                                )
-                          :adjacent-regular-scale-list
-                          (list 5e-4 5e-4 0 0 0 0)
+                          :temporary-invariant-joint-list temporary-invariant-joint-list
+                          :adjacent-regular-scale-list adjacent-regular-scale-list
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
                           :stop 50
