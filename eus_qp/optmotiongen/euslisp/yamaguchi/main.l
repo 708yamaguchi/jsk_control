@@ -14,36 +14,56 @@
 ;; 全く同じ位置の平面は与えられなかったので、同じ場所で複数タスクを行う場合は微小量だけ動かした平面を利用
 (setq *attachable-plane-list*
       (list
+       ;; faucet
        (instance attachable-plane :init
                  :offset 900
                  :min-angle-list (list 7800 -250)
                  :max-angle-list (list 8300 600)
                  :normal :z+)
-       (instance attachable-plane :init
-                 :offset 900.001
-                 :min-angle-list (list 7800 -250)
-                 :max-angle-list (list 8300 600)
-                 :normal :z+)
-       (instance attachable-plane :init
-                 :offset 900.002
-                 :min-angle-list (list 7800 -250)
-                 :max-angle-list (list 8300 600)
-                 :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 900.001
+       ;;           :min-angle-list (list 7800 -250)
+       ;;           :max-angle-list (list 8300 600)
+       ;;           :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 900.002
+       ;;           :min-angle-list (list 7800 -250)
+       ;;           :max-angle-list (list 8300 600)
+       ;;           :normal :z+)
+       ;; IH
        (instance attachable-plane :init
                  :offset 8500
-                 :min-angle-list (list -1250 1100)
+                 :min-angle-list (list -1250 1000)
                  :max-angle-list (list 1600 2000)
                  :normal :x-)
+       (instance attachable-plane :init
+                 :offset 8500.001
+                 :min-angle-list (list -1250 1000)
+                 :max-angle-list (list 1600 2000)
+                 :normal :x-)
+       ;; table
        (instance attachable-plane :init
                  :offset 720
                  :min-angle-list (list 4300 -700)
                  :max-angle-list (list 5000 150)
                  :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 720.001
+       ;;           :min-angle-list (list 4300 -700)
+       ;;           :max-angle-list (list 5000 150)
+       ;;           :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 720.002
+       ;;           :min-angle-list (list 4300 -700)
+       ;;           :max-angle-list (list 5000 150)
+       ;;           :normal :z+)
+       ;; microwave
        (instance attachable-plane :init
                  :offset 1200
                  :min-angle-list (list 6050 1870)
                  :max-angle-list (list 6450 2150)
                  :normal :z+)
+       ;; fridge
        (instance attachable-plane :init
                  :offset 1850
                  :min-angle-list (list 6720 2010)
@@ -70,22 +90,25 @@
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
        ))
-;; TODO ただのcoordsを使う
-;; TODO タスク名を付けて、同じタスク名だと同じ場所ということにする。
-;; TODO *same-position-task-index*をグローバルに与えずに、関数内部で計算できるようになる。
 ;; 注意：同じ場所で実行するタスクは、リストの隣り合う要素として記述すること
 (setq *task-coords-list*
       (list
        (make-cascoords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0)
                        :name "faucet")
-       (make-cascoords :pos (float-vector 8000 600 1000) :rpy (list (deg2rad 60) 0 0)
-                       :name "faucet")
-       (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)
-                       :name "faucet")
-       (make-cascoords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)
+       ;; (make-cascoords :pos (float-vector 8300 700 1100) :rpy (list (deg2rad 60) 0 0)
+       ;;                 :name "faucet")
+       ;; (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)
+       ;;                 :name "faucet")
+       (make-cascoords :pos (float-vector 8200 -600 1000) :rpy (list 0 0 0)
+                       :name "IH")
+       (make-cascoords :pos (float-vector 8200 -500 1000) :rpy (list 0 0 0)
                        :name "IH")
        (make-cascoords :pos (float-vector 4600 200 720) :rpy (list 0 0 0)
                        :name "table")
+       ;; (make-cascoords :pos (float-vector 4500 100 730) :rpy (list 0 0 0)
+       ;;                 :name "table")
+       ;; (make-cascoords :pos (float-vector 4600 0 720) :rpy (list 0 0 0)
+       ;;                 :name "table")
        (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)
                        :name "microwave")
        (make-cascoords :pos (float-vector 6900 2400 1850) :rpy (list 0 0 0)
@@ -105,12 +128,15 @@
       (list
        ;; faucet
        (float-vector 0 0 -1 0 0 0)
-       (float-vector 0 0 -1 0 0 0)
-       (float-vector 0 0 -1 0 0 0)
+       ;; (float-vector 0 0 -1 0 0 0)
+       ;; (float-vector 0 0 -1 0 0 0)
        ;; IH
        (float-vector 0 0 -1 0 0 0)
+       (float-vector 0 0 -1 0 0 0)
        ;; table
-       (float-vector 0 0 1 0 0 0)
+       (float-vector 0 0 -1 0 0 0)
+       ;; (float-vector 0 0 -1 0 0 0)
+       ;; (float-vector 0 0 -1 0 0 0)
        ;; microwave
        (float-vector 0 0 -1 0 0 0)
        ;; fridge
