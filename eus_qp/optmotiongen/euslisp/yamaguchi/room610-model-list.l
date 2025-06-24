@@ -23,6 +23,45 @@
         #f(6740.47 1058.99 706.424)
         #f(0.0 0.0 1.0)))
 
+(defun set-viewpoint (name)
+  (cond ((equal name "room610")
+         (send *irtviewer* :viewer :viewing :look
+               #f(-8636.77 -8927.11 10455.5)
+               #f(6740.47 1058.99 706.424)
+               #f(0.0 0.0 1.0)))
+        ((equal name "fridge")
+         (send *irtviewer* :viewer :viewing :look
+               #f(5438.79 -481.969 4157.96)
+               #f(6253.24 873.508 3091.33)
+               #f(0.0 0.0 1.0)))
+        ((equal name "IH")
+         (send *irtviewer* :viewer :viewing :look
+               #f(5805.94 -2065.66 2831.48)
+               #f(7620.59 -975.311 1508.62)
+               #f(0.0 0.0 1.0)))
+        ((equal name "faucet")
+         (send *irtviewer* :viewer :viewing :look
+               #f(5484.0 -938.376 2915.31)
+               #f(7143.14 58.5374 1705.81)
+               #f(0.0 0.0 1.0)))
+        ((equal name "microwave")
+         (send *irtviewer* :viewer :viewing :look
+               #f(4737.65 -541.252 2497.55)
+               #f(5386.21 628.784 1929.7)
+               #f(0.0 0.0 1.0)))
+        ((equal name "table")
+         (send *irtviewer* :viewer :viewing :look
+               #f(2658.83 -1341.6 2228.54)
+               #f(5671.96 690.778 130.163)
+               #f(0.0 0.0 1.0)))
+        )
+  (send *irtviewer* :draw-objects))
+
+(defun check-viewpoints ()
+  (dolist (name (list "table" "IH" "faucet" "fridge" "microwave" "room610"))
+    (set-viewpoint name)
+    (unix:sleep 2)))
+
 ;; Arrow
 
 (require "models/arrow-object.l")

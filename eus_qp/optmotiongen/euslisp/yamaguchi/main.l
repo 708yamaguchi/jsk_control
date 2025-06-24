@@ -30,15 +30,15 @@
        ;;           :min-angle-list (list 7800 -250)
        ;;           :max-angle-list (list 8300 600)
        ;;           :normal :z+)
-       ;; IH
+       ;; IH Z軸方向で、キッチンのちょっとした側まで平面を伸ばすと成功率が上がる
        (instance attachable-plane :init
                  :offset 8500
-                 :min-angle-list (list -1250 1000)
+                 :min-angle-list (list -1250 800)
                  :max-angle-list (list 1600 2000)
                  :normal :x-)
        (instance attachable-plane :init
                  :offset 8500.001
-                 :min-angle-list (list -1250 1000)
+                 :min-angle-list (list -1250 800)
                  :max-angle-list (list 1600 2000)
                  :normal :x-)
        ;; table
@@ -47,21 +47,21 @@
                  :min-angle-list (list 4300 -700)
                  :max-angle-list (list 5000 150)
                  :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 720.001
-       ;;           :min-angle-list (list 4300 -700)
-       ;;           :max-angle-list (list 5000 150)
-       ;;           :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 720.002
-       ;;           :min-angle-list (list 4300 -700)
-       ;;           :max-angle-list (list 5000 150)
-       ;;           :normal :z+)
+       (instance attachable-plane :init
+                 :offset 720.001
+                 :min-angle-list (list 4300 -700)
+                 :max-angle-list (list 5000 150)
+                 :normal :z+)
+       (instance attachable-plane :init
+                 :offset 720.002
+                 :min-angle-list (list 4300 -700)
+                 :max-angle-list (list 5000 150)
+                 :normal :z+)
        ;; microwave
        (instance attachable-plane :init
                  :offset 1200
-                 :min-angle-list (list 6050 1870)
-                 :max-angle-list (list 6450 2150)
+                 :min-angle-list (list 6050 1850)
+                 :max-angle-list (list 6450 2200)
                  :normal :z+)
        ;; fridge
        (instance attachable-plane :init
@@ -103,12 +103,12 @@
                        :name "IH")
        (make-cascoords :pos (float-vector 8200 -500 1000) :rpy (list 0 0 0)
                        :name "IH")
-       (make-cascoords :pos (float-vector 4600 200 720) :rpy (list 0 0 0)
+       (make-cascoords :pos (float-vector 4650 0 740) :rpy (list 0 0 0)
                        :name "table")
-       ;; (make-cascoords :pos (float-vector 4500 100 730) :rpy (list 0 0 0)
-       ;;                 :name "table")
-       ;; (make-cascoords :pos (float-vector 4600 0 720) :rpy (list 0 0 0)
-       ;;                 :name "table")
+       (make-cascoords :pos (float-vector 4500 -150 740) :rpy (list 0 0 0)
+                       :name "table")
+       (make-cascoords :pos (float-vector 4650 -300 740) :rpy (list 0 0 0)
+                       :name "table")
        (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)
                        :name "microwave")
        (make-cascoords :pos (float-vector 6900 2400 1850) :rpy (list 0 0 0)
@@ -135,8 +135,8 @@
        (float-vector 0 0 -1 0 0 0)
        ;; table
        (float-vector 0 0 -1 0 0 0)
-       ;; (float-vector 0 0 -1 0 0 0)
-       ;; (float-vector 0 0 -1 0 0 0)
+       (float-vector 0 0 -1 0 0 0)
+       (float-vector 0 0 -1 0 0 0)
        ;; microwave
        (float-vector 0 0 -1 0 0 0)
        ;; fridge
@@ -191,7 +191,7 @@
       (unless (boundp '*irtviewer*)
         (make-irtviewer))
       (send *irtviewer* :objects additional-draw-objects)
-      (set-room610-viewpoint)
+      (set-viewpoint "room610")
       (send *irtviewer* :draw-objects))
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
