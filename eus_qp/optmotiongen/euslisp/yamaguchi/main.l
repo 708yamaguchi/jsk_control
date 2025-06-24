@@ -24,6 +24,11 @@
                  :max-angle-list (list 8300 600)
                  :normal :z+)
        (instance attachable-plane :init
+                 :offset 900.2
+                 :min-angle-list (list 7800 -250)
+                 :max-angle-list (list 8300 600)
+                 :normal :z+)
+       (instance attachable-plane :init
                  :offset 8500
                  :min-angle-list (list -1250 1100)
                  :max-angle-list (list 1600 2000)
@@ -52,6 +57,9 @@
        ;; 蛇口2
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 8000 600 1000) :rpy (list (deg2rad 60) 0 0)))
+       ;; 蛇口3
+       (send (instance arrow-object :init) :newcoords
+             (make-coords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)))
        ;; IH
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
@@ -69,6 +77,7 @@
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
 (setq *task-wrench-list*
       (list
+       (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
@@ -200,12 +209,14 @@
                           :invariant-joint-list (send *robot* :invariant-joint-list)
                           :temporary-invariant-joint-list
                           ;; TODO: 関節名を自動的に与える。ロボットモデルのクラスを使う？
-                          (list (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x 0 1)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y 0 1)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x 0 1)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y 0 1)
-                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z 0 1)
-                                      )
+                          (list (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x 0 1 2)
+                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y 0 1 2)
+                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x 0 1 2)
+                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y 0 1 2)
+                                (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z 0 1 2)
+                                )
+                          :adjacent-regular-scale-list
+                          (list 5e-4 5e-4 0 0 0 0)
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
                           :stop 50

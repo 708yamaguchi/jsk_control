@@ -73,10 +73,9 @@ $\bm{e}^{(l)}(\bm{q}_{\mathit{var}}^{(l)}, \bm{q}_{\mathit{invar}}) \ (l=1,2,\cd
    (&key
     (name)
     (instant-config-task-list)
-    ;; temporary-invariant-joint-listを(list (list "joint0" 0 1) (list "joint1" 4 5))とすると、以下の効果がある
-    ;; 時変変数"joint0"の角度は、instant-config-task-listの0,1番目で不変
+    ;; temporary-invariant-joint-listを(list (list "joint0" 0 1 2) (list "joint1" 4 5))とすると、以下の効果がある
+    ;; 時変変数"joint0"の角度は、instant-config-task-listの0,1,2番目で不変
     ;; 時変変数"joint1"の角度は、instant-config-task-listの4,5番目で不変
-    ;; 注意：現状では、(JOINT_NAME index1 index2)という形式しか対応しておらず、3つ以上のインデックスは渡せない
     (temporary-invariant-joint-list)
     (norm-regular-scale-max 1e-4)
     (norm-regular-scale-offset 1e-7)
@@ -110,14 +109,18 @@ Initialize instance
      (let* ((instant-config-task (car _instant-config-task-list))
             (variant-joint-list (send instant-config-task :variant-joint-list))
             (dim-variant-config (send instant-config-task :dim-variant-config))
-            target-joint-index target-joint-index-list)
+            target-joint-index target-joint-index-list target-joint-index-pair)
        (dolist (l temporary-invariant-joint-list)
          (setq target-joint-index (joint-index-func (car l) variant-joint-list))
+         (setq target-joint-index-pair
+               (mapcar #'list (subseq (cdr l) 0 (- (length (cdr l)) 1)) (cdr (cdr l))))
          (setq target-joint-index-list
-               (mapcar #'(lambda (x) (+ (* x dim-variant-config) target-joint-index))
-                       (cdr l)))
+               (mapcar #'(lambda (x)
+                           (list (+ (* (car x) dim-variant-config) target-joint-index)
+                                 (+ (* (cadr x) dim-variant-config) target-joint-index)))
+                       target-joint-index-pair))
          (setq _temporary-invariant-index-list (append _temporary-invariant-index-list
-                                                       (list target-joint-index-list))))
+                                                       target-joint-index-list)))
        ))
    )
   (:_initialize-number
