@@ -1,8 +1,6 @@
 (load "../inverse-kinematics-statics-wrapper.l")
 (load "../discrete-kinematics-configuration-task.l")
 (load "../sqp-msc-optimization.l")
-(require "models/arrow-object.l")
-(require "models/single-arrow-object.l")
 
 (load "room610-model-list.l") ;; Set *room610-model-list*
 (load "attachable-plane.l")
@@ -67,8 +65,7 @@
        (send (instance arrow-object :init) :newcoords
              (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
        ))
-;; TODO: *task-coords-list*の代わりにこちらをvisualizeする
-;; TODO: タスクに合っている力の制約を入れる。
+;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
 (setq *task-wrench-list*
       (list
@@ -79,6 +76,17 @@
        (float-vector 0 0 -1 0 0 0)
        (float-vector 0 0 -1 0 0 0)
        ))
+;; 可視化用オブジェクト。(send-all *task-arrow-list* :worldcoords)などはしない。
+(setq *task-arrow-list*
+      (mapcar #'(lambda (coords wrench)
+                  (if (equal (subseq wrench 0 3) (float-vector 0 0 0))
+                      nil
+                    (make-single-arrow :length 300
+                                       :pos (send coords :worldpos)
+                                       :axis (subseq wrench 0 3)
+                                       :color #f(1 0.3 1))))
+              *task-coords-list* *task-wrench-list*))
+(setq *task-arrow-list* (remove nil *task-arrow-list*))
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
   (print "Task definition is wrong.")
@@ -105,7 +113,7 @@
           (append *room610-model-list*
                   (send-all *attachable-plane-list* :object)
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                  *task-coords-list*)))
+                  *task-arrow-list*)))
     ;; 2. Visualize
     (unless (boundp '*irtviewer*)
       (make-irtviewer))
