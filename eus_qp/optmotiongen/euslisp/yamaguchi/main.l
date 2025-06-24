@@ -259,6 +259,7 @@
           (setq same-position-task-index (append same-position-task-index (list i)))))
       (dolist (j (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y
+                       :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-z
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z))
