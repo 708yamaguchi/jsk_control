@@ -49,21 +49,21 @@
                  :min-angle-list (list 6720 2010)
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
-       (instance attachable-plane :init
-                 :offset 1850.001
-                 :min-angle-list (list 6720 2010)
-                 :max-angle-list (list 7300 2520)
-                 :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 1850.001
+       ;;           :min-angle-list (list 6720 2010)
+       ;;           :max-angle-list (list 7300 2520)
+       ;;           :normal :z+)
        (instance attachable-plane :init
                  :offset 1850.002
                  :min-angle-list (list 6720 2010)
                  :max-angle-list (list 7300 2520)
                  :normal :z+)
-       (instance attachable-plane :init
-                 :offset 1850.003
-                 :min-angle-list (list 6720 2010)
-                 :max-angle-list (list 7300 2520)
-                 :normal :z+)
+       ;; (instance attachable-plane :init
+       ;;           :offset 1850.003
+       ;;           :min-angle-list (list 6720 2010)
+       ;;           :max-angle-list (list 7300 2520)
+       ;;           :normal :z+)
        (instance attachable-plane :init
                  :offset 1850.004
                  :min-angle-list (list 6720 2010)
@@ -90,12 +90,12 @@
                        :name "microwave")
        (make-cascoords :pos (float-vector 6900 2400 1850) :rpy (list 0 0 0)
                        :name "fridge")
-       (make-cascoords :pos (float-vector 6850 2325 1850) :rpy (list 0 0 0)
-                       :name "fridge")
+       ;; (make-cascoords :pos (float-vector 6850 2325 1850) :rpy (list 0 0 0)
+       ;;                 :name "fridge")
        (make-cascoords :pos (float-vector 6800 2250 1850) :rpy (list 0 0 0)
                        :name "fridge")
-       (make-cascoords :pos (float-vector 6850 2175 1850) :rpy (list 0 0 0)
-                       :name "fridge")
+       ;; (make-cascoords :pos (float-vector 6850 2175 1850) :rpy (list 0 0 0)
+       ;;                 :name "fridge")
        (make-cascoords :pos (float-vector 6900 2100 1850) :rpy (list 0 0 0)
                        :name "fridge")
        ))
@@ -115,9 +115,9 @@
        (float-vector 0 0 -1 0 0 0)
        ;; fridge
        (float-vector 0 0 1 0 0 0)
+       ;; (float-vector 0 0 1 0 0 0)
        (float-vector 0 0 1 0 0 0)
-       (float-vector 0 0 1 0 0 0)
-       (float-vector 0 0 1 0 0 0)
+       ;; (float-vector 0 0 1 0 0 0)
        (float-vector 0 0 1 0 0 0)
        ))
 ;; 可視化用オブジェクト。(send-all *task-arrow-list* :worldcoords)などはしない。
@@ -260,8 +260,9 @@
                           :adjacent-regular-scale-list adjacent-regular-scale-list
                           :root-virtual-mode :6dof
                           :optimize-torque? nil
-                          :stop 50
-                          :min-loop 30
+                          :min-loop 10
+                          ;; :stop 50
+                          ;; :min-loop 30
                           ;; :stop 100
                           ;; :min-loop 100
                           :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
