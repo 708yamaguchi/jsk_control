@@ -56,34 +56,27 @@
                  :normal :z+)
        ))
 ;; TODO ただのcoordsを使う
-;; タスク名を付けて、同じタスク名だと同じ場所ということにする。
-;; *same-position-task-index*をグローバルに与えずに、関数内部で計算できるようになる。
+;; TODO タスク名を付けて、同じタスク名だと同じ場所ということにする。
+;; TODO *same-position-task-index*をグローバルに与えずに、関数内部で計算できるようになる。
+;; 注意：同じ場所で実行するタスクは、リストの隣り合う要素として記述すること
 (setq *task-coords-list*
       (list
-       ;; 蛇口
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0)))
-       ;; 蛇口2
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 8000 600 1000) :rpy (list (deg2rad 60) 0 0)))
-       ;; 蛇口3
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)))
-       ;; IH
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)))
-       ;; 中央の机
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 4600 200 720) :rpy (list 0 0 0)))
-       ;; 電子レンジ
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)))
-       ;; 冷蔵庫
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)))
-       ;; 冷蔵庫
-       (send (instance arrow-object :init) :newcoords
-             (make-coords :pos (float-vector 7000 2500 1850) :rpy (list 0 0 0)))
+       (make-cascoords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0)
+                    :name "faucet")
+       (make-cascoords :pos (float-vector 8000 600 1000) :rpy (list (deg2rad 60) 0 0)
+                    :name "faucet")
+       (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)
+                    :name "faucet")
+       (make-cascoords :pos (float-vector 8200 -800 1000) :rpy (list 0 0 0)
+                    :name "IH")
+       (make-cascoords :pos (float-vector 4600 200 720) :rpy (list 0 0 0)
+                    :name "table")
+       (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)
+                    :name "microwave")
+       (make-cascoords :pos (float-vector 7000 2400 1850) :rpy (list 0 0 0)
+                    :name "fridge")
+       (make-cascoords :pos (float-vector 7000 2500 1850) :rpy (list 0 0 0)
+                    :name "fridge")
        ))
 ;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
@@ -109,11 +102,7 @@
                                        :color #f(1 0.3 1))))
               *task-coords-list* *task-wrench-list*))
 (setq *task-arrow-list* (remove nil *task-arrow-list*))
-;; (list i j)は、i, i+1, j, j+1番目のタスクが同じ場所で実行されるという意味
-(setq *same-position-task-index*
-      (list (list 0 1)
-            (list 6)
-            ))
+
 (unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
              (eq (length *task-coords-list*) (length *task-wrench-list*)))
   (print "Task definition is wrong.")
@@ -175,7 +164,7 @@
                                              (list (elt (send *robot* :links) 0) (car (last (send *robot* :links))))
                                              ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
-           temporary-invariant-joint-list adjacent-regular-scale-list
+           same-position-task-index temporary-invariant-joint-list adjacent-regular-scale-list
            (external-coords-list (mapcar #'list *task-coords-list*))
            (external-wrench-list (mapcar #'list *task-wrench-list*))
            )
@@ -206,15 +195,20 @@
         )
       (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
       (setq contact-move-target-list (mapcar #'cdr move-target-list))
+      ;; same-position-task-indexが(list i j)のとき、i, i+1, j, j+1番目のタスクが同じ場所で実行されるという意味
+      (dotimes (i (- (length *task-coords-list*) 1))
+        (when (equal (send (elt *task-coords-list* i) :name)
+                     (send (elt *task-coords-list* (+ i 1)) :name))
+          (setq same-position-task-index (append same-position-task-index (list i)))))
       (dolist (j (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z))
-        (dolist (i *same-position-task-index*)
-          (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (append (list j) i))))))
+        (dolist (i same-position-task-index)
+          (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (list j i))))))
       (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
-      (dolist (l (flatten *same-position-task-index*))
+      (dolist (l same-position-task-index)
         (setf (elt adjacent-regular-scale-list l) 5e-4))
       (setq sqp-opt (send *robot*
                           :inverse-kinematics-statics-trajectory-optmotiongen
