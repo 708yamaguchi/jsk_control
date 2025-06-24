@@ -61,10 +61,13 @@
            ;; friction
            (instance 2D-translational-friction-contact-constraint :init 0.8)
            (instance rotational-friction-contact-constraint :init 0.02 :fz)
+           ;; moment
+           ;; 剛体脚がモーメントを発生させられることにより、吸着パッド全体で大きなモーメントに耐えられる
+           (instance 2D-cop-contact-constraint :init 15 -15 15 -15)
+           ;; (instance no-moment-constraint :init)
            ;; fz
            ;; (instance min-max-contact-constraint :init :fz 0 :min/max :min)
            (instance norm-contact-constraint :init :fz)
-           (instance no-moment-constraint :init)
            )))
 
    (send-super :init :name name)
@@ -89,14 +92,18 @@
    (setq contact-constraint-list
          (append
           (list
-           ;; friction
-           ;; (instance 2D-translational-friction-contact-constraint :init 0.8)
-           ;; (instance rotational-friction-contact-constraint :init 0.02 :fz)
-           (instance no-friction-constraint :init)
-           (instance no-moment-constraint :init)
-           ;; (instance norm-contact-constraint :init :fz :norm -1)
+           ;; ;; friction
+           (instance 2D-translational-friction-contact-constraint :init -0.8) ;; negative value because suction is negative force
+           (instance rotational-friction-contact-constraint :init -0.02 :fz) ;; negative value because suction is negative force
+           ;; (instance no-friction-constraint :init)
+           ;; moment
+           ;; COP制約を大きくすると、吸着パッドが大きなモーメントを発生させられるので、剛体脚のサイズが小さくてすむ
+           (instance 2D-cop-contact-constraint :init -40 40 -40 40) ;; min/max is swapped because of the negative force
+           ;; (instance 2D-cop-contact-constraint :init -80 80 -80 80) ;; 吸着パッドより大きいCOPを採用した例（現実ではありえない）
+           ;; (instance no-moment-constraint :init)
+           ;; fz
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
-           ;; (instance min-max-contact-constraint :init :fz -50 :min/max :max)
+           (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
            )))
 
    (send-super :init :name name)
