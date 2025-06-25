@@ -163,6 +163,6 @@
        *faucet-task*
        *IH-task*
        *table-task*
-       ;; *microwave-task*
-       ;; *fridge-task*
+       *microwave-task*
+       *fridge-task*
        ))
