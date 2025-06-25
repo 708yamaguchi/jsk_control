@@ -206,6 +206,7 @@
                               (send *robot* :get :rigid-leg2-coords)
                               (send *robot* :get :rigid-leg3-coords)
                               (send *robot* :get :vacuum-pad-coords)
+                              (send *robot* :get :vacuum-pad-normal-coords)
                               ))
            (limb-size (1- (length move-target)))
            (task-target-coords (send-all *task-coords-list* :copy-worldcoords))
@@ -242,11 +243,12 @@
         (setq contact-constraint-list (append contact-constraint-list
                                               (list
                                                (list
-                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 0, ~A" i))
-                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 1, ~A" i))
-                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 2, ~A" i))
-                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 3, ~A" i))
-                                                (instance vacuum-pad-contact-constraint :init :name (format nil "vacuum-pad ~A" i))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 0, ~A" i) :size 15)
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 1, ~A" i) :size 15)
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 2, ~A" i) :size 15)
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 3, ~A" i) :size 15)
+                                                (instance vacuum-pad-contact-constraint :init :name (format nil "vacuum-pad-negative ~A" i))
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "vacuum-pad-normal ~A" i) :size 40)
                                                 )
                                                )))
         )

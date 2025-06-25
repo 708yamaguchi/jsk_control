@@ -50,7 +50,7 @@
 
 (defmethod rigid-leg-contact-constraint
   (:init
-   (&key (name))
+   (&key (name) (size))
    "Calc default constraint matrix.
     This is include 2D friction force, 1D rotational friction moment, non-negative normal force, and 2D-COP constraint,
     e.g., for foot constraint.
@@ -63,7 +63,7 @@
            (instance rotational-friction-contact-constraint :init 0.02 :fz)
            ;; moment
            ;; 剛体脚がモーメントを発生させられることにより、吸着パッド全体で大きなモーメントに耐えられる
-           (instance 2D-cop-contact-constraint :init 15 -15 15 -15)
+           (instance 2D-cop-contact-constraint :init size (* -1 size) size (* -1 size))
            ;; (instance no-moment-constraint :init)
            ;; fz
            ;; (instance min-max-contact-constraint :init :fz 0 :min/max :min)
@@ -93,17 +93,17 @@
          (append
           (list
            ;; ;; friction
-           (instance 2D-translational-friction-contact-constraint :init -0.8) ;; negative value because suction is negative force
-           (instance rotational-friction-contact-constraint :init -0.02 :fz) ;; negative value because suction is negative force
-           ;; (instance no-friction-constraint :init)
+           ;; (instance 2D-translational-friction-contact-constraint :init -0.8) ;; negative value because suction is negative force
+           ;; (instance rotational-friction-contact-constraint :init -0.02 :fz) ;; negative value because suction is negative force
+           (instance no-friction-constraint :init)
            ;; moment
            ;; COP制約を大きくすると、吸着パッドが大きなモーメントを発生させられるので、剛体脚のサイズが小さくてすむ
-           (instance 2D-cop-contact-constraint :init -40 40 -40 40) ;; min/max is swapped because of the negative force
+           ;; (instance 2D-cop-contact-constraint :init -40 40 -40 40) ;; min/max is swapped because of the negative force
            ;; (instance 2D-cop-contact-constraint :init -80 80 -80 80) ;; 吸着パッドより大きいCOPを採用した例（現実ではありえない）
-           ;; (instance no-moment-constraint :init)
+           (instance no-moment-constraint :init)
            ;; fz
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
-           (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
+           ;; (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
            )))
 
    (send-super :init :name name)

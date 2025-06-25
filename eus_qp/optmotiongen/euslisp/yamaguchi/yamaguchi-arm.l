@@ -105,6 +105,35 @@
      (send vacuum-pad-link :assoc vacuum-pad-coords)
      (send self :put :vacuum-pad-coords vacuum-pad-coords)
      )
+   ;; 垂直抗力用
+   (let* ((base-link (find "base_link" (send self :links)
+                           :test #'(lambda (x y) (equal x (send y :name)))))
+          (height 10)
+          (vacuum-pad (make-cylinder 40 height))
+          vacuum-pad-link vacuum-pad-joint vacuum-pad-coords
+          )
+     (send vacuum-pad :set-color #f(0.3 0.3 1))
+     (setq vacuum-pad-link (instance bodyset-link
+                                     :init (make-cascoords)
+                                     :bodies (list vacuum-pad)
+                                     :name "vacuum_pad_normal"))
+     (send base-link :assoc vacuum-pad-link)
+     (setq vacuum-pad-joint
+           (instance rotational-joint :init
+                     :name "vacuum_pad_joint"
+                     :parent-link base-link :child-link vacuum-pad-link
+                     :axis (float-vector 0 0 1)
+                     :min 0 :max 0
+                     :max-joint-velocity 0
+                     :max-joint-torque 0))
+     (setq links (append links (list vacuum-pad-link)))
+     (setq joint-list (append joint-list (list vacuum-pad-joint)))
+     (setq vacuum-pad-coords (make-cascoords
+                              :coords (send vacuum-pad-link :copy-worldcoords)
+                              :name ":vacuum-pad-normal-coords"))
+     (send vacuum-pad-link :assoc vacuum-pad-coords)
+     (send self :put :vacuum-pad-normal-coords vacuum-pad-coords)
+     )
    nil)
   (:invariant-joint-list
    ()
