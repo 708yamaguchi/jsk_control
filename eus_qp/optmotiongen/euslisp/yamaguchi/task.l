@@ -48,20 +48,18 @@
                 :attachable-plane-obj
                 (instance attachable-plane :init
                           :offset 900
-                          :min-angle-list (list 7800 -250)
-                          :max-angle-list (list 8300 600)
+                          :min-angle-list (list 7730 -270)
+                          :max-angle-list (list 8320 590)
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0))
-                 ;; (make-cascoords :pos (float-vector 8300 700 1100) :rpy (list (deg2rad 60) 0 0))
-                 ;; (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0))
+                 (make-cascoords :pos (float-vector 8100 700 1000) :rpy (list (deg2rad 60) 0 0))
+                 (make-cascoords :pos (float-vector 8200 700 1100) :rpy (list (deg2rad 60) 0 0))
                  )
                 :wrench-list
                 (list
                  (float-vector 0 0 -1 0 0 0)
-                 ;; (float-vector 0 0 -1 0 0 0)
-                 ;; (float-vector 0 0 -1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
                  )
                 ))
 
@@ -72,16 +70,18 @@
                 ;; 平面をキッチンの下側まで伸ばすと成功率が上がった
                 (instance attachable-plane :init
                           :offset 8500
-                          :min-angle-list (list -1250 800)
+                          :min-angle-list (list -1250 1000)
                           :max-angle-list (list 1600 2000)
                           :normal :x-)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 8200 -600 1000) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 8200 -500 1000) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 8200 -700 1200) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 8100 -600 1200) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 8200 -500 1200) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
+                 (float-vector 0 0 -1 0 0 0)
                  (float-vector 0 0 -1 0 0 0)
                  (float-vector 0 0 -1 0 0 0)
                  )
@@ -93,22 +93,22 @@
                 :attachable-plane-obj
                 (instance attachable-plane :init
                           :offset 720
-                          :min-angle-list (list 4300 -700)
-                          :max-angle-list (list 5000 150)
+                          :min-angle-list (list 4350 -650)
+                          :max-angle-list (list 4950 100)
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 4700 -50 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4400 -150 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4400 -450 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4700 -550 740) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 4450 -550 740) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 4450 0 740) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 4850 -550 740) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 4850 0 740) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
                  )
                 ))
 
@@ -144,17 +144,17 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 7000 2450 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 6750 2350 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 6750 2150 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 7000 2050 1850) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 6750 2050 1850) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 6750 2450 1850) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 7200 2050 1850) :rpy (list 0 0 0))
+                 ;; (make-cascoords :pos (float-vector 7200 2450 1850) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 4 0 0 0)
+                 (float-vector 0 0 4 0 0 0)
+                 (float-vector 0 0 4 0 0 0)
+                 ;; (float-vector 0 0 3 0 0 0)
                  )
                 ))
 
@@ -162,7 +162,7 @@
       (list
        *faucet-task*
        *IH-task*
-       *table-task*
-       *microwave-task*
+       ;; *table-task*
+       ;; *microwave-task*
        *fridge-task*
        ))
