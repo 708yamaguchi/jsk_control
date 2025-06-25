@@ -70,7 +70,7 @@
                 ;; 平面をキッチンの下側まで伸ばすと成功率が上がった
                 (instance attachable-plane :init
                           :offset 8500
-                          :min-angle-list (list -1250 1000)
+                          :min-angle-list (list -1250 800)
                           :max-angle-list (list 1600 2000)
                           :normal :x-)
                 :coords-list
@@ -162,7 +162,7 @@
       (list
        *faucet-task*
        *IH-task*
-       ;; *table-task*
-       ;; *microwave-task*
+       *table-task*
+       *microwave-task*
        *fridge-task*
        ))
