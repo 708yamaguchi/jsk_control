@@ -73,11 +73,13 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
 ;; パラメータが小さいと細長いベース形状が出やすいが、
 ;; 収束可能なギリギリまで大きくすると正方形に近い形状（目的関数を満たす形状）が出やすくなる
 ;; (defconstant *default-base-size-task-scale* (* 0.5 1e-3))
-(defconstant *default-base-size-task-scale* (* 0.5 1e-4))
+;; (defconstant *default-base-size-task-scale* (* 0.5 1e-4))
 ;; (defconstant *default-base-size-task-scale* (* 1.2 1e-4)) ;; 収束
 ;; (defconstant *default-base-size-task-scale* (* 8.0 1e-4)) ;; 惜しい
 ;; (defconstant *default-base-size-task-scale* (* 5.0 1e-4)) ;; 逆に、結構ダメ
 ;; (defconstant *default-base-size-task-scale* (* 10.0 1e-4)) ;; 2番目に惜しい
+
+(defconstant *default-base-size-task-scale* (* 3.0 1e-4)) ;; 収束
 
 ;; (defconstant *default-base-size-task-scale* 0)
 (unless (boundp '*base-size-task-scale*)

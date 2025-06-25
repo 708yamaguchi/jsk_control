@@ -59,8 +59,9 @@
          (append
           (list
            ;; friction
-           (instance 2D-translational-friction-contact-constraint :init 0.8)
-           (instance rotational-friction-contact-constraint :init 0.02 :fz)
+           ;; 静止摩擦係数を下げると、逆に収束しやすくなる（出力されるベースサイズが小さくなる）ことがある。
+           (instance 2D-translational-friction-contact-constraint :init 0.5)
+           (instance rotational-friction-contact-constraint :init 0.01 :fz)
            ;; moment
            ;; 剛体脚がモーメントを発生させられることにより、吸着パッド全体で大きなモーメントに耐えられる
            (instance 2D-cop-contact-constraint :init size (* -1 size) size (* -1 size))
