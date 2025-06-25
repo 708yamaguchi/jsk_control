@@ -164,7 +164,7 @@
              (instant-config-task-list (send traj-config-task :instant-config-task-list)))
         (format t "~%===== Result (in world coords) =====~%")
         (dotimes (i (length instant-config-task-list))
-          (format t "task~A~%" i)
+          (format t "task ~A: ~A~%" i (send (elt task-coords-list i) :name))
           (let* ((config-task (elt instant-config-task-list i))
                  (contact-attention-coords-list (send config-task :contact-attention-coords-list))
                  (contact-target-coords-list (send config-task :contact-target-coords-list)))
