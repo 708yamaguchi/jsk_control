@@ -124,10 +124,12 @@
                 :coords-list
                 (list
                  (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 6200 1700 1100) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 -1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
                  )
                 ))
 
