@@ -60,7 +60,8 @@ normalは:x-, :x+, :y-, :y+, :z-, :z+
             (send arrow :rotate -pi/2 :x)))
      arrow))
   (:offset
-   ()
+   (&optional (offset))
+   (when offset (setq _offset offset))
    _offset)
   (:min-angle-list
    ()

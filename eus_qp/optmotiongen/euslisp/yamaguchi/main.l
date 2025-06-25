@@ -3,174 +3,10 @@
 (load "../sqp-msc-optimization.l")
 
 (load "room610-model-list.l") ;; Set *room610-model-list*
-(load "attachable-plane.l")
+(load "task.l") ;; Set *tasks*
 (load "yamaguchi-arm.l") ;; Define (yamaguchi-arm) function
 (load "contact-constrant-models.l")
 (load "base-shape-constraint.l") ;; Add equality constraint for base shape
-
-;; 1. Prepare task environment
-;; If you change task configuration, change only this section.
-;; The following variables are the same length and correspond in order
-;; 全く同じ位置の平面は与えられなかったので、同じ場所で複数タスクを行う場合は微小量だけ動かした平面を利用
-(setq *attachable-plane-list*
-      (list
-       ;; ;; faucet
-       ;; (instance attachable-plane :init
-       ;;           :offset 900
-       ;;           :min-angle-list (list 7800 -250)
-       ;;           :max-angle-list (list 8300 600)
-       ;;           :normal :z+)
-       ;; ;; (instance attachable-plane :init
-       ;; ;;           :offset 900.001
-       ;; ;;           :min-angle-list (list 7800 -250)
-       ;; ;;           :max-angle-list (list 8300 600)
-       ;; ;;           :normal :z+)
-       ;; ;; (instance attachable-plane :init
-       ;; ;;           :offset 900.002
-       ;; ;;           :min-angle-list (list 7800 -250)
-       ;; ;;           :max-angle-list (list 8300 600)
-       ;; ;;           :normal :z+)
-       ;; ;; IH Z軸方向で、キッチンのちょっとした側まで平面を伸ばすと成功率が上がる
-       ;; (instance attachable-plane :init
-       ;;           :offset 8500
-       ;;           :min-angle-list (list -1250 800)
-       ;;           :max-angle-list (list 1600 2000)
-       ;;           :normal :x-)
-       ;; (instance attachable-plane :init
-       ;;           :offset 8500.001
-       ;;           :min-angle-list (list -1250 800)
-       ;;           :max-angle-list (list 1600 2000)
-       ;;           :normal :x-)
-       ;; table
-       (instance attachable-plane :init
-                 :offset 720
-                 :min-angle-list (list 4300 -700)
-                 :max-angle-list (list 5000 150)
-                 :normal :z+)
-       (instance attachable-plane :init
-                 :offset 720.001
-                 :min-angle-list (list 4300 -700)
-                 :max-angle-list (list 5000 150)
-                 :normal :z+)
-       (instance attachable-plane :init
-                 :offset 720.002
-                 :min-angle-list (list 4300 -700)
-                 :max-angle-list (list 5000 150)
-                 :normal :z+)
-       (instance attachable-plane :init
-                 :offset 720.003
-                 :min-angle-list (list 4300 -700)
-                 :max-angle-list (list 5000 150)
-                 :normal :z+)
-       ;; ;; microwave
-       ;; (instance attachable-plane :init
-       ;;           :offset 1200
-       ;;           :min-angle-list (list 6050 1850)
-       ;;           :max-angle-list (list 6450 2200)
-       ;;           :normal :z+)
-       ;; ;; fridge
-       ;; (instance attachable-plane :init
-       ;;           :offset 1850
-       ;;           :min-angle-list (list 6720 2010)
-       ;;           :max-angle-list (list 7300 2520)
-       ;;           :normal :z+)
-       ;; ;; (instance attachable-plane :init
-       ;; ;;           :offset 1850.001
-       ;; ;;           :min-angle-list (list 6720 2010)
-       ;; ;;           :max-angle-list (list 7300 2520)
-       ;; ;;           :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 1850.002
-       ;;           :min-angle-list (list 6720 2010)
-       ;;           :max-angle-list (list 7300 2520)
-       ;;           :normal :z+)
-       ;; ;; (instance attachable-plane :init
-       ;; ;;           :offset 1850.003
-       ;; ;;           :min-angle-list (list 6720 2010)
-       ;; ;;           :max-angle-list (list 7300 2520)
-       ;; ;;           :normal :z+)
-       ;; (instance attachable-plane :init
-       ;;           :offset 1850.004
-       ;;           :min-angle-list (list 6720 2010)
-       ;;           :max-angle-list (list 7300 2520)
-       ;;           :normal :z+)
-       ))
-;; 注意：同じ場所で実行するタスクは、リストの隣り合う要素として記述すること
-(setq *task-coords-list*
-      (list
-       ;; (make-cascoords :pos (float-vector 8200 700 1000) :rpy (list (deg2rad 60) 0 0)
-       ;;                 :name "faucet")
-       ;; ;; (make-cascoords :pos (float-vector 8300 700 1100) :rpy (list (deg2rad 60) 0 0)
-       ;; ;;                 :name "faucet")
-       ;; ;; (make-cascoords :pos (float-vector 7800 600 1000) :rpy (list (deg2rad 60) 0 0)
-       ;; ;;                 :name "faucet")
-       ;; (make-cascoords :pos (float-vector 8200 -600 1000) :rpy (list 0 0 0)
-       ;;                 :name "IH")
-       ;; (make-cascoords :pos (float-vector 8200 -500 1000) :rpy (list 0 0 0)
-       ;;                 :name "IH")
-       (make-cascoords :pos (float-vector 4700 -50 740) :rpy (list 0 0 0)
-                       :name "table")
-       (make-cascoords :pos (float-vector 4400 -150 740) :rpy (list 0 0 0)
-                       :name "table")
-       (make-cascoords :pos (float-vector 4400 -450 740) :rpy (list 0 0 0)
-                       :name "table")
-       (make-cascoords :pos (float-vector 4700 -550 740) :rpy (list 0 0 0)
-                       :name "table")
-       ;; (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0)
-       ;;                 :name "microwave")
-       ;; (make-cascoords :pos (float-vector 6900 2400 1850) :rpy (list 0 0 0)
-       ;;                 :name "fridge")
-       ;; ;; (make-cascoords :pos (float-vector 6850 2325 1850) :rpy (list 0 0 0)
-       ;; ;;                 :name "fridge")
-       ;; (make-cascoords :pos (float-vector 6800 2250 1850) :rpy (list 0 0 0)
-       ;;                 :name "fridge")
-       ;; ;; (make-cascoords :pos (float-vector 6850 2175 1850) :rpy (list 0 0 0)
-       ;; ;;                 :name "fridge")
-       ;; (make-cascoords :pos (float-vector 6900 2100 1850) :rpy (list 0 0 0)
-       ;;                 :name "fridge")
-       ))
-;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
-;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
-(setq *task-wrench-list*
-      (list
-       ;; ;; faucet
-       ;; (float-vector 0 0 -1 0 0 0)
-       ;; ;; (float-vector 0 0 -1 0 0 0)
-       ;; ;; (float-vector 0 0 -1 0 0 0)
-       ;; ;; IH
-       ;; (float-vector 0 0 -1 0 0 0)
-       ;; (float-vector 0 0 -1 0 0 0)
-       ;; table
-       (float-vector 0 0 1 0 0 0)
-       (float-vector 0 0 1 0 0 0)
-       (float-vector 0 0 1 0 0 0)
-       (float-vector 0 0 1 0 0 0)
-       ;; ;; microwave
-       ;; (float-vector 0 0 -1 0 0 0)
-       ;; ;; fridge
-       ;; (float-vector 0 0 1 0 0 0)
-       ;; ;; (float-vector 0 0 1 0 0 0)
-       ;; (float-vector 0 0 1 0 0 0)
-       ;; ;; (float-vector 0 0 1 0 0 0)
-       ;; (float-vector 0 0 1 0 0 0)
-       ))
-;; 可視化用オブジェクト。(send-all *task-arrow-list* :worldcoords)などはしない。
-(setq *task-arrow-list*
-      (mapcar #'(lambda (coords wrench)
-                  (if (equal (subseq wrench 0 3) (float-vector 0 0 0))
-                      nil
-                    (make-single-arrow :length 200
-                                       :pos (send coords :worldpos)
-                                       :axis (subseq wrench 0 3)
-                                       :color #f(1 0.3 1))))
-              *task-coords-list* *task-wrench-list*))
-(setq *task-arrow-list* (remove nil *task-arrow-list*))
-
-(unless (and (eq (length *attachable-plane-list*) (length *task-coords-list*))
-             (eq (length *task-coords-list*) (length *task-wrench-list*)))
-  (print "Task definition is wrong.")
-  (exit))
-
 
 ;; TODO: Create edge case test functions
 
@@ -189,11 +25,25 @@
      (debug-view t)
      &allow-other-keys
      )
-  (let* ((additional-draw-objects
+  (let* (;; 可視化用オブジェクト。(send-all *task-arrow-list* :worldcoords)などはしない。
+         (task-arrow-list
+          (remove nil
+                  (mapcar #'(lambda (coords wrench)
+                              (if (equal (subseq wrench 0 3) (float-vector 0 0 0))
+                                  nil
+                                (make-single-arrow :length 200
+                                                   :pos (send coords :worldpos)
+                                                   :axis (subseq wrench 0 3)
+                                                   :color #f(1 0.3 1))))
+                          (flatten (send-all *tasks* :coords-list))
+                          (flatten (send-all *tasks* :wrench-list))
+                          )))
+         (attachable-plane-list (flatten (send-all *tasks* :attachable-plane-list)))
+         (additional-draw-objects
           (append *room610-model-list*
-                  (send-all *attachable-plane-list* :object)
+                  (send-all attachable-plane-list :object)
                   ;; (send-all *attachable-plane-list* :normal-object) ;; For debug
-                  *task-arrow-list*)))
+                  task-arrow-list)))
     ;; 2. Visualize
     (when debug-view
       (unless (boundp '*irtviewer*)
@@ -207,8 +57,7 @@
     (if base-size-task-scale
         (setq *base-size-task-scale* base-size-task-scale) ;; overwrite
       (setq *base-size-task-scale* *default-base-size-task-scale*)) ;; reset
-    (let* ((task-size (length *task-coords-list*))
-           (move-target (list (send *robot* :end-coords)
+    (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
                               (send *robot* :get :rigid-leg2-coords)
@@ -217,7 +66,10 @@
                               (send *robot* :get :vacuum-pad-normal-coords)
                               ))
            (limb-size (1- (length move-target)))
-           (task-target-coords (send-all *task-coords-list* :copy-worldcoords))
+           (task-coords-list (flatten (send-all *tasks* :coords-list)))
+           (task-wrench-list (flatten (send-all *tasks* :wrench-list)))
+           (task-target-coords (send-all task-coords-list :copy-worldcoords))
+           (task-size (length task-coords-list))
            contact-target-coords-list
            contact-move-target-list
            (translation-axis-list (make-list task-size :initial-element
@@ -231,15 +83,15 @@
                                              ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
            same-position-task-index temporary-invariant-joint-list adjacent-regular-scale-list
-           (external-coords-list (mapcar #'list *task-coords-list*))
-           (external-wrench-list (mapcar #'list *task-wrench-list*))
+           (external-coords-list (mapcar #'list task-coords-list))
+           (external-wrench-list (mapcar #'list task-wrench-list))
            )
       (dotimes (i task-size)
         ;; メモ：各平面に固有の名前を付けないと、inverse-kinematics-statics-wrapper.lの以下のコードで除去される
         ;; (remove-duplicates (flatten target-coords-list) :test #'equal)
         (let (task-face)
           (dotimes (j limb-size)
-            (setq task-face (append task-face (list (send (elt *attachable-plane-list* i)
+            (setq task-face (append task-face (list (send (elt attachable-plane-list i)
                                                           :face :margin 0
                                                           :name (format nil "~A,~A" i j)
                                                           )))))
@@ -263,9 +115,9 @@
       (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
       (setq contact-move-target-list (mapcar #'cdr move-target-list))
       ;; same-position-task-indexが(list i j)のとき、i, i+1, j, j+1番目のタスクが同じ場所で実行されるという意味
-      (dotimes (i (- (length *task-coords-list*) 1))
-        (when (equal (send (elt *task-coords-list* i) :name)
-                     (send (elt *task-coords-list* (+ i 1)) :name))
+      (dotimes (i (- (length task-coords-list) 1))
+        (when (equal (send (elt task-coords-list i) :name)
+                     (send (elt task-coords-list (+ i 1)) :name))
           (setq same-position-task-index (append same-position-task-index (list i)))))
       (dolist (j (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x
                        :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y
