@@ -211,7 +211,6 @@
                                       pad-pos))))))
      ;; rigid legs
      (dolist (limb-coords (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords))
-       (send self :get limb-coords)
        (setq leg-pos (send (send self :get limb-coords) :worldpos))
        (setq leg-vertices nil)
        (dotimes (i 4)
@@ -229,7 +228,32 @@
                                                       -1)
                                         leg-pos)
                            ))))))
+     ;; Visualize
      (send-all (append pad-edges leg-edges) :draw-on :flush t :color (float-vector 0.3 1 0.3) :width 3))
+   )
+  (:draw-friction-cone
+   ()
+   (let ((cone (make-cone (float-vector 0 0 0)
+                          (list (float-vector 9 9 30) (float-vector 9 -9 30) (float-vector -9 -9 30) (float-vector -9 9 30))))
+         pad-pos pad-edges leg-pos leg-edges)
+     ;; vacuum-pad
+     (setq pad-pos (send (send self :get :vacuum-pad-coords) :worldpos))
+     (setq cone (copy-object cone))
+     (send cone :locate pad-pos :world)
+     (send cone :worldcoords)
+     (setq pad-edges (send cone :edges))
+     ;; leg
+     (dolist (limb-coords (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords))
+       (setq cone (copy-object cone))
+       (setq leg-pos (send (send self :get limb-coords) :worldpos))
+       (send cone :locate leg-pos :world)
+       (send cone :worldcoords)
+       (send cone :edges)
+       (setq leg-edges (append leg-edges (send cone :edges))))
+     ;; visualize
+     (send-all (append pad-edges leg-edges)
+               :draw-on :flush t :color (float-vector 1 1 1) :width 1)
+     )
    )
   (:set-leg-color
    (&optional (color (float-vector 1 1 0.3)))
@@ -245,13 +269,15 @@
   (instance yamaguchi-arm-robot :init)
   )
 
-(defun draw-support-polygon (robot)
+(defun draw-contact-constraints (robot)
   (let ((r (copy-object robot)))
     (send r :move-rigid-leg-to-original)
     (send r :set-leg-color (float-vector 0 0 0 0)) ;; transparent
     (send *irtviewer* :draw-origin nil) ;; Remove IRT viewer origin
     (send r :draw-support-polygon)
+    (send r :draw-friction-cone)
     (unix:usleep (* 100 1000))
     (send r :draw-support-polygon)
+    (send r :draw-friction-cone)
     )
   )
