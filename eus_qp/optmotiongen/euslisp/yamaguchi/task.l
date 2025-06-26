@@ -118,8 +118,8 @@
                 :attachable-plane-obj
                 (instance attachable-plane :init
                           :offset 1200
-                          :min-angle-list (list 6020 1820)
-                          :max-angle-list (list 6480 2200)
+                          :min-angle-list (list 6020 1850)
+                          :max-angle-list (list 6480 2230)
                           :normal :z+)
                 :coords-list
                 (list
@@ -128,8 +128,8 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 -5 0 0 0 0)
-                 (float-vector 0 -3 3 0 0 0)
+                 (float-vector 0 6 0 0 0 0)
+                 (float-vector 0 3 3 0 0 0)
                  )
                 ))
 
