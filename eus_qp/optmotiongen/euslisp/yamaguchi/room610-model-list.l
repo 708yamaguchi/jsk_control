@@ -46,13 +46,13 @@
                #f(0.0 0.0 1.0)))
         ((equal name "microwave")
          (send *irtviewer* :viewer :viewing :look
-               #f(4737.65 -541.252 2497.55)
-               #f(5386.21 628.784 1929.7)
+               #f(3664.02 -200.18 3179.07)
+               (float-vector 6200 1800 1200)
                #f(0.0 0.0 1.0)))
         ((equal name "table")
          (send *irtviewer* :viewer :viewing :look
-               #f(2658.83 -1341.6 2228.54)
-               #f(5671.96 690.778 130.163)
+               #f(2164.53 -2264.89 2451.8)
+               #f(2779.37 -1748.98 2060.34)
                #f(0.0 0.0 1.0)))
         )
   (send *irtviewer* :draw-objects))
