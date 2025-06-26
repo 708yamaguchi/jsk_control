@@ -173,10 +173,22 @@
             ;; Look at vacuum base shape
             (when (and debug-view (eq i 0))
               (let ((robot (copy-object *robot*))
-                    (v (send-lexpr (instantiate x::irtviewer) :create nil)))
+                    (v (send-lexpr (instantiate x::irtviewer) :create nil))
+                    (r 40) cop-edges
+                    )
                 (send robot :newcoords (make-coords))
                 (send robot :angle-vector
                       (send (send config-task :robot-env) :robot :angle-vector))
+                (dotimes (i 8)
+                  (setq cop-edges
+                        (append
+                         cop-edges
+                         (list
+                          (instance edge :init
+                                    :pvertex (float-vector (* r (cos (* i (/ pi 4)))) (* r (sin (* i (/ pi 4)))) -0.1)
+                                    :nvertex (float-vector (* r (cos (* (+ i 1) (/ pi 4)))) (* r (sin (* (+ i 1) (/ pi 4)))) -0.1))
+                          ))))
+                ;; (send v :objects (append (list robot) cop-edges))
                 (send v :objects (list robot))
                 (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
                 (send v :draw-objects)))
