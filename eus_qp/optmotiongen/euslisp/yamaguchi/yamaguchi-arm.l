@@ -1,5 +1,20 @@
 (require "yamaguchi_6axis_arm_with_vacuum_base.l")
 
+(defmacro with-set-color-line-width
+  (vw color line-width &rest bodies)
+  (with-gensyms
+   (prev-color prev-width)
+   `(let* ((,prev-color (send ,vw :viewsurface :color))
+           (,prev-width (send ,vw :viewsurface :line-width)))
+      (unwind-protect
+          (progn
+            (send ,vw :viewsurface :color ,color)
+            (send ,vw :viewsurface :line-width ,line-width)
+            ,@bodies)
+        (send ,vw :viewsurface :color ,prev-color)
+        (send ,vw :viewsurface :line-width ,prev-width)
+        ))))
+
 (defclass yamaguchi-arm-robot
   :super yamaguchi_6axis_arm_with_vacuum_base-robot
   :slots ()
@@ -190,7 +205,7 @@
      (send self :angle-vector av))
    )
   (:draw-support-polygon
-   ()
+   (&key (flush t))
    (let ((pad-size 40) pad-pos pad-edges ;; padの半径
          (leg-size 15) leg-pos leg-edges) ;; legの一辺の長さの半分
      ;; vacuum-pad
@@ -229,10 +244,10 @@
                                         leg-pos)
                            ))))))
      ;; Visualize
-     (send-all (append pad-edges leg-edges) :draw-on :flush t :color (float-vector 0.3 1 0.3) :width 3))
+     (send-all (append pad-edges leg-edges) :draw-on :flush flush :color (float-vector 0.3 1 0.3) :width 3))
    )
   (:draw-friction-cone
-   ()
+   (&key (flush t))
    (let ((cone (make-cone (float-vector 0 0 0)
                           (list (float-vector 9 9 30) (float-vector 9 -9 30) (float-vector -9 -9 30) (float-vector -9 9 30))))
          pad-pos pad-edges leg-pos leg-edges)
@@ -252,9 +267,18 @@
        (setq leg-edges (append leg-edges (send cone :edges))))
      ;; visualize
      (send-all (append pad-edges leg-edges)
-               :draw-on :flush t :color (float-vector 1 1 1) :width 1)
+               :draw-on :flush flush :color (float-vector 1 1 1) :width 1)
      )
    )
+  (:draw-suction-arrow
+   (&key (flush t))
+   (let ((arrow-color (float-vector 1 0.3 0.3))
+         (arrow-width 3))
+     (with-set-color-line-width
+      (send *irtviewer* :viewer) arrow-color arrow-width
+      (send (send *irtviewer* :viewer) :draw-arrow
+            (float-vector 0 0 0) (float-vector 0 0 -50)) :flush flush)
+     ))
   (:set-leg-color
    (&optional (color (float-vector 1 1 0.3)))
    ;; (send leg :set-color color))
@@ -271,13 +295,21 @@
 
 (defun draw-contact-constraints (robot)
   (let ((r (copy-object robot)))
+    (objects (list r))
+    (send *irtviewer* :viewer :viewing :look
+          #f(273.173 910.441 465.739)
+          #f(7.75047 42.2827 80.3897)
+          #f(0.0 0.0 1.0))
+    (send *irtviewer* :draw-objects)
+    (send *irtviewer* :draw-objects)
+
+    (send r :newcoords (make-coords))
     (send r :move-rigid-leg-to-original)
     (send r :set-leg-color (float-vector 0 0 0 0)) ;; transparent
     (send *irtviewer* :draw-origin nil) ;; Remove IRT viewer origin
-    (send r :draw-support-polygon)
-    (send r :draw-friction-cone)
-    (unix:usleep (* 100 1000))
-    (send r :draw-support-polygon)
-    (send r :draw-friction-cone)
+    (send r :draw-support-polygon :flush nil)
+    (send r :draw-friction-cone :flush nil)
+    (send r :draw-suction-arrow :flush nil)
+    (send *irtviewer* :flush)
     )
   )
