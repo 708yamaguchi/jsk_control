@@ -47,7 +47,7 @@
        (setq leg-joint-list (append leg-joint-list (list leg-joint-x)))
        ;; dummy-link -> y linear joint -> leg link
        (setq leg (make-cube 30 30 20))
-       (send leg :set-color #f(1 1 0.3))
+       (send leg :set-color (float-vector 1 1 0.3))
        (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
        (setq leg-link (instance bodyset-link
                                 :init (make-cascoords)
@@ -189,8 +189,69 @@
      (setf (elt av 15)  38.0)
      (send self :angle-vector av))
    )
+  (:draw-support-polygon
+   ()
+   (let ((pad-size 40) pad-pos pad-edges ;; padの半径
+         (leg-size 15) leg-pos leg-edges) ;; legの一辺の長さの半分
+     ;; vacuum-pad
+     (setq pad-pos (send (send self :get :vacuum-pad-coords) :worldpos))
+     (dotimes (i 8)
+       (setq pad-edges
+             (append
+              pad-edges
+              (list
+               (instance edge :init
+                         :pvertex (v+ (float-vector (* pad-size (cos (* i (/ pi 4))))
+                                                    (* pad-size (sin (* i (/ pi 4))))
+                                                    -1)
+                                      pad-pos)
+                         :nvertex (v+ (float-vector (* pad-size (cos (* (+ i 1) (/ pi 4))))
+                                                    (* pad-size (sin (* (+ i 1) (/ pi 4))))
+                                                    -1)
+                                      pad-pos))))))
+     ;; rigid legs
+     (dolist (limb-coords (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords))
+       (send self :get limb-coords)
+       (setq leg-pos (send (send self :get limb-coords) :worldpos))
+       (setq leg-vertices nil)
+       (dotimes (i 4)
+         (setq leg-edges
+               (append
+                leg-edges
+                (list
+                 (instance edge :init
+                           :pvertex (v+ (float-vector (* (sqrt 2) leg-size (cos (* (+ i 0.5) (/ pi 2))))
+                                                      (* (sqrt 2) leg-size (sin (* (+ i 0.5) (/ pi 2))))
+                                                      -1)
+                                        leg-pos)
+                           :nvertex (v+ (float-vector (* (sqrt 2) leg-size (cos (* (+ i 1.5) (/ pi 2))))
+                                                      (* (sqrt 2) leg-size (sin (* (+ i 1.5) (/ pi 2))))
+                                                      -1)
+                                        leg-pos)
+                           ))))))
+     (send-all (append pad-edges leg-edges) :draw-on :flush t :color (float-vector 0.3 1 0.3) :width 3))
+   )
+  (:set-leg-color
+   (&optional (color (float-vector 1 1 0.3)))
+   ;; (send leg :set-color color))
+   (let (leg-link)
+     (dolist (link-name (list "rigid_leg0_link" "rigid_leg1_link" "rigid_leg2_link" "rigid_leg3_link"))
+       (setq leg-link (find link-name (send r :links) :test #'(lambda (x y) (equal x (send y :name)))))
+       (send-all (send leg-link :bodies) :set-color color)))
+   )
   )
 
 (defun yamaguchi-arm ()
   (instance yamaguchi-arm-robot :init)
+  )
+
+(defun draw-support-polygon (robot)
+  (let ((r (copy-object robot)))
+    (send r :move-rigid-leg-to-original)
+    (send r :set-leg-color (float-vector 0 0 0 0)) ;; transparent
+    (send *irtviewer* :draw-origin nil) ;; Remove IRT viewer origin
+    (send r :draw-support-polygon)
+    (unix:usleep (* 100 1000))
+    (send r :draw-support-polygon)
+    )
   )
