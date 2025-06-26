@@ -128,8 +128,8 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 5 0 0 0)
-                 (float-vector 0 0 5 0 0 0)
+                 (float-vector 0 -5 0 0 0 0)
+                 (float-vector 0 -3 3 0 0 0)
                  )
                 ))
 
@@ -151,9 +151,9 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 4 0 0 0)
-                 (float-vector 0 0 4 0 0 0)
-                 (float-vector 0 0 4 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
                  ;; (float-vector 0 0 3 0 0 0)
                  )
                 ))
