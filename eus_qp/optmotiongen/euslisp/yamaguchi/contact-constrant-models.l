@@ -50,7 +50,7 @@
 
 (defmethod rigid-leg-contact-constraint
   (:init
-   (&key (name) (size))
+   (&key (name) (size) (shape :square))
    "Calc default constraint matrix.
     This is include 2D friction force, 1D rotational friction moment, non-negative normal force, and 2D-COP constraint,
     e.g., for foot constraint.
@@ -64,7 +64,20 @@
            (instance rotational-friction-contact-constraint :init 0.005 :fz)
            ;; moment
            ;; 剛体脚がモーメントを発生させられることにより、吸着パッド全体で大きなモーメントに耐えられる
-           (instance 2D-cop-contact-constraint :init size (* -1 size) size (* -1 size))
+           (cond
+            ((equal shape :square)
+             (instance 2D-cop-contact-constraint :init size (* -1 size) size (* -1 size)))
+            ;; 半径sizeの円に内接する八角形
+            ((equal shape :octagon)
+             (let (vertices (size 40) octagon-face)
+               (dotimes (i 8)
+                 (setq vertices (append vertices (list (scale size (float-vector (cos (* i (/ pi 4)))
+                                                                                 (sin (* i (/ pi 4)))
+                                                                                 0))))))
+               (setq octagon-face (elt (send (make-prism vertices 1) :faces) 0)) ;; normalは逆かも？
+               (instance polygon-cop-contact-constraint :init octagon-face))
+             )
+            )
            ;; fz 垂直抗力は正の方向
            (instance norm-contact-constraint :init :fz)
            )))

@@ -108,7 +108,7 @@
                                                 (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 2, ~A" i) :size 15)
                                                 (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg 3, ~A" i) :size 15)
                                                 (instance vacuum-pad-contact-constraint :init :name (format nil "vacuum-pad-negative ~A" i))
-                                                (instance rigid-leg-contact-constraint :init :name (format nil "vacuum-pad-normal ~A" i) :size 40)
+                                                (instance rigid-leg-contact-constraint :init :name (format nil "vacuum-pad-normal ~A" i) :size 40 :shape :octagon)
                                                 )
                                                )))
         )

@@ -80,6 +80,7 @@ return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
 ;; (defconstant *default-base-size-task-scale* (* 10.0 1e-4)) ;; 2番目に惜しい
 
 (defconstant *default-base-size-task-scale* (* 3.0 1e-4)) ;; 収束
+;; (defconstant *default-base-size-task-scale* (* 5.0 1e-4)) ;; 失敗
 
 ;; (defconstant *default-base-size-task-scale* 0)
 (unless (boundp '*base-size-task-scale*)
