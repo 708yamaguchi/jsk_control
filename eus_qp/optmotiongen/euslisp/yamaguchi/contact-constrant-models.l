@@ -111,6 +111,8 @@
            ;; fz
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
            (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
+           ;; 大きな吸着力を発揮させると、ベースサイズは小さくなる。吸着力とベースサイズにはトレードオフが存在する。
+           ;; (instance min-max-contact-constraint :init :fz -50 :min/max :max)
            )))
 
    (send-super :init :name name)
