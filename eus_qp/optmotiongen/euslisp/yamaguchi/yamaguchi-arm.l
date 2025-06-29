@@ -147,7 +147,7 @@
   (:invariant-joint-list
    ()
    (let (end-coords-list invariant-joint-list)
-     (dolist (coords-name (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :vacuum-pad-coords))
+     (dolist (coords-name (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :vacuum-pad-coords :vacuum-pad-normal-coords))
        (setq end-coords-list (append end-coords-list (list (send self :get coords-name)))))
      (dolist (ec end-coords-list)
        (let ((target-link (send ec :parent)))
