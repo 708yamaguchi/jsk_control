@@ -158,6 +158,11 @@
                  )
                 ))
 
+;; メモ
+;; table + microwaveで三角形っぽい
+;; IHのみで直線っぽい
+;; faucetのみで一点
+;; 全部込みで四角形っぽい
 (setq *tasks*
       (list
        *faucet-task*
