@@ -110,9 +110,10 @@
            (instance no-moment-constraint :init)
            ;; fz
            (instance min-max-contact-constraint :init :fz suction-force :min/max :min)
-           (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
+           ;; (instance min-max-contact-constraint :init :fz 0 :min/max :max) ;; Make sure that suction is negative
            ;; 大きな吸着力を発揮させると、ベースサイズは小さくなる。吸着力とベースサイズにはトレードオフが存在する。
-           ;; (instance min-max-contact-constraint :init :fz -50 :min/max :max)
+           ;; ポンプの制御で、吸着パッド内気圧が常に-10kPa以下になるようにしている。80mmの吸着パッドだと-50Nに相当
+           (instance min-max-contact-constraint :init :fz -50 :min/max :max)
            )))
 
    (send-super :init :name name)

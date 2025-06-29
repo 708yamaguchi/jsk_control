@@ -207,7 +207,7 @@
   (:draw-support-polygon
    (&key (flush t))
    (let ((pad-size 40) pad-pos pad-edges ;; padの半径
-         (leg-size 15) leg-pos leg-edges) ;; legの一辺の長さの半分
+         (leg-size 2.5) leg-pos leg-edges) ;; legの一辺の長さの半分
      ;; vacuum-pad
      (setq pad-pos (send (send self :get :vacuum-pad-coords) :worldpos))
      (dotimes (i 8)
