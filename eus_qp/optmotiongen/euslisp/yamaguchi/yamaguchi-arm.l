@@ -300,13 +300,13 @@
           #f(273.173 910.441 465.739)
           #f(7.75047 42.2827 80.3897)
           #f(0.0 0.0 1.0))
+    (send *irtviewer* :draw-origin nil) ;; Remove IRT viewer origin
     (send *irtviewer* :draw-objects)
     (send *irtviewer* :draw-objects)
 
     (send r :newcoords (make-coords))
     (send r :move-rigid-leg-to-original)
     (send r :set-leg-color (float-vector 0 0 0 0)) ;; transparent
-    (send *irtviewer* :draw-origin nil) ;; Remove IRT viewer origin
     (send r :draw-support-polygon :flush nil)
     (send r :draw-friction-cone :flush nil)
     (send r :draw-suction-arrow :flush nil)
