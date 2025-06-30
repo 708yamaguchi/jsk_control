@@ -104,10 +104,10 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 3.6 0 0 0)
-                 (float-vector 0 0 3.6 0 0 0)
-                 (float-vector 0 0 3.6 0 0 0)
-                 (float-vector 0 0 3.6 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
                  )
                 ))
 
@@ -146,13 +146,13 @@
                  (make-cascoords :pos (float-vector 6750 2050 1850) :rpy (list 0 0 0))
                  (make-cascoords :pos (float-vector 6750 2450 1850) :rpy (list 0 0 0))
                  (make-cascoords :pos (float-vector 7200 2050 1850) :rpy (list 0 0 0))
-                 ;; (make-cascoords :pos (float-vector 7200 2450 1850) :rpy (list 0 0 0))
+                 (make-cascoords :pos (float-vector 7200 2450 1850) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 ;; (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
                  )
                 ))

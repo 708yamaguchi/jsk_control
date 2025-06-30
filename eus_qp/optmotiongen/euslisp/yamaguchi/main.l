@@ -8,19 +8,23 @@
 (load "contact-constrant-models.l")
 (load "base-shape-constraint.l") ;; Add equality constraint for base shape
 
-;; TODO: 入力するタスクの種類ごとに、異なるベース形状が出力される例を探す
-;; 電子レンジ操作：一方向の力を耐えればいいので、4つの剛体脚が1つの場所に集まって直線状のベース形状が出力される
-;; 料理：IH + faucet。力を発揮する方向が増え、吸着パッドがはみ出た三角形のベース形状が出力される
-;; 拭き掃除：table。ベースの周囲全方向に力を発揮するため、吸着パッドを内部に含む四角形のベース形状が出力される
 (defun a ()
-  (main (list
-         *faucet-task*
-         *IH-task*
-         *table-task*
-         *microwave-task*
-         *fridge-task*
-         )
-        ))
+  ;; 電子レンジ操作：一方向の力を耐えればいいので、4つの剛体脚が1つの場所に集まって直線状のベース形状が出力された
+  ;; (main (list *microwave-task*))
+  ;; 料理：異なる場所に力を発揮するには、直線形状ではモーメントに耐えられず、三角形ベース形状が出力された
+  ;; (main (list *faucet-task* *IH-task*))
+  ;; 拭き掃除：ベースの周囲全方向に力を発揮するため、吸着パッドを内部に含む四角形のベース形状が出力される
+  (main (list *table-task* *fridge-task*))
+
+  ;; 全タスク。主にタスク環境可視化用
+  ;; (main (list
+  ;;        *microwave-task*
+  ;;        *faucet-task*
+  ;;        *IH-task*
+  ;;        *table-task*
+  ;;        *fridge-task*
+  ;;        ))
+  )
 (warn "(a)~%")
 
 ;; 研究で使うメイン関数。吸着ベースの設計パラメータを時不変変数として扱っているのが特徴。
