@@ -40,7 +40,6 @@
    _wrench-list)
   )
 
-;; TODO: タスクに合っている力の制約を入れる。タスクの場所も増やす
 ;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
 (setq *faucet-task*
       (instance task :init
@@ -58,8 +57,8 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 -1 0 0 0)
-                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 -2 0 0 0)
+                 (float-vector 0 0 2 0 0 0)
                  )
                 ))
 
@@ -81,9 +80,9 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 -1 0 0 0)
-                 (float-vector 0 0 -1 0 0 0)
-                 (float-vector 0 0 -1 0 0 0)
+                 (float-vector 0 1 -3 0 0 0)
+                 (float-vector 1 0 -3 0 0 0)
+                 (float-vector 0 -1 -3 0 0 0)
                  )
                 ))
 
@@ -105,10 +104,10 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3.6 0 0 0)
+                 (float-vector 0 0 3.6 0 0 0)
+                 (float-vector 0 0 3.6 0 0 0)
+                 (float-vector 0 0 3.6 0 0 0)
                  )
                 ))
 
@@ -151,9 +150,9 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 2 0 0 0)
-                 (float-vector 0 0 2 0 0 0)
-                 (float-vector 0 0 2 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
                  ;; (float-vector 0 0 3 0 0 0)
                  )
                 ))
