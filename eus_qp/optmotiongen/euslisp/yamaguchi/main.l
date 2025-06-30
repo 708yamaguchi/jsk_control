@@ -8,20 +8,35 @@
 (load "contact-constrant-models.l")
 (load "base-shape-constraint.l") ;; Add equality constraint for base shape
 
-;; TODO: Create edge case test functions
-
-;;このテストから、 ベースサイズタスクの重みが小さいほど、大きな形状のベースが出力されることが分かる。
-(defun test-low-base-size-task-scale ()
-  (main :base-size-task-scale (* 0.01 *default-base-size-task-scale*))
-  )
+;; TODO: 入力するタスクの種類ごとに、異なるベース形状が出力される例を探す
+;; 食事の準備：table + microwaveで三角形っぽい（力の種類が多い）？
+;; 食事の準備：table + IHで、四角形
+;; table単体でも、小さな四角形
+;; fridge単体では、小さな三角形。頂点の内1つは吸着パッドと一致
+;; fridge単体では、小さな三角形。頂点の内1つは吸着パッドと一致
+;; IH単体では、吸着パッドを挟んで直線っぽい形状（なぜ？）
+;; 洗い物：faucetのみで直線っぽい（力の方向が反対向きに2種類あるので、剛体脚が吸着パッドを挟んで直線上になっている）？
+;; 電子レンジ専用動作：microwaveのみで一点っぽい（力の方向がほぼ1種類なので、短い直線。全ての剛体脚が1点に集まっている）
+;; 拭き掃除：table + fridgeで、吸着パッドを挟んで直線っぽい形状（なぜ？）
+;; 汎用動作：全部込みで四角形（台形）っぽい
+;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
+(defun a ()
+  (main (list
+         *faucet-task*
+         *IH-task*
+         *table-task*
+         *microwave-task*
+         *fridge-task*
+         )
+        ))
 
 ;; 研究で使うメイン関数。吸着ベースの設計パラメータを時不変変数として扱っているのが特徴。
 (defun main
-    (&key
+    (tasks
+     &key
      (pre-process-func)
      (post-process-func)
      (visualize-callback-func)
-     (base-size-task-scale)
      (debug-view t)
      &allow-other-keys
      )
@@ -35,10 +50,10 @@
                                                    :pos (send coords :worldpos)
                                                    :axis (subseq wrench 0 3)
                                                    :color #f(1 0.3 1))))
-                          (flatten (send-all *tasks* :coords-list))
-                          (flatten (send-all *tasks* :wrench-list))
+                          (flatten (send-all tasks :coords-list))
+                          (flatten (send-all tasks :wrench-list))
                           )))
-         (attachable-plane-list (flatten (send-all *tasks* :attachable-plane-list)))
+         (attachable-plane-list (flatten (send-all tasks :attachable-plane-list)))
          (additional-draw-objects
           (append *room610-model-list*
                   (send-all attachable-plane-list :object)
@@ -54,9 +69,6 @@
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
     (send *robot* :leg-init :pos 50)
-    (if base-size-task-scale
-        (setq *base-size-task-scale* base-size-task-scale) ;; overwrite
-      (setq *base-size-task-scale* *default-base-size-task-scale*)) ;; reset
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
@@ -66,8 +78,8 @@
                               (send *robot* :get :vacuum-pad-normal-coords)
                               ))
            (limb-size (1- (length move-target)))
-           (task-coords-list (flatten (send-all *tasks* :coords-list)))
-           (task-wrench-list (flatten (send-all *tasks* :wrench-list)))
+           (task-coords-list (flatten (send-all tasks :coords-list)))
+           (task-wrench-list (flatten (send-all tasks :wrench-list)))
            (task-target-coords (send-all task-coords-list :copy-worldcoords))
            (task-size (length task-coords-list))
            contact-target-coords-list
@@ -130,94 +142,101 @@
       (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
       (dolist (l same-position-task-index)
         (setf (elt adjacent-regular-scale-list l) 5e-4))
-      (setq sqp-opt (send *robot*
-                          :inverse-kinematics-statics-trajectory-optmotiongen
-                          target-coords-list
-                          :move-target-list move-target-list
-                          :contact-target-coords-list contact-target-coords-list
-                          :contact-move-target-list contact-move-target-list
-                          :contact-constraint-list contact-constraint-list
-                          ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
-                          :external-wrench-list external-wrench-list
-                          :external-coords-list external-coords-list
-                          :translation-axis-list translation-axis-list
-                          :rotation-axis-list rotation-axis-list
-                          :collision-avoidance-link-pair collision-avoidance-link-pair
-                          :collision-distance-limit -0.5
-                          :invariant-joint-list (send *robot* :invariant-joint-list)
-                          :temporary-invariant-joint-list temporary-invariant-joint-list
-                          :adjacent-regular-scale-list adjacent-regular-scale-list
-                          :root-virtual-mode :6dof
-                          :optimize-torque? nil
-                          ;; :stop 50
-                          ;; :min-loop 30
-                          ;; :stop 100
-                          ;; :min-loop 100
-                          :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
-                          :adjacent-regular-scale 0.0
-                          :pre-process-func pre-process-func
-                          :post-process-func post-process-func))
-      ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+      ;; First, use effective but unstable convergence parameter. Then, use stable parameter.
+      (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
+        (setq *base-size-task-scale* base-size-task-scale)
+        (format t "Try *base-size-task-scale* ~A~%" *base-size-task-scale*)
+        (setq sqp-opt (send *robot*
+                            :inverse-kinematics-statics-trajectory-optmotiongen
+                            target-coords-list
+                            :move-target-list move-target-list
+                            :contact-target-coords-list contact-target-coords-list
+                            :contact-move-target-list contact-move-target-list
+                            :contact-constraint-list contact-constraint-list
+                            ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
+                            :external-wrench-list external-wrench-list
+                            :external-coords-list external-coords-list
+                            :translation-axis-list translation-axis-list
+                            :rotation-axis-list rotation-axis-list
+                            :collision-avoidance-link-pair collision-avoidance-link-pair
+                            :collision-distance-limit -0.5
+                            :invariant-joint-list (send *robot* :invariant-joint-list)
+                            :temporary-invariant-joint-list temporary-invariant-joint-list
+                            :adjacent-regular-scale-list adjacent-regular-scale-list
+                            :root-virtual-mode :6dof
+                            :optimize-torque? nil
+                            ;; :stop 50
+                            ;; :min-loop 30
+                            ;; :stop 100
+                            ;; :min-loop 100
+                            :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
+                            :adjacent-regular-scale 0.0
+                            :pre-process-func pre-process-func
+                            :post-process-func post-process-func))
+        ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
 
-      ;; 4. Print result
-      (let* ((traj-config-task (send sqp-opt :config-task))
-             (instant-config-task-list (send traj-config-task :instant-config-task-list)))
-        (format t "~%===== Result (in world coords) =====~%")
-        (dotimes (i (length instant-config-task-list))
-          (format t "task ~A: ~A~%" i (send (elt task-coords-list i) :name))
-          (let* ((config-task (elt instant-config-task-list i))
-                 (contact-attention-coords-list (send config-task :contact-attention-coords-list))
-                 (contact-target-coords-list (send config-task :contact-target-coords-list)))
-            (format t "angle vector~%")
-            (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
-            ;; Look at vacuum base shape
-            (when (and debug-view (eq i 0))
-              (let ((robot (copy-object *robot*))
-                    (v (send-lexpr (instantiate x::irtviewer) :create nil))
-                    )
-                (send robot :newcoords (make-coords))
-                (send robot :angle-vector
-                      (send (send config-task :robot-env) :robot :angle-vector))
-                (send v :draw-origin nil) ;; 原点のRGBを消す
-                (send v :objects (list robot))
-                (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
-                (send v :draw-objects)))
-            (format t "base size~%")
-            (let* ((robot (send (send config-task :robot-env) :robot))
-                   (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
-                   (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
-                   (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
-                   (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
-              (format t " X size: ~A~%" (abs (- x0 x2)))
-              (format t " Y size: ~A~%" (abs (- y0 y2))))
-            (format t "worldcoords~%")
-            (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
-            ;; Print contact coords
-            (format t "Contact coords~%")
-            (dolist (contact-target-coords contact-target-coords-list)
-              (format t " ~A~%" contact-target-coords))
-            ;; Print wrench
-            (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
-              (format t " ~A " force-type)
-              (if (or (eq force-type :force-list) (eq force-type :external-force-list))
-                  (format t "[N]~%"))
-              (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
-                  (format t "[Nm]~%"))
-              (if (send config-task force-type)
-                  (progn
-                    (when (or (eq force-type :force-list) (eq force-type :moment-list))
-                      (dotimes (j (length contact-attention-coords-list))
-                        (format t "   At ~A, ~A~%"
-                                (elt (send-all contact-attention-coords-list :name) j)
-                                (elt (send config-task force-type) j))))
-                    (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
-                      (dotimes (j (length (send config-task :external-coords-list)))
-                        (format t "   At ~A, ~A~%"
-                                (send (elt (send config-task :external-coords-list) j) :worldcoords)
-                                (elt (send config-task force-type) j))
-                        )))
-                (format t "   nil~%"))))
-          (format t "~%")))
-      (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
-      sqp-opt)))
+        ;; 4. Print result
+        (let* ((traj-config-task (send sqp-opt :config-task))
+               (instant-config-task-list (send traj-config-task :instant-config-task-list)))
+          (format t "~%===== Result (in world coords) =====~%")
+          (dotimes (i (length instant-config-task-list))
+            (format t "task ~A: ~A~%" i (send (elt task-coords-list i) :name))
+            (let* ((config-task (elt instant-config-task-list i))
+                   (contact-attention-coords-list (send config-task :contact-attention-coords-list))
+                   (contact-target-coords-list (send config-task :contact-target-coords-list)))
+              (format t "angle vector~%")
+              (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+              ;; Look at vacuum base shape
+              (when (and debug-view (eq i 0))
+                (let ((robot (copy-object *robot*))
+                      (v (send-lexpr (instantiate x::irtviewer) :create nil))
+                      )
+                  (send robot :newcoords (make-coords))
+                  (send robot :angle-vector
+                        (send (send config-task :robot-env) :robot :angle-vector))
+                  (send v :draw-origin nil) ;; 原点のRGBを消す
+                  (send v :objects (list robot))
+                  (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
+                  (send v :draw-objects)))
+              (format t "base size~%")
+              (let* ((robot (send (send config-task :robot-env) :robot))
+                     (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
+                     (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
+                     (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
+                     (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
+                (format t " X size: ~A~%" (abs (- x0 x2)))
+                (format t " Y size: ~A~%" (abs (- y0 y2))))
+              (format t "worldcoords~%")
+              (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
+              ;; Print contact coords
+              (format t "Contact coords~%")
+              (dolist (contact-target-coords contact-target-coords-list)
+                (format t " ~A~%" contact-target-coords))
+              ;; Print wrench
+              (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
+                (format t " ~A " force-type)
+                (if (or (eq force-type :force-list) (eq force-type :external-force-list))
+                    (format t "[N]~%"))
+                (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
+                    (format t "[Nm]~%"))
+                (if (send config-task force-type)
+                    (progn
+                      (when (or (eq force-type :force-list) (eq force-type :moment-list))
+                        (dotimes (j (length contact-attention-coords-list))
+                          (format t "   At ~A, ~A~%"
+                                  (elt (send-all contact-attention-coords-list :name) j)
+                                  (elt (send config-task force-type) j))))
+                      (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
+                        (dotimes (j (length (send config-task :external-coords-list)))
+                          (format t "   At ~A, ~A~%"
+                                  (send (elt (send config-task :external-coords-list) j) :worldcoords)
+                                  (elt (send config-task force-type) j))
+                          )))
+                  (format t "   nil~%"))))
+            (format t "~%")))
+        (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
+        (when (eq (send sqp-opt :status) :success)
+          (return-from main sqp-opt)))
+      sqp-opt
+      )))
 (warn "(main)~%")
