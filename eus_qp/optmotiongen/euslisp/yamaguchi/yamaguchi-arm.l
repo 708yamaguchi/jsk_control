@@ -61,7 +61,7 @@
                        :max-joint-torque 999999.0))
        (setq leg-joint-list (append leg-joint-list (list leg-joint-x)))
        ;; dummy-link -> y linear joint -> leg link
-       (setq leg (make-cube 30 30 20))
+       (setq leg (make-cube 10 10 1)) ;; モデル的には2.5mm*2.5mmだが、見にくいので大きめに描画
        (send leg :set-color (float-vector 1 1 0.3))
        (send leg :translate (float-vector 0 0 (* 0.5 (z-of-cube leg))) :local)
        (setq leg-link (instance bodyset-link
@@ -244,7 +244,7 @@
                                         leg-pos)
                            ))))))
      ;; Visualize
-     (send-all (append pad-edges leg-edges) :draw-on :flush flush :color (float-vector 0.3 1 0.3) :width 3))
+     (send-all (append pad-edges leg-edges) :draw-on :flush flush :color (float-vector 0.3 1 0.3) :width 5))
    )
   (:draw-friction-cone
    (&key (flush t))
@@ -267,13 +267,13 @@
        (setq leg-edges (append leg-edges (send cone :edges))))
      ;; visualize
      (send-all (append pad-edges leg-edges)
-               :draw-on :flush flush :color (float-vector 1 1 1) :width 1)
+               :draw-on :flush flush :color (float-vector 1 1 1) :width 5)
      )
    )
   (:draw-suction-arrow
    (&key (flush t))
    (let ((arrow-color (float-vector 1 0.3 0.3))
-         (arrow-width 3))
+         (arrow-width 5))
      (with-set-color-line-width
       (send *irtviewer* :viewer) arrow-color arrow-width
       (send (send *irtviewer* :viewer) :draw-arrow
@@ -284,7 +284,7 @@
    ;; (send leg :set-color color))
    (let (leg-link)
      (dolist (link-name (list "rigid_leg0_link" "rigid_leg1_link" "rigid_leg2_link" "rigid_leg3_link"))
-       (setq leg-link (find link-name (send r :links) :test #'(lambda (x y) (equal x (send y :name)))))
+       (setq leg-link (find link-name (send self :links) :test #'(lambda (x y) (equal x (send y :name)))))
        (send-all (send leg-link :bodies) :set-color color)))
    )
   )
