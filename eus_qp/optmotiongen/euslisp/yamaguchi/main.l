@@ -137,7 +137,8 @@
         (setf (elt adjacent-regular-scale-list l) 5e-4))
       ;; First, use effective but unstable convergence parameter. Then, use stable parameter.
       ;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
-      (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
+      ;; (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
+      (dolist (base-size-task-scale (list (* 3.0 1e-4)))
         (setq *base-size-task-scale* base-size-task-scale)
         (format t "Try *base-size-task-scale* ~A~%" *base-size-task-scale*)
         (setq sqp-opt (send *robot*
