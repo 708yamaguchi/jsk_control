@@ -9,17 +9,14 @@
 (load "base-shape-constraint.l") ;; Add equality constraint for base shape
 
 ;; TODO: 入力するタスクの種類ごとに、異なるベース形状が出力される例を探す
-;; 食事の準備：table + microwaveで三角形っぽい（力の種類が多い）？
+;; 食事の準備：table + microwaveで小さい三角形っぽい？吸着パッドが頂点の一つ
 ;; 食事の準備：table + IHで、四角形
 ;; table単体でも、小さな四角形
 ;; fridge単体では、小さな三角形。頂点の内1つは吸着パッドと一致
-;; fridge単体では、小さな三角形。頂点の内1つは吸着パッドと一致
-;; IH単体では、吸着パッドを挟んで直線っぽい形状（なぜ？）
-;; 洗い物：faucetのみで直線っぽい（力の方向が反対向きに2種類あるので、剛体脚が吸着パッドを挟んで直線上になっている）？
-;; 電子レンジ専用動作：microwaveのみで一点っぽい（力の方向がほぼ1種類なので、短い直線。全ての剛体脚が1点に集まっている）
-;; 拭き掃除：table + fridgeで、吸着パッドを挟んで直線っぽい形状（なぜ？）
+;; IH単体では、吸着パッドを挟んで線分っぽい形状。線分の片方が吸着パッド
+;; 電子レンジ専用動作：microwaveのみで線分っぽい。線分の片方が吸着パッド。（力の方向がほぼ1種類なので、短い線分）
+;; 拭き掃除：table + fridgeで、吸着パッドを挟んで直線っぽい形状（吸着パッドのサイズで直線に垂直な方向のモーメントは受けられる？）
 ;; 汎用動作：全部込みで四角形（台形）っぽい
-;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
 (defun a ()
   (main (list
          *faucet-task*
@@ -143,6 +140,7 @@
       (dolist (l same-position-task-index)
         (setf (elt adjacent-regular-scale-list l) 5e-4))
       ;; First, use effective but unstable convergence parameter. Then, use stable parameter.
+      ;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
       (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
         (setq *base-size-task-scale* base-size-task-scale)
         (format t "Try *base-size-task-scale* ~A~%" *base-size-task-scale*)
