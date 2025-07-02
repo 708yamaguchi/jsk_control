@@ -176,6 +176,7 @@
                             ;; :stop 100
                             ;; :min-loop 100
                             :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
+                            :only-kinematics? nil
                             :pre-process-func pre-process-func
                             :post-process-func post-process-func))
         ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)

@@ -92,13 +92,13 @@
    (cond (_only-kinematics?
           (setq _dim-task (+ (* 6 _num-kin) _num-posture-joint))
           )
-         ;; base size task is added
-         ;; 最後に足した数字が、新しく追加する目的関数の要素数
-         ((rigid-legs-invariant? _invariant-joint-list)
-          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint 8)))
          (t
           (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
           ))
+   ;; base size task is added
+   ;; 最後に足した数字が、新しく追加する目的関数の要素数
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (setq _dim-task (+ _dim-task 8)))
    )
   (:base-size-task-value
    (&key (update? t))
@@ -217,76 +217,6 @@ return $\bm{e}(\bm{q})
     (when (rigid-legs-invariant? _invariant-joint-list)
       (send self :base-size-task-value :update? update?))
     )
-   )
-  (:variant-task-jacobian
-   ()
-   "
-\begin{eqnarray}
-  \frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}}
-  &=&
-  \bordermatrix{
-    & N_{\mathit{var\mathchar`-joint}} & 6 N_{\mathit{cnt}} & N_{\mathit{drive\mathchar`-joint}} \cr
-    6 N_{\mathit{kin}} & \frac{\partial \bm{e}^{\mathit{kin}}}{\partial \bm{\theta}} & & \cr
-    3 & & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-trans}}}{\partial \bm{\hat{w}}} & & \cr
-    3 & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\hat{w}}} & & \cr
-    N_{\mathit{drive\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\hat{w}}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\tau}} \cr
-    N_{\mathit{posture\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{posture}}}{\partial \bm{\theta}} & &
-  }
-\end{eqnarray}
-
-return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}} \in \mathbb{R}^{(6 N_{\mathit{kin}} + 3 + 3 + N_{\mathit{drive\mathchar`-joint}} + N_{\mathit{posture\mathchar`-joint}}) \times (N_{\mathit{var\mathchar`-joint}} + 6 N_{\mathit{cnt}} + N_{\mathit{drive\mathchar`-joint}})}$
-   "
-   (cond (_variant-task-jacobi
-          (fill (array-entity _variant-task-jacobi) 0)
-          )
-         (t
-          (setq _variant-task-jacobi (make-matrix _dim-task _dim-variant-config))
-          ))
-   (when (= _dim-task 0)
-     (return-from :variant-task-jacobian _variant-task-jacobi))
-   (copy-block-matrix _variant-task-jacobi
-                      (send self :kinematics-task-jacobian-with-theta)
-                      0 0)
-   (unless _only-kinematics?
-     (copy-block-matrix _variant-task-jacobi
-                        (send self :eom-trans-task-jacobian-with-wrench)
-                        (* 6 _num-kin) _num-variant-joint)
-     (copy-block-matrix _variant-task-jacobi
-                        (send self :eom-rot-task-jacobian-with-theta)
-                        (+ (* 6 _num-kin) 3) 0)
-     (copy-block-matrix _variant-task-jacobi
-                        (send self :eom-rot-task-jacobian-with-wrench)
-                        (+ (* 6 _num-kin) 3) _num-variant-joint)
-     (when (> _num-drive-joint 0)
-       (copy-block-matrix _variant-task-jacobi
-                          (send self :torque-task-jacobian-with-theta)
-                          (+ (* 6 _num-kin) 3 3) 0)
-       (copy-block-matrix _variant-task-jacobi
-                          (send self :torque-task-jacobian-with-wrench)
-                          (+ (* 6 _num-kin) 3 3) _num-variant-joint)
-       (copy-block-matrix _variant-task-jacobi
-                          (send self :torque-task-jacobian-with-torque)
-                          (+ (* 6 _num-kin) 3 3) (+ _num-variant-joint (* 6 _num-contact)))
-       )
-     )
-   (when (> _num-posture-joint 0)
-     (copy-block-matrix _variant-task-jacobi
-                        (send self :posture-task-jacobian-with-theta)
-                        (if _only-kinematics?
-                            (* 6 _num-kin)
-                          (+ (* 6 _num-kin) 3 3 _num-drive-joint))
-                        0)
-     )
-   ;; base-size-task added
-   (when (rigid-legs-invariant? _invariant-joint-list)
-     (copy-block-matrix _variant-task-jacobi
-                        (make-matrix 1 _dim-variant-config)
-                        (if _only-kinematics?
-                            (* 6 _num-kin)
-                          (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint)) ;; 36+3+3+0+0=42。最後の要素を置き換え
-                        0)
-     )
-   _variant-task-jacobi
    )
   (:invariant-task-jacobian
    ()

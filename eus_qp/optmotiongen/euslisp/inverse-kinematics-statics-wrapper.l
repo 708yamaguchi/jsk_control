@@ -353,6 +353,7 @@ Solve inverse kinematics problem with sqp optimization.
     (norm-regular-scale-offset 1e-6)
     (torque-regular-scale 1e-5)
     (adjacent-regular-scale 0.0)
+    (only-kinematics?) ;; for debug
     (pre-process-func)
     (post-process-func)
     &allow-other-keys
@@ -593,6 +594,7 @@ Solve inverse kinematics problem with sqp optimization.
                                          ))
                                    target-coords
                                    )
+                                  :only-kinematics? only-kinematics?
                                   :kin-attention-coords-list
                                   (send robot-env :get :move-target)
                                   :contact-attention-coords-list contact-move-target
@@ -624,9 +626,10 @@ Solve inverse kinematics problem with sqp optimization.
                        )
                   (send config-task :put :thre thre)
                   (send config-task :put :rthre rthre)
-                  (send config-task :put :eom-trans-thre eom-trans-thre)
-                  (send config-task :put :eom-rot-thre eom-rot-thre)
-                  (send config-task :put :torque-thre torque-thre)
+                  ;; If only-kinematics, eom-**-thre and torque-thre are ignored
+                  (send config-task :put :eom-trans-thre (if only-kinematics? 1e10 eom-trans-thre))
+                  (send config-task :put :eom-rot-thre (if only-kinematics? 1e10 eom-rot-thre))
+                  (send config-task :put :torque-thre (if only-kinematics? 1e10 torque-thre))
                   config-task
                   ))
             (range (length robot-env-list))
