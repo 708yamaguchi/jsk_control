@@ -8,8 +8,8 @@
 (load "contact-constrant-models.l")
 (load "base-shape-constraint.l") ;; Add equality constraint for base shape
 
-;; TODO：ベースの形状を固定にして:inverse-kinematics-statics-optmotiongenを解いて、静力学的に解が出るかをチェックする
-;; TODO：現実と同じ物理パラメータになっているかをチェックできるようにするのが目的。
+;; ベースの形状を固定にして:inverse-kinematics-statics-optmotiongenを解いて、静力学的に解が出るかをチェックする
+;; 現実と同じ物理パラメータになっているかをチェックできるようにするのが目的。
 (defun check
   (task ;; taskに定義されているcoordsやwrenchのうち、最初の要素を利用してチェック
   &key
@@ -61,7 +61,6 @@
          (external-wrench (car (send task :wrench-list)))
          (contact-constraint
           (list
-           ;; TODO: 支持多角形を現実のサイズに固定して実験する
            (instance rigid-leg-contact-constraint :init :name "rigid-leg 0" :size 2.5)
            (instance rigid-leg-contact-constraint :init :name "rigid-leg 1" :size 2.5)
            (instance rigid-leg-contact-constraint :init :name "rigid-leg 2" :size 2.5)
