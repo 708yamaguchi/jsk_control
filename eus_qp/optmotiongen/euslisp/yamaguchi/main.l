@@ -67,7 +67,7 @@
     (setq *robot* (yamaguchi-arm))
     ;; (send *robot* :leg-init :pos 50)
     (send *robot* :move-rigid-leg-to-original)
-    (send *robot* :fix-leg)
+    ;; (send *robot* :fix-leg)
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
@@ -145,7 +145,7 @@
       ;; First, use effective but unstable convergence parameter. Then, use stable parameter.
       ;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
       ;; (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
-      (dolist (base-size-task-scale (list (* 3.0 1e-4)))
+      (dolist (base-size-task-scale (list (* 10.0 1e-4)))
         (setq *base-size-task-scale* base-size-task-scale)
         (format t "Try *base-size-task-scale* ~A~%" *base-size-task-scale*)
         (setq sqp-opt (send *robot*
