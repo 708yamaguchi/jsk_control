@@ -101,8 +101,12 @@
                         :debug-view (list :additional-draw-objects (send *irtviewer* :objects))
                         :revert-if-fail nil
                         :root-virtual-mode :6dof
+                        :stop 100
                         :optimize-torque? nil
-                        :kin-scale 3.0 ;; この値がデフォルトの1だと、収束しづらい
+                        ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
+                        ;; 手先や剛体脚にかかる力が大きい場合は、kin-scale値を0.03など小さくして、eom-**-taskの比重を上げる
+                        ;; 逆に、あまり力がかからない場合は、kin-scale値を3.0など大きくして、kin-taskの比重を上げる
+                        :kin-scale 0.03
                         :pre-process-func pre-process-func
                         :post-process-func post-process-func))
 

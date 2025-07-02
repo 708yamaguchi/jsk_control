@@ -165,11 +165,14 @@
                             :adjacent-regular-scale-list adjacent-regular-scale-list
                             :root-virtual-mode :6dof
                             :optimize-torque? nil
-                            :kin-scale 1.0 ;; デフォルト1.0。posが収束していない場合は、この値を上げる。
+                            ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
+                            ;; 手先や剛体脚にかかる力が大きい場合は、kin-scale値を0.03など小さくして、eom-**-taskの比重を上げる
+                            ;; 逆に、あまり力がかからない場合は、kin-scale値を3.0など大きくして、kin-taskの比重を上げる
+                            :kin-scale 0.1
                             ;; :stop 50
                             ;; :min-loop 30
                             ;; :stop 100
-                            ;; :min-loop 100
+                            :min-loop 100
                             :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                             :pre-process-func pre-process-func
                             :post-process-func post-process-func))
