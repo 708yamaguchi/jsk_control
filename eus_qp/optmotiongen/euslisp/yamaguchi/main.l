@@ -165,6 +165,7 @@
                             :adjacent-regular-scale-list adjacent-regular-scale-list
                             :root-virtual-mode :6dof
                             :optimize-torque? nil
+                            :kin-scale 1.0 ;; デフォルト1.0。posが収束していない場合は、この値を上げる。
                             ;; :stop 50
                             ;; :min-loop 30
                             ;; :stop 100

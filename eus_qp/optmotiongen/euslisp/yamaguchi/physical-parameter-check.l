@@ -103,6 +103,7 @@
                         :revert-if-fail nil
                         :root-virtual-mode :6dof
                         :optimize-torque? nil
+                        :kin-scale 3.0 ;; この値がデフォルトの1だと、収束しづらい
                         :pre-process-func pre-process-func
                         :post-process-func post-process-func))
 

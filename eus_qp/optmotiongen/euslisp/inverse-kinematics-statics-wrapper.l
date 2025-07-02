@@ -53,6 +53,7 @@
     (eom-trans-thre 1e-1)
     (eom-rot-thre 1e-1)
     (torque-thre 1e-1)
+    (kin-scale 1.0)
     (target-posture-scale 1e-3)
     (norm-regular-scale-max 1e-3)
     (norm-regular-scale-offset 1e-6)
@@ -178,6 +179,7 @@ Solve inverse kinematics problem with sqp optimization.
                      :collision-distance-margin (* 1e-3 collision-distance-limit) ;; [m]
                      :variant-joint-angle-margin joint-angle-margin
                      :invariant-joint-angle-margin joint-angle-margin
+                     :kin-scale kin-scale
                      :norm-regular-scale-max norm-regular-scale-max
                      :norm-regular-scale-offset norm-regular-scale-offset
                      :torque-regular-scale torque-regular-scale
@@ -345,6 +347,7 @@ Solve inverse kinematics problem with sqp optimization.
     (eom-trans-thre 1e-1)
     (eom-rot-thre 1e-1)
     (torque-thre 1e-1)
+    (kin-scale 1.0)
     (target-posture-scale 1e-3)
     (norm-regular-scale-max 1e-3)
     (norm-regular-scale-offset 1e-6)
@@ -614,6 +617,7 @@ Solve inverse kinematics problem with sqp optimization.
                                   (send robot-env :get :collision-pair-list)
                                   :collision-distance-margin
                                   (* 1e-3 collision-distance-limit) ;; [m]
+                                  :kin-scale kin-scale
                                   :variant-joint-angle-margin joint-angle-margin
                                   :invariant-joint-angle-margin joint-angle-margin
                                   ))
