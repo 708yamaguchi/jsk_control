@@ -16,11 +16,8 @@
      (progn
        (print "Task definition is wrong.")
        (exit)))
-   ;; 全く同じ位置の平面は与えられなかったので、同じ場所で複数タスクを行う場合は微小量だけ動かした平面を利用
    (dotimes (i _size)
-     (let ((p (copy-object attachable-plane-obj)))
-       (send p :offset (+ (send p :offset) (* i 0.001)))
-       (setq _attachable-plane-list (append _attachable-plane-list (list p)))))
+     (setq _attachable-plane-list (append _attachable-plane-list (list attachable-plane-obj))))
    )
   (:size
    ()
