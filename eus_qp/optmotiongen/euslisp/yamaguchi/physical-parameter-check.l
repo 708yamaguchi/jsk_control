@@ -44,8 +44,9 @@
 
   ;; Optimization
   (setq *robot* (yamaguchi-arm))
+  (send *robot* :move-rigid-leg-to-original)
+  (send *robot* :fix-leg)
   (send *robot* :newcoords (make-coords))
-  (send *robot* :leg-init :pos 50) ;; TODO: ここを現実のサイズに固定して実験する
   (let* ((move-target (list (send *robot* :end-coords)
                             (send *robot* :get :rigid-leg0-coords)
                             (send *robot* :get :rigid-leg1-coords)
@@ -99,6 +100,7 @@
                         :collision-avoidance-link-pair collision-avoidance-link-pair
                         :collision-distance-limit -10 ;; 多少のめり込みを許容する？と、IKの成功率が格段に上がる[mm]
                         :debug-view (list :additional-draw-objects (send *irtviewer* :objects))
+                        :revert-if-fail nil
                         :root-virtual-mode :6dof
                         :optimize-torque? nil
                         :pre-process-func pre-process-func
