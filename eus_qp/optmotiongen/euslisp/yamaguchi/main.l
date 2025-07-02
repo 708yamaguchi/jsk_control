@@ -92,7 +92,8 @@
                                              ))
            sqp-opt target-coords-list move-target-list contact-constraint-list
            same-position-task-index temporary-invariant-joint-list adjacent-regular-scale-list
-           (external-coords-list (mapcar #'list task-coords-list))
+           ;; (external-coords-list (mapcar #'list task-coords-list))
+           (external-coords-name-list (make-list (length task-wrench-list) :initial-element (list :end-coords)))
            (external-wrench-list (mapcar #'list task-wrench-list))
            )
       (dotimes (i task-size)
@@ -154,7 +155,7 @@
                             :contact-constraint-list contact-constraint-list
                             ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
                             :external-wrench-list external-wrench-list
-                            :external-coords-list external-coords-list
+                            :external-coords-name-list external-coords-name-list
                             :translation-axis-list translation-axis-list
                             :rotation-axis-list rotation-axis-list
                             :collision-avoidance-link-pair collision-avoidance-link-pair

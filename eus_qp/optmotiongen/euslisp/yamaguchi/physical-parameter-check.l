@@ -91,10 +91,9 @@
                         :contact-target-coords (cdr target-coords)
                         :contact-move-target (cdr move-target)
                         :contact-constraint contact-constraint
-                        ;; TODO: external-XXXの引数を受け取れるようにする
                         ;; メモ：external-wrenchは、手先が発揮しているレンチではなく、手先が受けているレンチ
-                        :external-wrench external-wrench
-                        :external-coords (send task-coords :copy-worldcoords)
+                        :external-wrench-list (list external-wrench)
+                        :external-coords-list (list (send *robot* :end-coords))
                         :translation-axis translation-axis
                         :rotation-axis rotation-axis
                         :collision-avoidance-link-pair collision-avoidance-link-pair

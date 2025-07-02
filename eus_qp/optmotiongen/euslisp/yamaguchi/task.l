@@ -52,8 +52,8 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 8100 700 1000) :rpy (list (deg2rad 60) 0 0))
-                 (make-cascoords :pos (float-vector 8200 700 1100) :rpy (list (deg2rad 60) 0 0))
+                 (make-coords :pos (float-vector 8100 700 1000) :rpy (list (deg2rad 60) 0 0))
+                 (make-coords :pos (float-vector 8200 700 1100) :rpy (list (deg2rad 60) 0 0))
                  )
                 :wrench-list
                 (list
@@ -74,9 +74,9 @@
                           :normal :x-)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 8200 -700 1200) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 8100 -600 1200) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 8200 -500 1200) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8200 -700 1200) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8100 -600 1200) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8200 -500 1200) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
@@ -97,10 +97,10 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 4450 -550 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4450 0 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4850 -550 740) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 4850 0 740) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 4450 -550 740) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 4450 0 740) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 4850 -550 740) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 4850 0 740) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
@@ -122,8 +122,8 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 6200 1720 1120) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 6200 1800 1200) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 6200 1720 1120) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
@@ -143,10 +143,10 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-cascoords :pos (float-vector 6750 2050 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 6750 2450 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 7200 2050 1850) :rpy (list 0 0 0))
-                 (make-cascoords :pos (float-vector 7200 2450 1850) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 6750 2050 1850) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 6750 2450 1850) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 7200 2050 1850) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 7200 2450 1850) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
