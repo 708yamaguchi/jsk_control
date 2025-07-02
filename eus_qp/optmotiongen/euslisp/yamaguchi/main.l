@@ -170,7 +170,6 @@
                             ;; :stop 100
                             ;; :min-loop 100
                             :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
-                            :adjacent-regular-scale 0.0
                             :pre-process-func pre-process-func
                             :post-process-func post-process-func))
         ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
