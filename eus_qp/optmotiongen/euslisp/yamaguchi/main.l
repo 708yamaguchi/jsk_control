@@ -168,9 +168,9 @@
                             :root-virtual-mode :6dof
                             :optimize-torque? nil
                             ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
-                            ;; 手先や剛体脚にかかる力が大きい場合は、kin-scale値を0.03など小さくして、eom-**-taskの比重を上げる
-                            ;; 逆に、あまり力がかからない場合は、kin-scale値を3.0など大きくして、kin-taskの比重を上げる
-                            :kin-scale 3.0
+                            ;; only-kinematics? tの挙動に近づけるためには、kin-scale値を10など大きめに設定する
+                            ;; 定性的な理解：吸着力を大きくするだけで整合性を取りやすいeom-**-taskの優先度を下げて、kin-taskを重視するのが良さそう。
+                            :kin-scale 10
                             ;; :stop 50
                             ;; :min-loop 30
                             ;; :stop 100
