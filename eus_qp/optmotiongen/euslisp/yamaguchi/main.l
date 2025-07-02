@@ -65,7 +65,9 @@
       (send *irtviewer* :draw-objects))
     ;; 3. optimization
     (setq *robot* (yamaguchi-arm))
-    (send *robot* :leg-init :pos 50)
+    ;; (send *robot* :leg-init :pos 50)
+    (send *robot* :move-rigid-leg-to-original)
+    (send *robot* :fix-leg)
     (let* ((move-target (list (send *robot* :end-coords)
                               (send *robot* :get :rigid-leg0-coords)
                               (send *robot* :get :rigid-leg1-coords)
@@ -168,11 +170,11 @@
                             ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
                             ;; 手先や剛体脚にかかる力が大きい場合は、kin-scale値を0.03など小さくして、eom-**-taskの比重を上げる
                             ;; 逆に、あまり力がかからない場合は、kin-scale値を3.0など大きくして、kin-taskの比重を上げる
-                            :kin-scale 0.1
+                            :kin-scale 3.0
                             ;; :stop 50
                             ;; :min-loop 30
                             ;; :stop 100
-                            :min-loop 100
+                            ;; :min-loop 100
                             :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                             :pre-process-func pre-process-func
                             :post-process-func post-process-func))
