@@ -573,7 +573,7 @@ Solve inverse kinematics problem with sqp optimization.
                                   :posture-joint-list posture-jl
                                   :posture-joint-angle-list posture-jal
                                   :external-wrench-list external-wrench
-                                  :external-coords-list (mapcar #'(lambda (x) (when x (send (send robot-env :robot) x))) external-coords-name)
+                                  :external-coords-list (mapcar #'(lambda (x) (when x (send robot-env :robot x))) external-coords-name)
                                   :kin-target-coords-list
                                   (mapcar
                                    #'(lambda (tc)
