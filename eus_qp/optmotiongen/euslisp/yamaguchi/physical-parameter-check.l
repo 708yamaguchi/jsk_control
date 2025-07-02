@@ -56,7 +56,7 @@
                             ))
          (limb-size (1- (length move-target)))
          target-coords
-         (task-coords (send (car (send task :coords-list)) :copy-worldcoords))
+         (task-coords (car (send task :coords-list)))
          (external-wrench (car (send task :wrench-list)))
          (contact-constraint
           (list
@@ -83,7 +83,7 @@
                                                       :face :margin 0
                                                       :name (format nil "~A" j)
                                                       )))))
-      (setq target-coords (append (list task-coords) task-face)))
+      (setq target-coords (append (list (send task-coords :copy-worldcoords)) task-face)))
     (setq sqp-opt (send *robot*
                         :inverse-kinematics-statics-optmotiongen
                         target-coords
@@ -94,7 +94,7 @@
                         ;; TODO: external-XXXの引数を受け取れるようにする
                         ;; メモ：external-wrenchは、手先が発揮しているレンチではなく、手先が受けているレンチ
                         :external-wrench external-wrench
-                        :external-coords task-coords
+                        :external-coords (send task-coords :copy-worldcoords)
                         :translation-axis translation-axis
                         :rotation-axis rotation-axis
                         :collision-avoidance-link-pair collision-avoidance-link-pair
@@ -105,6 +105,54 @@
                         :pre-process-func pre-process-func
                         :post-process-func post-process-func))
 
-    ;; TODO 出力された力の大きさなどをprintする
-    sqp-opt))
+    ;; Print result
+    (let* ((config-task (send sqp-opt :config-task))
+           (contact-attention-coords-list (send config-task :contact-attention-coords-list))
+           (contact-target-coords-list (send config-task :contact-target-coords-list)))
+      (format t "~%===== Result (in world coords) =====~%")
+      (format t "task: ~A~%" (send task-coords :name))
+      (format t "angle vector~%")
+      (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+      ;; Look at vacuum base shape
+      (let ((robot (copy-object *robot*))
+            (v (send-lexpr (instantiate x::irtviewer) :create nil))
+            )
+        (send robot :newcoords (make-coords))
+        (send robot :angle-vector
+              (send (send config-task :robot-env) :robot :angle-vector))
+        (send v :draw-origin nil) ;; 原点のRGBを消す
+        (send v :objects (list robot))
+        (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
+        (send v :draw-objects))
+      (format t "worldcoords~%")
+      (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
+      ;; Print contact coords
+      (format t "Contact coords~%")
+      (dolist (contact-target-coords contact-target-coords-list)
+        (format t " ~A~%" contact-target-coords))
+      ;; Print wrench
+      (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
+        (format t " ~A " force-type)
+        (if (or (eq force-type :force-list) (eq force-type :external-force-list))
+            (format t "[N]~%"))
+        (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
+            (format t "[Nm]~%"))
+        (if (send config-task force-type)
+            (progn
+              (when (or (eq force-type :force-list) (eq force-type :moment-list))
+                (dotimes (j (length contact-attention-coords-list))
+                  (format t "   At ~A, ~A~%"
+                          (elt (send-all contact-attention-coords-list :name) j)
+                          (elt (send config-task force-type) j))))
+              (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
+                (dotimes (j (length (send config-task :external-coords-list)))
+                  (format t "   At ~A, ~A~%"
+                          (send (elt (send config-task :external-coords-list) j) :worldcoords)
+                          (elt (send config-task force-type) j))
+                  )))
+          (format t "   nil~%")))
+      (format t "~%")
+      (format t "Status: ~A~%==================~%~%" (send sqp-opt :status)))
+    sqp-opt)
+    )
 (warn "(check *faucet-task*)~%")
