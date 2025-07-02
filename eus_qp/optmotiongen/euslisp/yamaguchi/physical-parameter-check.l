@@ -84,7 +84,7 @@
                                                       :name (format nil "~A" j)
                                                       )))))
       (setq target-coords (append (list task-coords) task-face)))
-    (setq sqp-opt (send *robot* ;; TODO: 返り値を設定する
+    (setq sqp-opt (send *robot*
                         :inverse-kinematics-statics-optmotiongen
                         target-coords
                         :move-target move-target

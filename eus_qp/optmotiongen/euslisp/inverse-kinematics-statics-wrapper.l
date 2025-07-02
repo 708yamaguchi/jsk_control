@@ -280,15 +280,21 @@ Solve inverse kinematics problem with sqp optimization.
      (send instant-config-task :put :eom-trans-thre eom-trans-thre)
      (send instant-config-task :put :eom-rot-thre eom-rot-thre)
      (send instant-config-task :put :torque-thre torque-thre)
+     (when debug-view
+       (if (boundp '*irtviewer*)
+           ;; If *irtviewer* already exists, do not change the viewpoint
+           (send *irtviewer* :objects (append (list robot-env) (cadr (memq :additional-draw-objects debug-view))))
+         (objects (append (list robot-env) (cadr (memq :additional-draw-objects debug-view))))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
      (send robot-env :dissoc-root-virtual)
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
             (send self :angle-vector)
+            sqp-opt
             ))
      ))
   )
