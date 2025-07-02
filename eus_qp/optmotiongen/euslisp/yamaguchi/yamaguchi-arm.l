@@ -171,14 +171,14 @@
   ;; By setting leg initial pose, optmotiongen calculation is likely to succeed
   (:leg-init
    (&key (pos 50)) ;; [mm]
-   (send (send self :leg-joint 0 :x) :joint-angle 50)
-   (send (send self :leg-joint 0 :y) :joint-angle 50)
-   (send (send self :leg-joint 1 :x) :joint-angle -50)
-   (send (send self :leg-joint 1 :y) :joint-angle 50)
-   (send (send self :leg-joint 2 :x) :joint-angle -50)
-   (send (send self :leg-joint 2 :y) :joint-angle -50)
-   (send (send self :leg-joint 3 :x) :joint-angle 50)
-   (send (send self :leg-joint 3 :y) :joint-angle -50)
+   (send (send self :leg-joint 0 :x) :joint-angle pos)
+   (send (send self :leg-joint 0 :y) :joint-angle pos)
+   (send (send self :leg-joint 1 :x) :joint-angle (* -1 pos))
+   (send (send self :leg-joint 1 :y) :joint-angle pos)
+   (send (send self :leg-joint 2 :x) :joint-angle (* -1 pos))
+   (send (send self :leg-joint 2 :y) :joint-angle (* -1 pos))
+   (send (send self :leg-joint 3 :x) :joint-angle pos)
+   (send (send self :leg-joint 3 :y) :joint-angle (* -1 pos))
    )
   (:end-coords
    ()
