@@ -54,6 +54,7 @@
     (eom-rot-thre 1e-1)
     (torque-thre 1e-1)
     (kin-scale 1.0)
+    (eom-scale 1.0)
     (target-posture-scale 1e-3)
     (norm-regular-scale-max 1e-3)
     (norm-regular-scale-offset 1e-6)
@@ -180,6 +181,7 @@ Solve inverse kinematics problem with sqp optimization.
                      :variant-joint-angle-margin joint-angle-margin
                      :invariant-joint-angle-margin joint-angle-margin
                      :kin-scale kin-scale
+                     :eom-scale eom-scale
                      :norm-regular-scale-max norm-regular-scale-max
                      :norm-regular-scale-offset norm-regular-scale-offset
                      :torque-regular-scale torque-regular-scale

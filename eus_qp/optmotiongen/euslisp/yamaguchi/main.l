@@ -142,14 +142,21 @@
       (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
       (dolist (l same-position-task-index)
         (setf (elt adjacent-regular-scale-list l) 5e-4))
-      ;; 最初は運動学のみで解を出す。この解を初期値にして、次に静力学のみで解を出す。
-      ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする
-      ;; これにより、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず
-      (let ((only-kinematics?-list (list t nil nil nil nil nil nil))
-            (kin-scale-list (list 5 5 0.8 0.5 0.3 0.2 0.1))
-            (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
+      ;; 1回目は、運動学のみで解を出す。
+      ;; 2回目は、この解を初期値にして、次に静力学のみで解を出す。
+      ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする。静力学の範囲で解は出ているので、kin-scaleとeom-scaleは小さめに設定する。
+      ;; この手順を踏むことで、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず。
+      (let (
+            (only-kinematics?-list (list t nil nil nil nil nil nil))
+            (kin-scale-list (list 5.0 5.0 0.01 0.01 0.01 0.01 0.01))
+            ;; (kin-scale-list (list 5.0 5.0 1.0 1.0 1.0 1.0 1.0))
+            (eom-scale-list (list 0.0 1.0 0.01 0.01 0.01 0.01 0.01))
+            ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
+            ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
+            (base-size-task-scale-list (list 0 0 (* 0.01 1e-4) (* 0.03 1e-4) (* 0.05 1e-4) (* 0.1 1e-4) (* 0.3 1e-4)))
             robot-env-list robot-list)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
+                     (eq (length only-kinematics?-list) (length eom-scale-list))
                      (eq (length only-kinematics?-list) (length base-size-task-scale-list))
                      )
           (print "Iteration parameters does not correspond.")
@@ -159,6 +166,7 @@
           (format t "Start optimization with the following parameters~%")
           (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
           (format t "kin-scale ~A~%" (elt kin-scale-list i))
+          (format t "eom-scale ~A~%" (elt eom-scale-list i))
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           ;; 前回のsqpの結果を初期値にして、新しい最適化計算を行う
           (when sqp-opt
@@ -168,8 +176,7 @@
                       (mapcar #'copy-object (send-all robot-env-list :robot)))))
           ;; 静力学を考えない時は、剛体脚の位置を固定にしておく
           ;; ベースサイズをタスク関数に入れない時は、剛体脚の位置を固定にしておく
-          (if ;; (elt only-kinematics?-list i)
-              (or (eq *base-size-task-scale* 0) (eq *base-size-task-scale* 0.0))
+          (if (or (eq *base-size-task-scale* 0) (eq *base-size-task-scale* 0.0))
               (if robot-list
                   (send-all robot-list :fix-leg)
                 (send *robot* :fix-leg))
@@ -195,13 +202,12 @@
                               :adjacent-regular-scale-list adjacent-regular-scale-list
                               :root-virtual-mode :6dof
                               :optimize-torque? nil
-                              ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
-                              ;; only-kinematics? tの挙動に近づけるためには、kin-scale値を10など大きめに設定する
-                              ;; 定性的な理解：吸着力を大きくするだけで整合性を取りやすいeom-**-taskの優先度を下げて、kin-taskを重視するのが良さそう。
+                              ;; メモ：kin-scaleやeom-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
                               :kin-scale (elt kin-scale-list i)
+                              :eom-scale (elt eom-scale-list i)
                               ;; :stop 50
                               ;; :min-loop 30
-                              ;; :stop 100
+                              :stop 100
                               ;; :min-loop 100
                               :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                               :only-kinematics? (elt only-kinematics?-list i)
@@ -272,6 +278,7 @@
               (format t "~%")))
           (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
           (format t "kin-scale ~A~%" (elt kin-scale-list i))
+          (format t "eom-scale ~A~%" (elt eom-scale-list i))
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
           (when (not (eq (send sqp-opt :status) :success))

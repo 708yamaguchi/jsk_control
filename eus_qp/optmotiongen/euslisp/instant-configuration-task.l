@@ -37,6 +37,7 @@
           (_dim-task "$\mathit{dim}(\bm{e})$")
           ;; scale
           (_kin-scale-mat-list "$K_{\mathit{kin}}$")
+          (_eom-scale)
           (_target-posture-scale-list "$k_{\mathit{posture}}$")
           (_norm-regular-scale-max "$k_{\mathit{max}}$")
           (_norm-regular-scale-coeff "$k_{\mathit{coeff}}$")
@@ -197,6 +198,7 @@ $\bm{\hat{w}}$は次式のように，全接触部位でのワールド座標系
     (kin-scale 1.0)
     (kin-scale-list)
     (kin-scale-mat-list)
+    (eom-scale 1.0)
     (target-posture-scale 1e-3)
     (target-posture-scale-list)
     (norm-regular-scale-max (if only-kinematics? 1e-3 1e-5))
@@ -252,6 +254,7 @@ Initialize instance
           (setq _kin-scale-mat-list
                 (make-list (length kin-target-coords-list) :initial-element (scale-matrix kin-scale (unit-matrix 6))))
           ))
+   (setq _eom-scale eom-scale)
    (cond (target-posture-scale-list
           (setq _target-posture-scale-list target-posture-scale-list)
           )
@@ -826,7 +829,7 @@ return $\bm{e}^{\mathit{eom\mathchar`-trans}}(\bm{q}) \in \mathbb{R}^3$
              (send self :external-force-list)
              ))
            ))
-   (send self :get :eom-trans-task-value)
+   (scale _eom-scale (send self :get :eom-trans-task-value))
    )
   (:eom-rot-task-value
    (&key (update? t))
@@ -859,7 +862,7 @@ return $\bm{e}^{\mathit{eom\mathchar`-rot}}(\bm{q}) \in \mathbb{R}^3$
               ))
             )
            ))
-   (send self :get :eom-rot-task-value)
+   (scale _eom-scale (send self :get :eom-rot-task-value))
    )
   (:torque-task-value
    (&key (update? t))
@@ -1091,8 +1094,9 @@ return $\dfrac{\partial \bm{e}^{\mathit{kin}}}{\partial \bm{\phi}} \in \mathbb{R
 
 return $\frac{\partial \bm{e}^{\mathit{eom\mathchar`-trans}}}{\partial \bm{\hat{w}}} \in \mathbb{R}^{3 \times 6N_{\mathit{cnt}}}$
    "
-   (apply #'concatenate-matrix-row
-          (flatten (mapcar #'(lambda (x) (list (unit-matrix 3) (make-matrix 3 3))) (make-list _num-contact))))
+   (scale-matrix _eom-scale
+                 (apply #'concatenate-matrix-row
+                        (flatten (mapcar #'(lambda (x) (list (unit-matrix 3) (make-matrix 3 3))) (make-list _num-contact)))))
    )
   (:eom-rot-task-jacobian-with-theta
    ()
@@ -1115,52 +1119,53 @@ $\sum_{m=1}^{N_{\mathit{cnt}}} \bm{f}_m + \sum_{m=1}^{N_{\mathit{ex}}} \bm{f}_m^
 
 return $\frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\theta}} \in \mathbb{R}^{3 \times N_{\mathit{var\mathchar`-joint}}}$
    "
-   (reduce
-    #'m+
-    (remove
-     nil
-     (flatten
-      (list
-       (m* (outer-product-matrix (send self :mg-vec))
-           (send _robot-env :robot-with-root-virtual :calc-cog-jacobian-from-joint-list
-                 :union-joint-list _variant-joint-list
-                 :translation-axis t
-                 ))
-       (mapcar
-        #'(lambda (f c)
-            (if (derivedp c cascaded-coords)
-                (scale-matrix
-                 -1
-                 (m* (outer-product-matrix f)
-                     (send _robot-env :calc-jacobian-from-joint-list
-                           :union-joint-list _variant-joint-list
-                           :move-target (list c)
-                           :transform-coords (list (make-coords))
-                           :translation-axis (list t)
-                           :rotation-axis (list nil)
-                           )
-                     ))))
-        (send self :force-list)
-        _contact-target-coords-list
-        )
-       (mapcar
-        #'(lambda (ex-f ex-c)
-            (scale-matrix
-             -1
-             (m* (outer-product-matrix ex-f)
-                 (send _robot-env :calc-jacobian-from-joint-list
-                       :union-joint-list _variant-joint-list
-                       :move-target (list ex-c)
-                       :transform-coords (list (make-coords))
-                       :translation-axis (list t)
-                       :rotation-axis (list nil)
-                       )
-                 )))
-        (send self :external-force-list)
-        _external-coords-list
-        )
-       ))
-     ))
+   (scale-matrix _eom-scale
+                 (reduce
+                  #'m+
+                  (remove
+                   nil
+                   (flatten
+                    (list
+                     (m* (outer-product-matrix (send self :mg-vec))
+                         (send _robot-env :robot-with-root-virtual :calc-cog-jacobian-from-joint-list
+                               :union-joint-list _variant-joint-list
+                               :translation-axis t
+                               ))
+                     (mapcar
+                      #'(lambda (f c)
+                          (if (derivedp c cascaded-coords)
+                              (scale-matrix
+                               -1
+                               (m* (outer-product-matrix f)
+                                   (send _robot-env :calc-jacobian-from-joint-list
+                                         :union-joint-list _variant-joint-list
+                                         :move-target (list c)
+                                         :transform-coords (list (make-coords))
+                                         :translation-axis (list t)
+                                         :rotation-axis (list nil)
+                                         )
+                                   ))))
+                      (send self :force-list)
+                      _contact-target-coords-list
+                      )
+                     (mapcar
+                      #'(lambda (ex-f ex-c)
+                          (scale-matrix
+                           -1
+                           (m* (outer-product-matrix ex-f)
+                               (send _robot-env :calc-jacobian-from-joint-list
+                                     :union-joint-list _variant-joint-list
+                                     :move-target (list ex-c)
+                                     :transform-coords (list (make-coords))
+                                     :translation-axis (list t)
+                                     :rotation-axis (list nil)
+                                     )
+                               )))
+                      (send self :external-force-list)
+                      _external-coords-list
+                      )
+                     ))
+                   )))
    )
   (:eom-rot-task-jacobian-with-wrench
    ()
@@ -1178,13 +1183,14 @@ return $\frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\theta}
 
 return $\frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\hat{w}}} \in \mathbb{R}^{3 \times 6N_{\mathit{cnt}}}$
    "
-   (apply #'concatenate-matrix-row
-          (flatten
-           (mapcar
-            #'(lambda (p)
-                (list (outer-product-matrix (v- p (send self :cog))) (unit-matrix 3)))
-            (mapcar #'(lambda (c) (scale 1e-3 (send c :worldpos))) _contact-target-coords-list) ;; [m]
-            )))
+   (scale-matrix _eom-scale
+                 (apply #'concatenate-matrix-row
+                        (flatten
+                         (mapcar
+                          #'(lambda (p)
+                              (list (outer-product-matrix (v- p (send self :cog))) (unit-matrix 3)))
+                          (mapcar #'(lambda (c) (scale 1e-3 (send c :worldpos))) _contact-target-coords-list) ;; [m]
+                          ))))
    )
   (:eom-rot-task-jacobian-with-phi
    ()
@@ -1204,54 +1210,55 @@ $\sum_{m=1}^{N_{\mathit{cnt}}} \bm{f}_m + \sum_{m=1}^{N_{\mathit{ex}}} \bm{f}_m^
 
 return $\frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\phi}} \in \mathbb{R}^{3 \times N_{\mathit{invar\mathchar`-joint}}}$
    "
-   (reduce
-    #'m+
-    (remove
-     nil
-     (flatten
-      (list
-       (m* (outer-product-matrix (send self :mg-vec))
-           (send _robot-env :robot-with-root-virtual :calc-cog-jacobian-from-joint-list
-                 :union-joint-list _invariant-joint-list
-                 :translation-axis t
-                 ))
-       (mapcar
-        #'(lambda (f c)
-            (if (derivedp c cascaded-coords)
-                (scale-matrix
-                 -1
-                 (m*
-                  (outer-product-matrix f)
-                  (send _robot-env :calc-jacobian-from-joint-list
-                        :union-joint-list _invariant-joint-list
-                        :move-target (list c)
-                        :transform-coords (list (make-coords))
-                        :translation-axis (list t)
-                        :rotation-axis (list nil)
-                        )
-                  ))))
-        (send self :force-list)
-        _contact-target-coords-list
-        )
-       (mapcar
-        #'(lambda (ex-f ex-c)
-            (scale-matrix
-             -1
-             (m*
-              (outer-product-matrix ex-f)
-              (send _robot-env :calc-jacobian-from-joint-list
-                    :union-joint-list _invariant-joint-list
-                    :move-target (list ex-c)
-                    :transform-coords (list (make-coords))
-                    :translation-axis (list t)
-                    :rotation-axis (list nil)
-                    )
-              )))
-        (send self :external-force-list)
-        _external-coords-list
-        )
-       ))
-     ))
+   (scale-matrix _eom-scale
+                 (reduce
+                  #'m+
+                  (remove
+                   nil
+                   (flatten
+                    (list
+                     (m* (outer-product-matrix (send self :mg-vec))
+                         (send _robot-env :robot-with-root-virtual :calc-cog-jacobian-from-joint-list
+                               :union-joint-list _invariant-joint-list
+                               :translation-axis t
+                               ))
+                     (mapcar
+                      #'(lambda (f c)
+                          (if (derivedp c cascaded-coords)
+                              (scale-matrix
+                               -1
+                               (m*
+                                (outer-product-matrix f)
+                                (send _robot-env :calc-jacobian-from-joint-list
+                                      :union-joint-list _invariant-joint-list
+                                      :move-target (list c)
+                                      :transform-coords (list (make-coords))
+                                      :translation-axis (list t)
+                                      :rotation-axis (list nil)
+                                      )
+                                ))))
+                      (send self :force-list)
+                      _contact-target-coords-list
+                      )
+                     (mapcar
+                      #'(lambda (ex-f ex-c)
+                          (scale-matrix
+                           -1
+                           (m*
+                            (outer-product-matrix ex-f)
+                            (send _robot-env :calc-jacobian-from-joint-list
+                                  :union-joint-list _invariant-joint-list
+                                  :move-target (list ex-c)
+                                  :transform-coords (list (make-coords))
+                                  :translation-axis (list t)
+                                  :rotation-axis (list nil)
+                                  )
+                            )))
+                      (send self :external-force-list)
+                      _external-coords-list
+                      )
+                     ))
+                   )))
    )
   (:torque-task-jacobian-with-theta
    ()
