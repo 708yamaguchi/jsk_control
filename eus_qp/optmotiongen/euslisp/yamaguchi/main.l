@@ -142,106 +142,135 @@
       (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
       (dolist (l same-position-task-index)
         (setf (elt adjacent-regular-scale-list l) 5e-4))
-      ;; First, use effective but unstable convergence parameter. Then, use stable parameter.
-      ;; メモ：タスクの数が増えると、*default-base-size-task-scale*の値を小さくしないと収束しない
-      ;; (dolist (base-size-task-scale (list (* 10.0 1e-4) (* 3.0 1e-4)))
-      (dolist (base-size-task-scale (list (* 10.0 1e-4)))
-        (setq *base-size-task-scale* base-size-task-scale)
-        (format t "Try *base-size-task-scale* ~A~%" *base-size-task-scale*)
-        (setq sqp-opt (send *robot*
-                            :inverse-kinematics-statics-trajectory-optmotiongen
-                            target-coords-list
-                            :move-target-list move-target-list
-                            :contact-target-coords-list contact-target-coords-list
-                            :contact-move-target-list contact-move-target-list
-                            :contact-constraint-list contact-constraint-list
-                            ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
-                            :external-wrench-list external-wrench-list
-                            :external-coords-name-list external-coords-name-list
-                            :translation-axis-list translation-axis-list
-                            :rotation-axis-list rotation-axis-list
-                            :collision-avoidance-link-pair collision-avoidance-link-pair
-                            :collision-distance-limit -0.5
-                            :invariant-joint-list (send *robot* :invariant-joint-list)
-                            :temporary-invariant-joint-list temporary-invariant-joint-list
-                            :adjacent-regular-scale-list adjacent-regular-scale-list
-                            :root-virtual-mode :6dof
-                            :optimize-torque? nil
-                            ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
-                            ;; only-kinematics? tの挙動に近づけるためには、kin-scale値を10など大きめに設定する
-                            ;; 定性的な理解：吸着力を大きくするだけで整合性を取りやすいeom-**-taskの優先度を下げて、kin-taskを重視するのが良さそう。
-                            :kin-scale 10
-                            ;; :stop 50
-                            ;; :min-loop 30
-                            ;; :stop 100
-                            ;; :min-loop 100
-                            :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
-                            :only-kinematics? nil
-                            :pre-process-func pre-process-func
-                            :post-process-func post-process-func))
-        ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
+      ;; 最初は運動学のみで解を出す。この解を初期値にして、次に静力学のみで解を出す。
+      ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする
+      ;; これにより、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず
+      (let ((only-kinematics?-list (list t nil nil nil nil nil nil))
+            (kin-scale-list (list 1 0.1 0.1 0.1 0.1 0.1 0.1))
+            (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 3.0 1e-4) (* 10.0 1e-4) (* 20.0 1e-4) (* 40.0 1e-4)))
+            robot-env-list robot-list)
+        (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
+                     (eq (length only-kinematics?-list) (length base-size-task-scale-list)))
+          (print "Iteration parameters does not correspond.")
+          (exit))
+        (dotimes (i (length only-kinematics?-list))
+          (setq *base-size-task-scale* (elt base-size-task-scale-list i))
+          (format t "Start optimization with the following parameters~%")
+          (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
+          (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
+          ;; 前回のsqpの結果を初期値にして、新しい最適化計算を行う
+          (when sqp-opt
+              (progn
+                (setq robot-env-list (send-all (send (send sqp-opt :config-task) :instant-config-task-list) :robot-env))
+                (setq robot-list
+                      (mapcar #'copy-object (send-all robot-env-list :robot)))))
+          ;; 静力学を考えない時は、剛体脚の位置を固定にしておく
+          (if (elt only-kinematics?-list i)
+              (if robot-list
+                  (send-all robot-list :fix-leg)
+                (send *robot* :fix-leg))
+            (if robot-list
+                (send-all robot-list :unfix-leg)
+              (send *robot* :unfix-leg)))
+          (setq sqp-opt (send *robot*
+                              :inverse-kinematics-statics-trajectory-optmotiongen
+                              target-coords-list
+                              :move-target-list move-target-list
+                              :contact-target-coords-list contact-target-coords-list
+                              :contact-move-target-list contact-move-target-list
+                              :contact-constraint-list contact-constraint-list
+                              ;; メモ：external-wrench-listは、手先が発揮しているレンチではなく、手先が受けているレンチ
+                              :external-wrench-list external-wrench-list
+                              :external-coords-name-list external-coords-name-list
+                              :translation-axis-list translation-axis-list
+                              :rotation-axis-list rotation-axis-list
+                              :collision-avoidance-link-pair collision-avoidance-link-pair
+                              :collision-distance-limit -0.5
+                              :invariant-joint-list (send *robot* :invariant-joint-list)
+                              :temporary-invariant-joint-list temporary-invariant-joint-list
+                              :adjacent-regular-scale-list adjacent-regular-scale-list
+                              :root-virtual-mode :6dof
+                              :optimize-torque? nil
+                              ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
+                              ;; only-kinematics? tの挙動に近づけるためには、kin-scale値を10など大きめに設定する
+                              ;; 定性的な理解：吸着力を大きくするだけで整合性を取りやすいeom-**-taskの優先度を下げて、kin-taskを重視するのが良さそう。
+                              :kin-scale 0.3
+                              ;; :stop 50
+                              ;; :min-loop 30
+                              ;; :stop 100
+                              ;; :min-loop 100
+                              :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
+                              :only-kinematics? (elt only-kinematics?-list i)
+                              :robot-list robot-list
+                              :pre-process-func pre-process-func
+                              :post-process-func post-process-func))
+          (send *robot* :unfix-leg)
+          ;; (visualize-trajectory-result ret :visualize-callback-func visualize-callback-func)
 
-        ;; 4. Print result
-        (let* ((traj-config-task (send sqp-opt :config-task))
-               (instant-config-task-list (send traj-config-task :instant-config-task-list)))
-          (format t "~%===== Result (in world coords) =====~%")
-          (dotimes (i (length instant-config-task-list))
-            (format t "task ~A: ~A~%" i (send (elt task-coords-list i) :name))
-            (let* ((config-task (elt instant-config-task-list i))
-                   (contact-attention-coords-list (send config-task :contact-attention-coords-list))
-                   (contact-target-coords-list (send config-task :contact-target-coords-list)))
-              (format t "angle vector~%")
-              (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
-              ;; Look at vacuum base shape
-              (when (and debug-view (eq i 0))
-                (let ((robot (copy-object *robot*))
-                      (v (send-lexpr (instantiate x::irtviewer) :create nil))
-                      )
-                  (send robot :newcoords (make-coords))
-                  (send robot :angle-vector
-                        (send (send config-task :robot-env) :robot :angle-vector))
-                  (send v :draw-origin nil) ;; 原点のRGBを消す
-                  (send v :objects (list robot))
-                  (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
-                  (send v :draw-objects)))
-              (format t "base size~%")
-              (let* ((robot (send (send config-task :robot-env) :robot))
-                     (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
-                     (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
-                     (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
-                     (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
-                (format t " X size: ~A~%" (abs (- x0 x2)))
-                (format t " Y size: ~A~%" (abs (- y0 y2))))
-              (format t "worldcoords~%")
-              (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
-              ;; Print contact coords
-              (format t "Contact coords~%")
-              (dolist (contact-target-coords contact-target-coords-list)
-                (format t " ~A~%" contact-target-coords))
-              ;; Print wrench
-              (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
-                (format t " ~A " force-type)
-                (if (or (eq force-type :force-list) (eq force-type :external-force-list))
-                    (format t "[N]~%"))
-                (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
-                    (format t "[Nm]~%"))
-                (if (send config-task force-type)
-                    (progn
-                      (when (or (eq force-type :force-list) (eq force-type :moment-list))
-                        (dotimes (j (length contact-attention-coords-list))
-                          (format t "   At ~A, ~A~%"
-                                  (elt (send-all contact-attention-coords-list :name) j)
-                                  (elt (send config-task force-type) j))))
-                      (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
-                        (dotimes (j (length (send config-task :external-coords-list)))
-                          (format t "   At ~A, ~A~%"
-                                  (send (elt (send config-task :external-coords-list) j) :worldcoords)
-                                  (elt (send config-task force-type) j))
-                          )))
-                  (format t "   nil~%"))))
-            (format t "~%")))
-        (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
-        (when (eq (send sqp-opt :status) :success)
-          (return-from main sqp-opt)))
+          ;; 4. Print result
+          (let* ((traj-config-task (send sqp-opt :config-task))
+                 (instant-config-task-list (send traj-config-task :instant-config-task-list)))
+            (format t "~%===== Result (in world coords) =====~%")
+            (dotimes (i (length instant-config-task-list))
+              (format t "task ~A: ~A~%" i (send (elt task-coords-list i) :name))
+              (let* ((config-task (elt instant-config-task-list i))
+                     (contact-attention-coords-list (send config-task :contact-attention-coords-list))
+                     (contact-target-coords-list (send config-task :contact-target-coords-list)))
+                (format t "angle vector~%")
+                (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+                ;; Look at vacuum base shape
+                (when (and debug-view (eq i 0))
+                  (let ((robot (copy-object *robot*))
+                        (v (send-lexpr (instantiate x::irtviewer) :create nil))
+                        )
+                    (send robot :newcoords (make-coords))
+                    (send robot :angle-vector
+                          (send (send config-task :robot-env) :robot :angle-vector))
+                    (send v :draw-origin nil) ;; 原点のRGBを消す
+                    (send v :objects (list robot))
+                    (send v :viewer :viewing :look #f(0 0 -1000) #f(0.0 0.0 0.0) #f(0.0 1.0 0.0))
+                    (send v :draw-objects)))
+                (format t "base size~%")
+                (let* ((robot (send (send config-task :robot-env) :robot))
+                       (x0 (send (send robot :leg-joint 0 :x) :joint-angle))
+                       (y0 (send (send robot :leg-joint 0 :y) :joint-angle))
+                       (x2 (send (send robot :leg-joint 2 :x) :joint-angle))
+                       (y2 (send (send robot :leg-joint 2 :y) :joint-angle)))
+                  (format t " X size: ~A~%" (abs (- x0 x2)))
+                  (format t " Y size: ~A~%" (abs (- y0 y2))))
+                (format t "worldcoords~%")
+                (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))
+                ;; Print contact coords
+                (format t "Contact coords~%")
+                (dolist (contact-target-coords contact-target-coords-list)
+                  (format t " ~A~%" contact-target-coords))
+                ;; Print wrench
+                (dolist (force-type (list :force-list :moment-list :external-force-list :external-moment-list))
+                  (format t " ~A " force-type)
+                  (if (or (eq force-type :force-list) (eq force-type :external-force-list))
+                      (format t "[N]~%"))
+                  (if (or (eq force-type :moment-list) (eq force-type :external-moment-list))
+                      (format t "[Nm]~%"))
+                  (if (send config-task force-type)
+                      (progn
+                        (when (or (eq force-type :force-list) (eq force-type :moment-list))
+                          (dotimes (j (length contact-attention-coords-list))
+                            (format t "   At ~A, ~A~%"
+                                    (elt (send-all contact-attention-coords-list :name) j)
+                                    (elt (send config-task force-type) j))))
+                        (when (or (eq force-type :external-force-list) (eq force-type :external-moment-list))
+                          (dotimes (j (length (send config-task :external-coords-list)))
+                            (format t "   At ~A, ~A~%"
+                                    (send (elt (send config-task :external-coords-list) j) :worldcoords)
+                                    (elt (send config-task force-type) j))
+                            )))
+                    (format t "   nil~%"))))
+              (format t "~%")))
+          (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
+          (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
+          (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
+          (when (not (eq (send sqp-opt :status) :success))
+            (format t "Failed to optimize~%")
+            (return-from main sqp-opt))))
       sqp-opt
       )))

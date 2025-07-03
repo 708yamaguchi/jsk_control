@@ -353,6 +353,7 @@ Solve inverse kinematics problem with sqp optimization.
     (norm-regular-scale-offset 1e-6)
     (torque-regular-scale 1e-5)
     (adjacent-regular-scale 0.0)
+    (robot-list) ;; initial location and pose of robot used by instant-configuration-task class
     (only-kinematics?) ;; for debug
     (pre-process-func)
     (post-process-func)
@@ -466,13 +467,18 @@ Solve inverse kinematics problem with sqp optimization.
                    translation-axis
                    rotation-axis
                    transform-coords
+                   robot-
                    )
                   (send self :put :move-target move-target)
                   (let* ((robot
-                          (progn
-                            (send self :put :target-coords target-coords)
-                            (copy-object self)
-                            ))
+                          (if robot-
+                              (progn
+                                (send robot- :put :target-coords target-coords)
+                                robot-)
+                            (progn
+                              (send self :put :target-coords target-coords)
+                              (copy-object self)
+                              )))
                          (contact-list
                           (append
                            physical-contact
@@ -543,6 +549,7 @@ Solve inverse kinematics problem with sqp optimization.
               translation-axis-list
               rotation-axis-list
               transform-coords-list
+              (if robot-list robot-list (make-list (length target-coords-list) :initial-element nil))
               )
              ))
           (instant-config-task-list
