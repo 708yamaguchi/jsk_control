@@ -49,12 +49,12 @@
                           :normal :z+)
                 :coords-list
                 (list
-                 (make-coords :pos (float-vector 8100 700 1000) :rpy (list (deg2rad 60) 0 0))
-                 (make-coords :pos (float-vector 8200 700 1100) :rpy (list (deg2rad 60) 0 0))
+                 (make-coords :pos (float-vector 8000 750 1000) :rpy (list (deg2rad 60) 0 0))
+                 (make-coords :pos (float-vector 8100 650 1100) :rpy (list (deg2rad 60) 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 -4 0 0 0)
+                 (float-vector 0 0 -2 0 0 0)
                  (float-vector 0 0 2 0 0 0)
                  )
                 ))
@@ -101,10 +101,14 @@
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
+                 ;; (float-vector 0 0 3 0 0 0)
+                 ;; (float-vector 0 0 3 0 0 0)
+                 ;; (float-vector 0 0 3 0 0 0)
+                 ;; (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
                  )
                 ))
 

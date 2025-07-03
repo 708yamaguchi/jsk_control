@@ -146,9 +146,8 @@
       ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする
       ;; これにより、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず
       (let ((only-kinematics?-list (list t nil nil nil nil nil nil))
-            (kin-scale-list (list 1 0.1 0.1 0.1 0.1 0.1 0.1))
-            ;; (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 3.0 1e-4) (* 10.0 1e-4) (* 20.0 1e-4) (* 40.0 1e-4)))
-            (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4)))
+            (kin-scale-list (list 5 5 0.8 0.5 0.3 0.2 0.1))
+            (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
             robot-env-list robot-list)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
                      (eq (length only-kinematics?-list) (length base-size-task-scale-list))
@@ -159,6 +158,7 @@
           (setq *base-size-task-scale* (elt base-size-task-scale-list i))
           (format t "Start optimization with the following parameters~%")
           (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
+          (format t "kin-scale ~A~%" (elt kin-scale-list i))
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           ;; 前回のsqpの結果を初期値にして、新しい最適化計算を行う
           (when sqp-opt
@@ -167,7 +167,9 @@
                 (setq robot-list
                       (mapcar #'copy-object (send-all robot-env-list :robot)))))
           ;; 静力学を考えない時は、剛体脚の位置を固定にしておく
-          (if (elt only-kinematics?-list i)
+          ;; ベースサイズをタスク関数に入れない時は、剛体脚の位置を固定にしておく
+          (if ;; (elt only-kinematics?-list i)
+              (or (eq *base-size-task-scale* 0) (eq *base-size-task-scale* 0.0))
               (if robot-list
                   (send-all robot-list :fix-leg)
                 (send *robot* :fix-leg))
@@ -269,6 +271,7 @@
                     (format t "   nil~%"))))
               (format t "~%")))
           (format t "only-kinematics? ~A~%" (elt only-kinematics?-list i))
+          (format t "kin-scale ~A~%" (elt kin-scale-list i))
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           (format t "Status: ~A~%==================~%~%" (send sqp-opt :status))
           (when (not (eq (send sqp-opt :status) :success))
