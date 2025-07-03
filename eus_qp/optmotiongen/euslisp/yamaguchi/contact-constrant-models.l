@@ -60,6 +60,7 @@
           (list
            ;; friction
            ;; 静止摩擦係数を下げると、逆に収束しやすくなる（出力されるベースサイズが小さくなる）ことがある。
+           ;; 摩擦係数は、ゴムと環境の間の接触の摩擦係数。滑りやすい環境を想定して、0.3とした。
            (instance 2D-translational-friction-contact-constraint :init 0.3)
            (instance rotational-friction-contact-constraint :init 0.005 :fz)
            ;; moment
@@ -95,8 +96,8 @@
 ;; 吸着パッドは、rigid-leg-contact-constraint + vacuum-pad-contact-constraintの組み合わせで表現できる。
 (defmethod vacuum-pad-contact-constraint
   (:init
-   ;; 直径80mmの吸着パッドに-40kPaを書けると、およそ200N
-   (&key (suction-force -200) (name))
+   ;; 直径80mmの吸着パッドに-40kPaを書けると、およそ200N。ちょっと空気が漏れるような厳し目の環境を想定して150Nとする。
+   (&key (suction-force -150) (name))
    "Calc default constraint matrix.
     This is include 2D friction force, 1D rotational friction moment, non-negative normal force, and 2D-COP constraint,
     e.g., for foot constraint.
