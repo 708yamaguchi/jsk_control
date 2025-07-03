@@ -147,10 +147,12 @@
       ;; これにより、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず
       (let ((only-kinematics?-list (list t nil nil nil nil nil nil))
             (kin-scale-list (list 1 0.1 0.1 0.1 0.1 0.1 0.1))
-            (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 3.0 1e-4) (* 10.0 1e-4) (* 20.0 1e-4) (* 40.0 1e-4)))
+            ;; (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 3.0 1e-4) (* 10.0 1e-4) (* 20.0 1e-4) (* 40.0 1e-4)))
+            (base-size-task-scale-list (list 0 0 (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4) (* 1.0 1e-4)))
             robot-env-list robot-list)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
-                     (eq (length only-kinematics?-list) (length base-size-task-scale-list)))
+                     (eq (length only-kinematics?-list) (length base-size-task-scale-list))
+                     )
           (print "Iteration parameters does not correspond.")
           (exit))
         (dotimes (i (length only-kinematics?-list))
@@ -194,7 +196,7 @@
                               ;; メモ：kin-scale値がデフォルトの1.0のままだと、収束しづらいことがある。
                               ;; only-kinematics? tの挙動に近づけるためには、kin-scale値を10など大きめに設定する
                               ;; 定性的な理解：吸着力を大きくするだけで整合性を取りやすいeom-**-taskの優先度を下げて、kin-taskを重視するのが良さそう。
-                              :kin-scale 0.3
+                              :kin-scale (elt kin-scale-list i)
                               ;; :stop 50
                               ;; :min-loop 30
                               ;; :stop 100
