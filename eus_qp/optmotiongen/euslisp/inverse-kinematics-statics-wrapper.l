@@ -355,7 +355,7 @@ Solve inverse kinematics problem with sqp optimization.
     (norm-regular-scale-offset 1e-6)
     (torque-regular-scale 1e-5)
     (adjacent-regular-scale 0.0)
-    (robot-list) ;; initial location and pose of robot used by instant-configuration-task class
+    (robot-env-list-) ;; initial value of optimization by instant-configuration-task class
     (only-kinematics?) ;; for debug
     (pre-process-func)
     (post-process-func)
@@ -459,101 +459,97 @@ Solve inverse kinematics problem with sqp optimization.
             physical-target-coords
             ))
           (robot-env-list
-           (progn
-             ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
-             (send self :put :collision-pair-list collision-pair-list)
-             (mapcar
-              #'(lambda
-                  (target-coords
-                   move-target
-                   translation-axis
-                   rotation-axis
-                   transform-coords
-                   robot-
-                   )
-                  (send self :put :move-target move-target)
-                  (let* ((robot
-                          (if robot-
-                              (progn
-                                (send robot- :put :target-coords target-coords)
-                                robot-)
+           (if robot-env-list-
+               robot-env-list-
+             (progn
+               ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
+               (send self :put :collision-pair-list collision-pair-list)
+               (mapcar
+                #'(lambda
+                    (target-coords
+                     move-target
+                     translation-axis
+                     rotation-axis
+                     transform-coords
+                     )
+                    (send self :put :move-target move-target)
+                    (let* ((robot
                             (progn
                               (send self :put :target-coords target-coords)
                               (copy-object self)
-                              )))
-                         (contact-list
-                          (append
-                           physical-contact
-                           (remove
-                            nil
-                            (mapcar
-                             #'(lambda
-                                 (tc trans-axis rot-axis trans-coords)
-                                 (when (and (not
-                                             (find-if
-                                              #'(lambda (ptc) (equal (send tc :get :physical-id) (send ptc :get :physical-id)))
-                                              physical-target-coords))
-                                            (not (and (equal trans-axis t) (equal rot-axis t)))
+                              ))
+                           (contact-list
+                            (append
+                             physical-contact
+                             (remove
+                              nil
+                              (mapcar
+                               #'(lambda
+                                   (tc trans-axis rot-axis trans-coords)
+                                   (when (and (not
+                                               (find-if
+                                                #'(lambda (ptc) (equal (send tc :get :physical-id) (send ptc :get :physical-id)))
+                                                physical-target-coords))
+                                              (not (and (equal trans-axis t) (equal rot-axis t)))
+                                              )
+                                     (let* ((contact
+                                             (instance contact-ik-arg :init
+                                                       :target-coords tc
+                                                       :translation-axis trans-axis
+                                                       :rotation-axis rot-axis
+                                                       :transform-coords trans-coords
+                                                       ))
                                             )
-                                   (let* ((contact
-                                           (instance contact-ik-arg :init
-                                                     :target-coords tc
-                                                     :translation-axis trans-axis
-                                                     :rotation-axis rot-axis
-                                                     :transform-coords trans-coords
-                                                     ))
-                                          )
-                                     (send contact :put :target-coords tc)
-                                     contact
-                                     )))
-                             (send robot :get :target-coords)
-                             translation-axis
-                             rotation-axis
-                             transform-coords
-                             )))
-                          )
-                         (robot-env
-                          (instance robot-environment :init
-                                    :robot robot
-                                    :contact-list contact-list
-                                    :root-virtual-mode root-virtual-mode
-                                    :root-virtual-joint-min-angle-list root-virtual-joint-min-angle-list
-                                    :root-virtual-joint-max-angle-list root-virtual-joint-max-angle-list
-                                    ))
-                         )
-                    (send robot-env :invariant-joint-list
-                          (append
-                           (flatten
-                            (send-all
-                             (remove-if-not
-                              #'(lambda (c) (numberp (send (send c :get :target-coords) :get :physical-id)))
-                              contact-list)
-                             :joint-list))
-                           ;; robotは(copy-object self)なので、jointの名前で一致をかける必要がある
-                           (if invariant-joint-list
-                               (let ((names (send-all invariant-joint-list :name)))
-                                 (mapcar #'(lambda (name)
-                                             (find-if #'(lambda (x) (equal (send x :name) name))
-                                                      (send robot :joint-list)))
-                                         names)))
-                           (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
-                           ))
-                    (send robot-env :variant-joint-list
-                          (set-difference (send robot-env :joint-list) (send robot-env :invariant-joint-list)))
-                    (send robot-env :put :move-target
-                          (send robot-env :robot :get :move-target))
-                    (send robot-env :put :collision-pair-list
-                          (send robot-env :robot :get :collision-pair-list))
-                    robot-env
-                    ))
-              target-coords-list
-              move-target-list
-              translation-axis-list
-              rotation-axis-list
-              transform-coords-list
-              (if robot-list robot-list (make-list (length target-coords-list) :initial-element nil))
-              )
-             ))
+                                       (send contact :put :target-coords tc)
+                                       contact
+                                       )))
+                               (send robot :get :target-coords)
+                               translation-axis
+                               rotation-axis
+                               transform-coords
+                               )))
+                            )
+                           (robot-env
+                            (instance robot-environment :init
+                                      :robot robot
+                                      :contact-list contact-list
+                                      :root-virtual-mode root-virtual-mode
+                                      :root-virtual-joint-min-angle-list root-virtual-joint-min-angle-list
+                                      :root-virtual-joint-max-angle-list root-virtual-joint-max-angle-list
+                                      ))
+                           )
+                      (send robot-env :invariant-joint-list
+                            (append
+                             (flatten
+                              (send-all
+                               (remove-if-not
+                                #'(lambda (c) (numberp (send (send c :get :target-coords) :get :physical-id)))
+                                contact-list)
+                               :joint-list))
+                             ;; robotは(copy-object self)なので、jointの名前で一致をかける必要がある
+                             (if invariant-joint-list
+                                 (let ((names (send-all invariant-joint-list :name)))
+                                   (mapcar #'(lambda (name)
+                                               (find-if #'(lambda (x) (equal (send x :name) name))
+                                                        (send robot :joint-list)))
+                                           names)))
+                             (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
+                             ))
+                      (send robot-env :variant-joint-list
+                            (set-difference (send robot-env :joint-list) (send robot-env :invariant-joint-list)))
+                      (send robot-env :put :move-target
+                            (send robot-env :robot :get :move-target))
+                      (send robot-env :put :collision-pair-list
+                            (send robot-env :robot :get :collision-pair-list))
+                      robot-env
+                      ))
+                target-coords-list
+                move-target-list
+                translation-axis-list
+                rotation-axis-list
+                transform-coords-list
+                )
+               )))
           (instant-config-task-list
            (mapcar
             #'(lambda

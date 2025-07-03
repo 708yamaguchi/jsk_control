@@ -144,7 +144,7 @@
         (setf (elt adjacent-regular-scale-list l) 5e-4))
       ;; 1回目は、運動学のみで解を出す。
       ;; 2回目は、この解を初期値にして、次に静力学のみで解を出す。
-      ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする。静力学の範囲で解は出ているので、kin-scaleとeom-scaleは小さめに設定する。
+      ;; 3回目以降は、前回の最適化計算の値を初期値にしてbase-size-task-scaleを大きくしていくことで、ベースサイズを小さくする。静力学の範囲で解は出ているので、kin-scaleとeom-scaleは小さくしていく。
       ;; この手順を踏むことで、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず。
       (let (
             (only-kinematics?-list (list t nil nil nil nil nil nil))
@@ -154,7 +154,7 @@
             ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
             ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
             (base-size-task-scale-list (list 0 0 (* 0.01 1e-4) (* 0.03 1e-4) (* 0.05 1e-4) (* 0.1 1e-4) (* 0.3 1e-4)))
-            robot-env-list robot-list)
+            robot-env-list)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
                      (eq (length only-kinematics?-list) (length eom-scale-list))
                      (eq (length only-kinematics?-list) (length base-size-task-scale-list))
@@ -170,19 +170,12 @@
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           ;; 前回のsqpの結果を初期値にして、新しい最適化計算を行う
           (when sqp-opt
-              (progn
-                (setq robot-env-list (send-all (send (send sqp-opt :config-task) :instant-config-task-list) :robot-env))
-                (setq robot-list
-                      (mapcar #'copy-object (send-all robot-env-list :robot)))))
+            (setq robot-env-list (send-all (send (send sqp-opt :config-task) :instant-config-task-list) :robot-env)))
           ;; 静力学を考えない時は、剛体脚の位置を固定にしておく
           ;; ベースサイズをタスク関数に入れない時は、剛体脚の位置を固定にしておく
           (if (or (eq *base-size-task-scale* 0) (eq *base-size-task-scale* 0.0))
-              (if robot-list
-                  (send-all robot-list :fix-leg)
-                (send *robot* :fix-leg))
-            (if robot-list
-                (send-all robot-list :unfix-leg)
-              (send *robot* :unfix-leg)))
+              (send *robot* :fix-leg)
+            (send *robot* :unfix-leg))
           (setq sqp-opt (send *robot*
                               :inverse-kinematics-statics-trajectory-optmotiongen
                               target-coords-list
@@ -207,11 +200,11 @@
                               :eom-scale (elt eom-scale-list i)
                               ;; :stop 50
                               ;; :min-loop 30
-                              :stop 100
+                              ;; :stop 100
                               ;; :min-loop 100
                               :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                               :only-kinematics? (elt only-kinematics?-list i)
-                              :robot-list robot-list
+                              :robot-env-list robot-env-list
                               :pre-process-func pre-process-func
                               :post-process-func post-process-func))
           (send *robot* :unfix-leg)
