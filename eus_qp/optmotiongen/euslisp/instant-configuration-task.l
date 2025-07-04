@@ -35,6 +35,7 @@
           (_dim-invariant-config "$\mathit{dim}(\bm{q}_{\mathit{invar}})$")
           (_dim-config "$\mathit{dim}(\bm{q})$")
           (_dim-task "$\mathit{dim}(\bm{e})$")
+          (_dim-equality-task "")
           ;; scale
           (_kin-scale-mat-list "$K_{\mathit{kin}}$")
           (_eom-scale)

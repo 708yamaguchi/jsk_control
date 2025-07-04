@@ -148,11 +148,10 @@
       ;; この手順を踏むことで、運動学の問題、静力学の問題、ベースサイズ最小化問題を別々に解けるので、安定して解を出せるはず。
       (let (
             (only-kinematics?-list (list t nil nil nil nil nil nil))
-            (kin-scale-list (list 5.0 5.0 0.01 0.01 0.01 0.01 0.01))
-            ;; (kin-scale-list (list 5.0 5.0 1.0 1.0 1.0 1.0 1.0))
-            (eom-scale-list (list 0.0 1.0 0.01 0.01 0.01 0.01 0.01))
-            ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
-            ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
+            ;; (kin-scale-list (list 5.0 5.0 0.01 0.01 0.01 0.01 0.01))
+            (kin-scale-list (list 1 1 1 1 1 1 1))
+            ;; (eom-scale-list (list 0.0 1.0 0.01 0.01 0.01 0.01 0.01))
+            (eom-scale-list (list 1 1 1 1 1 1 1))
             (base-size-task-scale-list (list 0 0 (* 0.01 1e-4) (* 0.03 1e-4) (* 0.05 1e-4) (* 0.1 1e-4) (* 0.3 1e-4)))
             robot-env-list)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
