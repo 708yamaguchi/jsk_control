@@ -154,7 +154,7 @@
             ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
             ;; (base-size-task-scale-list (list 0 0 (* 0.1 1e-4) (* 0.5 1e-4) (* 0.7 1e-4) (* 1.0 1e-4) (* 3.0 1e-4)))
             (base-size-task-scale-list (list 0 0 (* 0.01 1e-4) (* 0.03 1e-4) (* 0.05 1e-4) (* 0.1 1e-4) (* 0.3 1e-4)))
-            robot-env-list)
+            prev-config-task)
         (unless (and (eq (length only-kinematics?-list) (length kin-scale-list))
                      (eq (length only-kinematics?-list) (length eom-scale-list))
                      (eq (length only-kinematics?-list) (length base-size-task-scale-list))
@@ -170,7 +170,7 @@
           (format t "*base-size-task-scale* ~A~%" *base-size-task-scale*)
           ;; 前回のsqpの結果を初期値にして、新しい最適化計算を行う
           (when sqp-opt
-            (setq robot-env-list (send-all (send (send sqp-opt :config-task) :instant-config-task-list) :robot-env)))
+            (setq prev-config-task (send sqp-opt :config-task)))
           ;; 静力学を考えない時は、剛体脚の位置を固定にしておく
           ;; ベースサイズをタスク関数に入れない時は、剛体脚の位置を固定にしておく
           (if (or (eq *base-size-task-scale* 0) (eq *base-size-task-scale* 0.0))
@@ -204,7 +204,7 @@
                               ;; :min-loop 100
                               :debug-view (when debug-view (list :additional-draw-objects additional-draw-objects))
                               :only-kinematics? (elt only-kinematics?-list i)
-                              :robot-env-list robot-env-list
+                              :initial-config-task prev-config-task
                               :pre-process-func pre-process-func
                               :post-process-func post-process-func))
           (send *robot* :unfix-leg)

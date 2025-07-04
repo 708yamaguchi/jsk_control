@@ -355,7 +355,7 @@ Solve inverse kinematics problem with sqp optimization.
     (norm-regular-scale-offset 1e-6)
     (torque-regular-scale 1e-5)
     (adjacent-regular-scale 0.0)
-    (robot-env-list-) ;; initial value of optimization by instant-configuration-task class
+    (initial-config-task)
     (only-kinematics?) ;; for debug
     (pre-process-func)
     (post-process-func)
@@ -459,206 +459,208 @@ Solve inverse kinematics problem with sqp optimization.
             physical-target-coords
             ))
           (robot-env-list
-           (if robot-env-list-
-               robot-env-list-
-             (progn
-               ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
-               (send self :put :collision-pair-list collision-pair-list)
-               (mapcar
-                #'(lambda
-                    (target-coords
-                     move-target
-                     translation-axis
-                     rotation-axis
-                     transform-coords
-                     )
-                    (send self :put :move-target move-target)
-                    (let* ((robot
-                            (progn
-                              (send self :put :target-coords target-coords)
-                              (copy-object self)
-                              ))
-                           (contact-list
-                            (append
-                             physical-contact
-                             (remove
-                              nil
-                              (mapcar
-                               #'(lambda
-                                   (tc trans-axis rot-axis trans-coords)
-                                   (when (and (not
-                                               (find-if
-                                                #'(lambda (ptc) (equal (send tc :get :physical-id) (send ptc :get :physical-id)))
-                                                physical-target-coords))
-                                              (not (and (equal trans-axis t) (equal rot-axis t)))
-                                              )
-                                     (let* ((contact
-                                             (instance contact-ik-arg :init
-                                                       :target-coords tc
-                                                       :translation-axis trans-axis
-                                                       :rotation-axis rot-axis
-                                                       :transform-coords trans-coords
-                                                       ))
+           (progn
+             ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
+             (send self :put :collision-pair-list collision-pair-list)
+             (mapcar
+              #'(lambda
+                  (target-coords
+                   move-target
+                   translation-axis
+                   rotation-axis
+                   transform-coords
+                   )
+                  (send self :put :move-target move-target)
+                  (let* ((robot
+                          (progn
+                            (send self :put :target-coords target-coords)
+                            (copy-object self)
+                            ))
+                         (contact-list
+                          (append
+                           physical-contact
+                           (remove
+                            nil
+                            (mapcar
+                             #'(lambda
+                                 (tc trans-axis rot-axis trans-coords)
+                                 (when (and (not
+                                             (find-if
+                                              #'(lambda (ptc) (equal (send tc :get :physical-id) (send ptc :get :physical-id)))
+                                              physical-target-coords))
+                                            (not (and (equal trans-axis t) (equal rot-axis t)))
                                             )
-                                       (send contact :put :target-coords tc)
-                                       contact
-                                       )))
-                               (send robot :get :target-coords)
-                               translation-axis
-                               rotation-axis
-                               transform-coords
-                               )))
-                            )
-                           (robot-env
-                            (instance robot-environment :init
-                                      :robot robot
-                                      :contact-list contact-list
-                                      :root-virtual-mode root-virtual-mode
-                                      :root-virtual-joint-min-angle-list root-virtual-joint-min-angle-list
-                                      :root-virtual-joint-max-angle-list root-virtual-joint-max-angle-list
-                                      ))
-                           )
-                      (send robot-env :invariant-joint-list
-                            (append
-                             (flatten
-                              (send-all
-                               (remove-if-not
-                                #'(lambda (c) (numberp (send (send c :get :target-coords) :get :physical-id)))
-                                contact-list)
-                               :joint-list))
-                             ;; robotは(copy-object self)なので、jointの名前で一致をかける必要がある
-                             (if invariant-joint-list
-                                 (let ((names (send-all invariant-joint-list :name)))
-                                   (mapcar #'(lambda (name)
-                                               (find-if #'(lambda (x) (equal (send x :name) name))
-                                                        (send robot :joint-list)))
-                                           names)))
-                             (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
-                             ))
-                      (send robot-env :variant-joint-list
-                            (set-difference (send robot-env :joint-list) (send robot-env :invariant-joint-list)))
-                      (send robot-env :put :move-target
-                            (send robot-env :robot :get :move-target))
-                      (send robot-env :put :collision-pair-list
-                            (send robot-env :robot :get :collision-pair-list))
-                      robot-env
-                      ))
-                target-coords-list
-                move-target-list
-                translation-axis-list
-                rotation-axis-list
-                transform-coords-list
-                )
-               )))
-          (instant-config-task-list
-           (mapcar
-            #'(lambda
-                (i
-                 robot-env
-                 target-coords
-                 thre
-                 rthre
-                 contact-move-target
-                 contact-target-coords
-                 contact-constraint
-                 posture-jl
-                 posture-jal
-                 external-wrench
-                 external-coords-name
-                 )
-                (let* ((config-task
-                        (instance instant-configuration-task :init
-                                  :robot-env robot-env
-                                  :variant-joint-list
-                                  (send robot-env :variant-joint-list)
-                                  :invariant-joint-list
-                                  (send robot-env :invariant-joint-list)
-                                  :drive-joint-list
-                                  (if (or optimize-torque?
-                                          (and optimize-start-end-torque?
-                                               (or (= i 0) (= i (1- (length robot-env-list)))))
+                                   (let* ((contact
+                                           (instance contact-ik-arg :init
+                                                     :target-coords tc
+                                                     :translation-axis trans-axis
+                                                     :rotation-axis rot-axis
+                                                     :transform-coords trans-coords
+                                                     ))
                                           )
-                                      (send robot-env :drive-joint-list))
-                                  :posture-joint-list posture-jl
-                                  :posture-joint-angle-list posture-jal
-                                  :external-wrench-list external-wrench
-                                  :external-coords-list (mapcar #'(lambda (x) (when x (send robot-env :robot x))) external-coords-name)
-                                  :kin-target-coords-list
-                                  (mapcar
-                                   #'(lambda (tc)
-                                       (let* ((contact
-                                               (find-if
-                                                #'(lambda (c) (equal (send c :get :target-coords) tc))
-                                                (send robot-env :contact-list)))
-                                              )
-                                         (cond (contact
-                                                (send contact :contact-coords)
+                                     (send contact :put :target-coords tc)
+                                     contact
+                                     )))
+                             (send robot :get :target-coords)
+                             translation-axis
+                             rotation-axis
+                             transform-coords
+                             )))
+                          )
+                         (robot-env
+                          (instance robot-environment :init
+                                    :robot robot
+                                    :contact-list contact-list
+                                    :root-virtual-mode root-virtual-mode
+                                    :root-virtual-joint-min-angle-list root-virtual-joint-min-angle-list
+                                    :root-virtual-joint-max-angle-list root-virtual-joint-max-angle-list
+                                    ))
+                         )
+                    (send robot-env :invariant-joint-list
+                          (append
+                           (flatten
+                            (send-all
+                             (remove-if-not
+                              #'(lambda (c) (numberp (send (send c :get :target-coords) :get :physical-id)))
+                              contact-list)
+                             :joint-list))
+                           ;; robotは(copy-object self)なので、jointの名前で一致をかける必要がある
+                           (if invariant-joint-list
+                               (let ((names (send-all invariant-joint-list :name)))
+                                 (mapcar #'(lambda (name)
+                                             (find-if #'(lambda (x) (equal (send x :name) name))
+                                                      (send robot :joint-list)))
+                                         names)))
+                           (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
+                           ))
+                    (send robot-env :variant-joint-list
+                          (set-difference (send robot-env :joint-list) (send robot-env :invariant-joint-list)))
+                    (send robot-env :put :move-target
+                          (send robot-env :robot :get :move-target))
+                    (send robot-env :put :collision-pair-list
+                          (send robot-env :robot :get :collision-pair-list))
+                    robot-env
+                    ))
+              target-coords-list
+              move-target-list
+              translation-axis-list
+              rotation-axis-list
+              transform-coords-list
+              )
+             ))
+          (instant-config-task-list
+           (if initial-config-task
+               nil ;; trajectory-config-taskが与えられるので、instant-config-taskは計算する必要がない
+             (mapcar
+              #'(lambda
+                  (i
+                   robot-env
+                   target-coords
+                   thre
+                   rthre
+                   contact-move-target
+                   contact-target-coords
+                   contact-constraint
+                   posture-jl
+                   posture-jal
+                   external-wrench
+                   external-coords-name
+                   )
+                  (let* ((config-task
+                          (instance instant-configuration-task :init
+                                    :robot-env robot-env
+                                    :variant-joint-list
+                                    (send robot-env :variant-joint-list)
+                                    :invariant-joint-list
+                                    (send robot-env :invariant-joint-list)
+                                    :drive-joint-list
+                                    (if (or optimize-torque?
+                                            (and optimize-start-end-torque?
+                                                 (or (= i 0) (= i (1- (length robot-env-list)))))
+                                            )
+                                        (send robot-env :drive-joint-list))
+                                    :posture-joint-list posture-jl
+                                    :posture-joint-angle-list posture-jal
+                                    :external-wrench-list external-wrench
+                                    :external-coords-list (mapcar #'(lambda (x) (when x (send robot-env :robot x))) external-coords-name)
+                                    :kin-target-coords-list
+                                    (mapcar
+                                     #'(lambda (tc)
+                                         (let* ((contact
+                                                 (find-if
+                                                  #'(lambda (c) (equal (send c :get :target-coords) tc))
+                                                  (send robot-env :contact-list)))
                                                 )
-                                               (t
-                                                tc))
-                                         ))
-                                   target-coords
-                                   )
-                                  :only-kinematics? only-kinematics?
-                                  :kin-attention-coords-list
-                                  (send robot-env :get :move-target)
-                                  :contact-attention-coords-list contact-move-target
-                                  :contact-target-coords-list
-                                  (mapcar
-                                   #'(lambda (tc)
-                                       (let* ((contact
-                                               (find-if
-                                                #'(lambda (c) (equal (send c :get :target-coords) tc))
-                                                (send robot-env :contact-list)))
-                                              )
-                                         (cond (contact
-                                                (send contact :contact-coords)
+                                           (cond (contact
+                                                  (send contact :contact-coords)
+                                                  )
+                                                 (t
+                                                  tc))
+                                           ))
+                                     target-coords
+                                     )
+                                    :only-kinematics? only-kinematics?
+                                    :kin-attention-coords-list
+                                    (send robot-env :get :move-target)
+                                    :contact-attention-coords-list contact-move-target
+                                    :contact-target-coords-list
+                                    (mapcar
+                                     #'(lambda (tc)
+                                         (let* ((contact
+                                                 (find-if
+                                                  #'(lambda (c) (equal (send c :get :target-coords) tc))
+                                                  (send robot-env :contact-list)))
                                                 )
-                                               (t
-                                                tc))
-                                         ))
-                                   contact-target-coords
-                                   )
-                                  :contact-constraint-list contact-constraint
-                                  :collision-pair-list
-                                  (send robot-env :get :collision-pair-list)
-                                  :collision-distance-margin
-                                  (* 1e-3 collision-distance-limit) ;; [m]
-                                  :kin-scale kin-scale
-                                  :variant-joint-angle-margin joint-angle-margin
-                                  :invariant-joint-angle-margin joint-angle-margin
-                                  ))
-                       )
-                  (send config-task :put :thre thre)
-                  (send config-task :put :rthre rthre)
-                  ;; If only-kinematics, eom-**-thre and torque-thre are ignored
-                  (send config-task :put :eom-trans-thre (if only-kinematics? 1e10 eom-trans-thre))
-                  (send config-task :put :eom-rot-thre (if only-kinematics? 1e10 eom-rot-thre))
-                  (send config-task :put :torque-thre (if only-kinematics? 1e10 torque-thre))
-                  config-task
-                  ))
-            (range (length robot-env-list))
-            robot-env-list
-            target-coords-list
-            thre-list
-            rthre-list
-            contact-move-target-list
-            contact-target-coords-list
-            contact-constraint-list
-            posture-joint-list
-            posture-joint-angle-list
-            (if external-wrench-list external-wrench-list (make-list (length target-coords-list) :initial-element nil))
-            (if external-coords-name-list external-coords-name-list (make-list (length target-coords-list) :initial-element nil))
-            ))
+                                           (cond (contact
+                                                  (send contact :contact-coords)
+                                                  )
+                                                 (t
+                                                  tc))
+                                           ))
+                                     contact-target-coords
+                                     )
+                                    :contact-constraint-list contact-constraint
+                                    :collision-pair-list
+                                    (send robot-env :get :collision-pair-list)
+                                    :collision-distance-margin
+                                    (* 1e-3 collision-distance-limit) ;; [m]
+                                    :kin-scale kin-scale
+                                    :variant-joint-angle-margin joint-angle-margin
+                                    :invariant-joint-angle-margin joint-angle-margin
+                                    ))
+                         )
+                    (send config-task :put :thre thre)
+                    (send config-task :put :rthre rthre)
+                    ;; If only-kinematics, eom-**-thre and torque-thre are ignored
+                    (send config-task :put :eom-trans-thre (if only-kinematics? 1e10 eom-trans-thre))
+                    (send config-task :put :eom-rot-thre (if only-kinematics? 1e10 eom-rot-thre))
+                    (send config-task :put :torque-thre (if only-kinematics? 1e10 torque-thre))
+                    config-task
+                    ))
+              (range (length robot-env-list))
+              robot-env-list
+              target-coords-list
+              thre-list
+              rthre-list
+              contact-move-target-list
+              contact-target-coords-list
+              contact-constraint-list
+              posture-joint-list
+              posture-joint-angle-list
+              (if external-wrench-list external-wrench-list (make-list (length target-coords-list) :initial-element nil))
+              (if external-coords-name-list external-coords-name-list (make-list (length target-coords-list) :initial-element nil))
+              )))
           (trajectory-config-task
-           (instance trajectory-configuration-task :init
-                     :instant-config-task-list instant-config-task-list
-                     :norm-regular-scale-max norm-regular-scale-max
-                     :norm-regular-scale-offset norm-regular-scale-offset
-                     :adjacent-regular-scale adjacent-regular-scale
-                     :torque-regular-scale torque-regular-scale
-                     :temporary-invariant-joint-list temporary-invariant-joint-list
-                     ))
+           (if initial-config-task
+               initial-config-task
+             (instance trajectory-configuration-task :init
+                       :instant-config-task-list instant-config-task-list
+                       :norm-regular-scale-max norm-regular-scale-max
+                       :norm-regular-scale-offset norm-regular-scale-offset
+                       :adjacent-regular-scale adjacent-regular-scale
+                       :torque-regular-scale torque-regular-scale
+                       :temporary-invariant-joint-list temporary-invariant-joint-list
+                       )))
           (sqp-opt
            (instance sqp-optimization :init
                      :config-task trajectory-config-task
