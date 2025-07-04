@@ -285,10 +285,10 @@ Solve inverse kinematics problem with sqp optimization.
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
-            (send self :angle-vector)
+            sqp-opt
             ))
      ))
   )
@@ -728,7 +728,7 @@ Solve inverse kinematics problem with sqp optimization.
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
             (send self :angle-vector (send (car robot-env-list) :robot :angle-vector))
@@ -739,6 +739,6 @@ Solve inverse kinematics problem with sqp optimization.
              (send-all robot-env-list :robot :angle-vector)
              (send-all robot-env-list :robot :copy-worldcoords)
              )
-            ))
+            sqp-opt))
      ))
   )
