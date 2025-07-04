@@ -90,15 +90,15 @@
    (setq _dim-invariant-config _dim-phi)
    (setq _dim-config (+ _dim-variant-config _dim-invariant-config))
    (cond (_only-kinematics?
-          (setq _dim-equality-task (+ (* 6 _num-kin) _num-posture-joint))
+          (setq _dim-task (+ (* 6 _num-kin) _num-posture-joint))
           )
          (t
-          (setq _dim-equality-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
+          (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
           ))
    ;; base size task is added
-   ;; 新しく追加する目的関数の要素数
+   ;; 最後に足した数字が、新しく追加する目的関数の要素数
    (when (rigid-legs-invariant? _invariant-joint-list)
-     (setq _dim-task 8))
+     (setq _dim-task (+ _dim-task 8)))
    )
   (:base-size-task-value
    (&key (update? t))
@@ -216,78 +216,17 @@ return $\bm{e}(\bm{q})
    "
    (concatenate
     float-vector
-    ;; (send self :kinematics-task-value :update? update?)
-    ;; (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
-    ;; (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
-    ;; (if (and (not _only-kinematics?) (> _num-drive-joint 0))
-    ;;     (send self :torque-task-value :update? update?))
-    ;; (if (> _num-posture-joint 0)
-    ;;     (send self :posture-task-value :update? update?))
+    (send self :kinematics-task-value :update? update?)
+    (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
+    (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
+    (if (and (not _only-kinematics?) (> _num-drive-joint 0))
+        (send self :torque-task-value :update? update?))
+    (if (> _num-posture-joint 0)
+        (send self :posture-task-value :update? update?))
     ;; base size task added
     (when (rigid-legs-invariant? _invariant-joint-list)
       (send self :base-size-task-value :update? update?))
     )
-   )
-  (:variant-task-jacobian
-   ()
-   "
-\begin{eqnarray}
-  \frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}}
-  &=&
-  \bordermatrix{
-    & N_{\mathit{var\mathchar`-joint}} & 6 N_{\mathit{cnt}} & N_{\mathit{drive\mathchar`-joint}} \cr
-    6 N_{\mathit{kin}} & \frac{\partial \bm{e}^{\mathit{kin}}}{\partial \bm{\theta}} & & \cr
-    3 & & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-trans}}}{\partial \bm{\hat{w}}} & & \cr
-    3 & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{eom\mathchar`-rot}}}{\partial \bm{\hat{w}}} & & \cr
-    N_{\mathit{drive\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\theta}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\hat{w}}} & \frac{\partial \bm{e}^{\mathit{trq}}}{\partial \bm{\tau}} \cr
-    N_{\mathit{posture\mathchar`-joint}} & \frac{\partial \bm{e}^{\mathit{posture}}}{\partial \bm{\theta}} & &
-  }
-\end{eqnarray}
-
-return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{var}}} \in \mathbb{R}^{(6 N_{\mathit{kin}} + 3 + 3 + N_{\mathit{drive\mathchar`-joint}} + N_{\mathit{posture\mathchar`-joint}}) \times (N_{\mathit{var\mathchar`-joint}} + 6 N_{\mathit{cnt}} + N_{\mathit{drive\mathchar`-joint}})}$
-   "
-   (cond (_variant-task-jacobi
-          (fill (array-entity _variant-task-jacobi) 0)
-          )
-         (t
-          (setq _variant-task-jacobi (make-matrix _dim-task _dim-variant-config))
-          ))
-   (when (= _dim-task 0)
-     (return-from :variant-task-jacobian _variant-task-jacobi))
-   ;; (copy-block-matrix _variant-task-jacobi
-   ;;                    (send self :kinematics-task-jacobian-with-theta)
-   ;;                    0 0)
-   ;; (unless _only-kinematics?
-   ;;   (copy-block-matrix _variant-task-jacobi
-   ;;                      (send self :eom-trans-task-jacobian-with-wrench)
-   ;;                      (* 6 _num-kin) _num-variant-joint)
-   ;;   (copy-block-matrix _variant-task-jacobi
-   ;;                      (send self :eom-rot-task-jacobian-with-theta)
-   ;;                      (+ (* 6 _num-kin) 3) 0)
-   ;;   (copy-block-matrix _variant-task-jacobi
-   ;;                      (send self :eom-rot-task-jacobian-with-wrench)
-   ;;                      (+ (* 6 _num-kin) 3) _num-variant-joint)
-   ;;   (when (> _num-drive-joint 0)
-   ;;     (copy-block-matrix _variant-task-jacobi
-   ;;                        (send self :torque-task-jacobian-with-theta)
-   ;;                        (+ (* 6 _num-kin) 3 3) 0)
-   ;;     (copy-block-matrix _variant-task-jacobi
-   ;;                        (send self :torque-task-jacobian-with-wrench)
-   ;;                        (+ (* 6 _num-kin) 3 3) _num-variant-joint)
-   ;;     (copy-block-matrix _variant-task-jacobi
-   ;;                        (send self :torque-task-jacobian-with-torque)
-   ;;                        (+ (* 6 _num-kin) 3 3) (+ _num-variant-joint (* 6 _num-contact)))
-   ;;     )
-   ;;   )
-   ;; (when (> _num-posture-joint 0)
-   ;;   (copy-block-matrix _variant-task-jacobi
-   ;;                      (send self :posture-task-jacobian-with-theta)
-   ;;                      (if _only-kinematics?
-   ;;                          (* 6 _num-kin)
-   ;;                        (+ (* 6 _num-kin) 3 3 _num-drive-joint))
-   ;;                      0)
-   ;;   )
-   _variant-task-jacobi
    )
   (:invariant-task-jacobian
    ()
@@ -315,134 +254,29 @@ return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{invar}}} \in \mathbb{R}^
           ))
    (when (= _dim-task 0)
      (return-from :invariant-task-jacobian _invariant-task-jacobi))
-   ;; (copy-block-matrix _invariant-task-jacobi
-   ;;                    (send self :kinematics-task-jacobian-with-phi)
-   ;;                    0 0)
-   ;; (unless _only-kinematics?
-   ;;   (copy-block-matrix _invariant-task-jacobi
-   ;;                      (send self :eom-rot-task-jacobian-with-phi)
-   ;;                      (+ (* 6 _num-kin) 3) 0)
-   ;;   (when (> _num-drive-joint 0)
-   ;;     (copy-block-matrix _invariant-task-jacobi
-   ;;                        (send self :torque-task-jacobian-with-phi)
-   ;;                        (+ (* 6 _num-kin) 3 3) 0)
-   ;;     )
-   ;;   )
+   (copy-block-matrix _invariant-task-jacobi
+                      (send self :kinematics-task-jacobian-with-phi)
+                      0 0)
+   (unless _only-kinematics?
+     (copy-block-matrix _invariant-task-jacobi
+                        (send self :eom-rot-task-jacobian-with-phi)
+                        (+ (* 6 _num-kin) 3) 0)
+     (when (> _num-drive-joint 0)
+       (copy-block-matrix _invariant-task-jacobi
+                          (send self :torque-task-jacobian-with-phi)
+                          (+ (* 6 _num-kin) 3 3) 0)
+       )
+     )
    ;; base-size-task added
    (when (rigid-legs-invariant? _invariant-joint-list)
      (copy-block-matrix _invariant-task-jacobi
                         (send self :base-size-task-jacobian-with-phi)
-                        ;; (if _only-kinematics?
-                        ;;     (* 6 _num-kin)
-                        ;;   (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
-                        0
+                        (if _only-kinematics?
+                            (* 6 _num-kin)
+                          (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
                         0)
      )
    _invariant-task-jacobi
-   )
-  ;; 元々、:variant-task-jacobianにあったものをここに持ってくる
-  (:variant-config-equality-constraint-matrix
-   (&key (update? nil))
-   "
-return $\bm{A}_{\mathit{var}} \in \mathbb{R}^{0 \times \mathit{dim}(\bm{q}_{\mathit{var}})}$ (no equality constraint)
-   "
-   (let ((variant-eq-mat (make-matrix _dim-equality-task _dim-variant-config)))
-     (copy-block-matrix variant-eq-mat
-                        (send self :kinematics-task-jacobian-with-theta)
-                        0 0)
-     (unless _only-kinematics?
-       (copy-block-matrix variant-eq-mat
-                          (send self :eom-trans-task-jacobian-with-wrench)
-                          (* 6 _num-kin) _num-variant-joint)
-       (copy-block-matrix variant-eq-mat
-                          (send self :eom-rot-task-jacobian-with-theta)
-                          (+ (* 6 _num-kin) 3) 0)
-       (copy-block-matrix variant-eq-mat
-                          (send self :eom-rot-task-jacobian-with-wrench)
-                          (+ (* 6 _num-kin) 3) _num-variant-joint)
-       (when (> _num-drive-joint 0)
-         (copy-block-matrix variant-eq-mat
-                            (send self :torque-task-jacobian-with-theta)
-                            (+ (* 6 _num-kin) 3 3) 0)
-         (copy-block-matrix variant-eq-mat
-                            (send self :torque-task-jacobian-with-wrench)
-                            (+ (* 6 _num-kin) 3 3) _num-variant-joint)
-         (copy-block-matrix variant-eq-mat
-                            (send self :torque-task-jacobian-with-torque)
-                            (+ (* 6 _num-kin) 3 3) (+ _num-variant-joint (* 6 _num-contact)))
-         )
-       )
-     (when (> _num-posture-joint 0)
-       (copy-block-matrix variant-eq-mat
-                          (send self :posture-task-jacobian-with-theta)
-                          (if _only-kinematics?
-                              (* 6 _num-kin)
-                            (+ (* 6 _num-kin) 3 3 _num-drive-joint))
-                          0)
-       )
-     variant-eq-mat
-     )
-   )
-  ;; 元々、:task-valueにあったものをここに持ってきて-1倍する。
-  (:variant-config-equality-constraint-vector
-   (&key (update? t))
-   "
-return $\bm{b}_{\mathit{var}} \in \mathbb{R}^{0}$ (no equality constraint)
-   "
-   (scale -1
-   (concatenate
-    float-vector
-    (send self :kinematics-task-value :update? update?)
-    (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
-    (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
-    (if (and (not _only-kinematics?) (> _num-drive-joint 0))
-        (send self :torque-task-value :update? update?))
-    (if (> _num-posture-joint 0)
-        (send self :posture-task-value :update? update?))
-    )
-   )
-   )
-  ;; 元々、:invariant-task-jacobianにあったものをここに持ってくる
-  (:invariant-config-equality-constraint-matrix
-   (&key (update? nil))
-   "
-return $\bm{A}_{\mathit{invar}} \in \mathbb{R}^{0 \times \mathit{dim}(\bm{q}_{\mathit{invar}})}$ (no equality constraint)
-   "
-   (let ((invariant-eq-mat (make-matrix _dim-equality-task _dim-invariant-config)))
-     (copy-block-matrix invariant-eq-mat
-                        (send self :kinematics-task-jacobian-with-phi)
-                        0 0)
-     (unless _only-kinematics?
-       (copy-block-matrix invariant-eq-mat
-                          (send self :eom-rot-task-jacobian-with-phi)
-                          (+ (* 6 _num-kin) 3) 0)
-       (when (> _num-drive-joint 0)
-         (copy-block-matrix invariant-eq-mat
-                            (send self :torque-task-jacobian-with-phi)
-                            (+ (* 6 _num-kin) 3 3) 0)
-         )
-       )
-     invariant-eq-mat
-     )
-   )
-  ;; 元々、:task-valueにあったものをここに持ってきて-1倍する。
-  (:invariant-config-equality-constraint-vector
-   (&key (update? t))
-   "
-return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
-   "
-   (scale -1
-   (concatenate
-    float-vector
-    (send self :kinematics-task-value :update? update?)
-    (if (not _only-kinematics?) (send self :eom-trans-task-value :update? update?))
-    (if (not _only-kinematics?) (send self :eom-rot-task-value :update? update?))
-    (if (and (not _only-kinematics?) (> _num-drive-joint 0))
-        (send self :torque-task-value :update? update?))
-    (if (> _num-posture-joint 0)
-        (send self :posture-task-value :update? update?))
-    )
-   )
    )
   (:print-status
    ()
