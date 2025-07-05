@@ -2460,6 +2460,7 @@ Update viewer.
       :force-list (send self :force-list)
       :moment-list (send self :moment-list)
       :coords-list _contact-target-coords-list
+      :robot (send _robot-env :robot)
       )
      (draw-torque
       :torque-vector _torque-vector
