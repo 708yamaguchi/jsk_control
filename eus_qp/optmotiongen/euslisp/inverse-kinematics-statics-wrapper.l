@@ -329,6 +329,7 @@ Solve inverse kinematics problem with sqp optimization.
     (external-wrench-list)
     (external-coords-list)
     (invariant-joint-list)
+    (temporary-invariant-joint-list)
     (root-virtual-mode :fix)
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
@@ -638,6 +639,7 @@ Solve inverse kinematics problem with sqp optimization.
                      :instant-config-task-list instant-config-task-list
                      :norm-regular-scale-max norm-regular-scale-max
                      :norm-regular-scale-offset norm-regular-scale-offset
+                     :temporary-invariant-joint-list temporary-invariant-joint-list
                      :adjacent-regular-scale adjacent-regular-scale
                      :torque-regular-scale torque-regular-scale
                      ))
