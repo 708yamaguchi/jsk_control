@@ -37,6 +37,7 @@
           (_dim-task "$\mathit{dim}(\bm{e})$")
           ;; scale
           (_kin-scale-mat-list "$K_{\mathit{kin}}$")
+          (_base-size-scale)
           (_target-posture-scale-list "$k_{\mathit{posture}}$")
           (_norm-regular-scale-max "$k_{\mathit{max}}$")
           (_norm-regular-scale-coeff "$k_{\mathit{coeff}}$")
@@ -195,6 +196,10 @@ $\bm{\hat{w}}$は次式のように，全接触部位でのワールド座標系
     (collision-distance-margin 0.01) ;; [m]
     (collision-distance-margin-list) ;; [m]
     (kin-scale 1.0)
+    ;; このパラメータを大きくすると、ベースが小さくなる。今以上の値にすると収束しなくなる。
+    ;; 収束可能なギリギリまで大きくすると、目的関数を満たす形状が出やすくなる
+    ;; 安定して収束するのは(* 3.0 1e-4)
+    (base-size-scale (* 10.0 1e-4))
     (kin-scale-list)
     (kin-scale-mat-list)
     (target-posture-scale 1e-3)
@@ -259,6 +264,7 @@ Initialize instance
           (setq _target-posture-scale-list
                 (make-list (length posture-joint-list) :initial-element target-posture-scale))
           ))
+   (setq _base-size-scale base-size-scale)
    (setq _norm-regular-scale-max norm-regular-scale-max)
    (setq _norm-regular-scale-coeff norm-regular-scale-coeff)
    (setq _norm-regular-scale-offset norm-regular-scale-offset)
@@ -303,6 +309,9 @@ Initialize instance
          (t
           (setq _dim-task (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
           ))
+   ;; 最後に足した数字(8)が、base-size目的関数の要素数
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (setq _dim-task (+ _dim-task 8)))
    )
   (:robot-env
    ()
@@ -941,6 +950,8 @@ return $\bm{e}(\bm{q})
         (send self :torque-task-value :update? update?))
     (if (> _num-posture-joint 0)
         (send self :posture-task-value :update? update?))
+    (when (rigid-legs-invariant? _invariant-joint-list)
+      (send self :base-size-task-value :update? update?))
     )
    )
   )
@@ -1493,6 +1504,13 @@ return $\frac{\partial \bm{e}}{\partial \bm{q}_{\mathit{invar}}} \in \mathbb{R}^
                           (+ (* 6 _num-kin) 3 3) 0)
        )
      )
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (copy-block-matrix _invariant-task-jacobi
+                        (send self :base-size-task-jacobian-with-phi)
+                        (if _only-kinematics?
+                            (* 6 _num-kin)
+                          (+ (* 6 _num-kin) 3 3 _num-drive-joint _num-posture-joint))
+                        0))
    _invariant-task-jacobi
    )
   (:task-jacobian
@@ -2503,6 +2521,8 @@ Print status.
      (warning-message 9 "|torque-task|=~a~%" (norm (send self :torque-task-value :update? nil)))
      )
    (warning-message 9 "|posture-task|=~a~%" (norm (send self :posture-task-value :update? nil)))
+   (when (rigid-legs-invariant? _invariant-joint-list)
+     (warning-message 9 "|base-size-task|=~a~%" (norm (send self :base-size-task-value :update? nil))))
    )
   (:_get-contact-index-from-limb ;; used in trajectory-configuration-task
    (&key (limb))
@@ -2515,3 +2535,111 @@ Print status.
     _contact-attention-coords-list
     ))
   )
+
+
+;; 剛体脚の配置をベースの中心に寄せることで、ベースのサイズを小さくする。
+(defmethod instant-configuration-task
+  (:base-size-task-value
+   (&key (update? t))
+   ;; タスク関数e_base_sizeは8次元ベクトルで、e = _base-size-scale * (X0, X1, X2, X3, Y0, Y1, Y2, Y3)
+   ;; 目的関数は0.5*e*eであるため、X0からY3の正負は気にしなくて良い
+   (let* ((x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+          (x1 (send (find-joint "rigid_leg1_x_joint" _invariant-joint-list) :joint-angle))
+          (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+          (x3 (send (find-joint "rigid_leg3_x_joint" _invariant-joint-list) :joint-angle))
+          (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+          (y1 (send (find-joint "rigid_leg1_y_joint" _invariant-joint-list) :joint-angle))
+          (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
+          (y3 (send (find-joint "rigid_leg3_y_joint" _invariant-joint-list) :joint-angle))
+          )
+     (scale _base-size-scale (float-vector (expt x0 1) (expt x1 1) (expt x2 1) (expt x3 1)
+                                                 (expt y0 1) (expt y1 1) (expt y2 1) (expt y3 1))))
+   )
+  (:base-size-task-jacobian-with-phi
+   (&key (update? t))
+   ;; base sizeヤコビアンを計算する際、X0からY3以外の変数でタスク関数e_base_sizeを微分した値は0
+   ;; よって、X0からY3で微分した値のみをヤコビアンにセットする。
+   (let* ((jac (make-matrix 8 _num-invariant-joint)) vec
+          (x0-index (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
+          (x1-index (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))
+          (x2-index (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))
+          (x3-index (joint-index-func "rigid_leg3_x_joint" _invariant-joint-list))
+          (y0-index (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))
+          (y1-index (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))
+          (y2-index (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))
+          (y3-index (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))
+          (indices (list x0-index x1-index x2-index x3-index
+                         y0-index y1-index y2-index y3-index))
+          (x0 (send (find-joint "rigid_leg0_x_joint" _invariant-joint-list) :joint-angle))
+          (x1 (send (find-joint "rigid_leg1_x_joint" _invariant-joint-list) :joint-angle))
+          (x2 (send (find-joint "rigid_leg2_x_joint" _invariant-joint-list) :joint-angle))
+          (x3 (send (find-joint "rigid_leg3_x_joint" _invariant-joint-list) :joint-angle))
+          (y0 (send (find-joint "rigid_leg0_y_joint" _invariant-joint-list) :joint-angle))
+          (y1 (send (find-joint "rigid_leg1_y_joint" _invariant-joint-list) :joint-angle))
+          (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
+          (y3 (send (find-joint "rigid_leg3_y_joint" _invariant-joint-list) :joint-angle))
+          (joint-angles (list x0 x1 x2 x3 y0 y1 y2 y3))
+          )
+     (dotimes (i (length indices))
+       (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
+       (setf (elt vec (elt indices i)) (* 1 (expt (elt joint-angles i) 0)))
+       (setf (matrix-row jac i) (scale _base-size-scale vec))
+       )
+     jac))
+  )
+
+;; ベースの形状を長方形にするための線形等式・不等式制約（使わない）
+;; (defmethod instant-configuration-task
+;;   ;; Add equality constraint for rectangle base shape
+;;   (:invariant-config-equality-constraint-matrix
+;;    (&key (update? nil))
+;;    "
+;; return $\bm{A}_{\mathit{invar}} \in \mathbb{R}^{0 \times \mathit{dim}(\bm{q}_{\mathit{invar}})}$ (no equality constraint)
+;;    "
+;;    (unless (rigid-legs-invariant? _invariant-joint-list)
+;;      ;; default value
+;;      (return-from :invariant-config-equality-constraint-matrix (make-matrix 0 _dim-invariant-config)))
+;;    (let ((m (make-matrix 4 _dim-invariant-config)) vec)
+;;      ;; X1 - X2 = 0
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row m 0) (coerce vec float-vector))
+;;      ;; X3 - X0 = 0
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg3_x_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row m 1) (coerce vec float-vector))
+;;      ;; Y0 - Y1 = 0
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg0_y_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row m 2) (coerce vec float-vector))
+;;      ;; Y2 - Y3 = 0
+;;      (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))) 1)
+;;      (setf (elt vec (eval (joint-index-func "rigid_leg3_y_joint" _invariant-joint-list))) -1)
+;;      (setf (matrix-row m 3) (coerce vec float-vector))
+;;      ;; ;; Y1 + Y2 = 0
+;;      ;; (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      ;; (setf (elt vec (eval (joint-index-func "rigid_leg1_y_joint" _invariant-joint-list))) 1)
+;;      ;; (setf (elt vec (eval (joint-index-func "rigid_leg2_y_joint" _invariant-joint-list))) 1)
+;;      ;; (setf (matrix-row m 4) (coerce vec float-vector))
+;;      ;; ;; X0 + X1 = 0
+;;      ;; (setq vec (make-list _dim-invariant-config :initial-element 0))
+;;      ;; (setf (elt vec (eval (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))) 1)
+;;      ;; (setf (elt vec (eval (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))) 1)
+;;      ;; (setf (matrix-row m 4) (coerce vec float-vector))
+;;      m
+;;      ))
+;;   ;; Add equality constraint for base shape
+;;   (:invariant-config-equality-constraint-vector
+;;    (&key (update? t))
+;;    "
+;; return $\bm{b}_{\mathit{invar}} \in \mathbb{R}^{0}$ (no equality constraint)
+;;    "
+;;    (unless (rigid-legs-invariant? _invariant-joint-list)
+;;      ;; default value
+;;      (return-from :invariant-config-equality-constraint-vector (float-vector)))
+;;    (float-vector 0 0 0 0))
+;; )
