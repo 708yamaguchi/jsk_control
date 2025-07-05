@@ -618,3 +618,22 @@ Override to support zero row matrix.
                   ))
      ))
   )
+
+;;;;;;;;;;;;
+;; yamaguchi
+;;;;;;;;;;;;
+
+(defun joint-index-func (name joint-list)
+  (position name joint-list :test #'(lambda (x y) (equal x (send y :name)))))
+
+(defun find-joint (name joint-list)
+  (find-if #'(lambda (x) (equal name (send x :name))) joint-list))
+
+(defun rigid-legs-invariant? (invariant-joint-list)
+  (let* ((invariant-leg-index-list
+          (mapcar #'(lambda (leg-joint)
+                      (joint-index-func leg-joint invariant-joint-list))
+                  (list "rigid_leg0_x_joint" "rigid_leg1_x_joint" "rigid_leg2_x_joint" "rigid_leg3_x_joint"
+                        "rigid_leg0_y_joint" "rigid_leg1_y_joint" "rigid_leg2_y_joint" "rigid_leg3_y_joint")))
+         (invariant? (reduce #'(lambda (x y) (and x y)) invariant-leg-index-list)))
+    invariant?))
