@@ -41,6 +41,8 @@
     (contact-target-coords)
     (contact-move-target)
     (contact-constraint)
+    (external-wrench-list)
+    (external-coords-list)
     (root-virtual-mode :fix)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
@@ -170,6 +172,8 @@ Solve inverse kinematics problem with sqp optimization.
                                  )))
                       contact-target-coords)
                      :contact-constraint-list contact-constraint
+                     :external-wrench-list external-wrench-list
+                     :external-coords-list external-coords-list
                      :collision-pair-list collision-pair-list
                      :collision-distance-margin (* 1e-3 collision-distance-limit) ;; [m]
                      :variant-joint-angle-margin joint-angle-margin
@@ -317,6 +321,8 @@ Solve inverse kinematics problem with sqp optimization.
     (contact-target-coords-list)
     (contact-move-target-list)
     (contact-constraint-list)
+    (external-wrench-list)
+    (external-coords-list)
     (root-virtual-mode :fix)
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
@@ -448,10 +454,12 @@ Solve inverse kinematics problem with sqp optimization.
                    translation-axis
                    rotation-axis
                    transform-coords
+                   external-coords
                    )
                   (send self :put :move-target move-target)
                   (let* ((robot
                           (progn
+                            (send self :put :external-coords external-coords)
                             (send self :put :target-coords target-coords)
                             (copy-object self)
                             ))
@@ -511,6 +519,8 @@ Solve inverse kinematics problem with sqp optimization.
                           (send robot-env :robot :get :move-target))
                     (send robot-env :put :collision-pair-list
                           (send robot-env :robot :get :collision-pair-list))
+                    (send robot-env :put :external-coords
+                          (send robot-env :robot :get :external-coords))
                     robot-env
                     ))
               target-coords-list
@@ -518,6 +528,7 @@ Solve inverse kinematics problem with sqp optimization.
               translation-axis-list
               rotation-axis-list
               transform-coords-list
+              (if external-coords-list external-coords-list (make-list (length target-coords-list)))
               )
              ))
           (instant-config-task-list
@@ -531,6 +542,7 @@ Solve inverse kinematics problem with sqp optimization.
                  contact-move-target
                  contact-target-coords
                  contact-constraint
+                 external-wrench
                  posture-jl
                  posture-jal)
                 (let* ((config-task
@@ -584,6 +596,8 @@ Solve inverse kinematics problem with sqp optimization.
                                    contact-target-coords
                                    )
                                   :contact-constraint-list contact-constraint
+                                  :external-wrench-list external-wrench
+                                  :external-coords-list (send robot-env :get :external-coords)
                                   :collision-pair-list
                                   (send robot-env :get :collision-pair-list)
                                   :collision-distance-margin
@@ -607,6 +621,7 @@ Solve inverse kinematics problem with sqp optimization.
             contact-move-target-list
             contact-target-coords-list
             contact-constraint-list
+            (if external-wrench-list external-wrench-list (make-list (length robot-env-list)))
             posture-joint-list
             posture-joint-angle-list
             ))
