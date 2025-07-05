@@ -328,6 +328,7 @@ Solve inverse kinematics problem with sqp optimization.
     (contact-constraint-list)
     (external-wrench-list)
     (external-coords-list)
+    (invariant-joint-list)
     (root-virtual-mode :fix)
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
@@ -452,6 +453,7 @@ Solve inverse kinematics problem with sqp optimization.
            (progn
              ;; By putting cascaded coords and copying object, cascaded structure is holded in copied object and accessible by :get method.
              (send self :put :collision-pair-list collision-pair-list)
+             (send self :put :invariant-joint-list invariant-joint-list)
              (mapcar
               #'(lambda
                   (target-coords
@@ -517,6 +519,7 @@ Solve inverse kinematics problem with sqp optimization.
                               contact-list)
                              :joint-list))
                            (if root-virtual-joint-invariant? (send robot-env :root-virtual-joint-list))
+                           (send robot-env :robot :get :invariant-joint-list)
                            ))
                     (send robot-env :variant-joint-list
                           (set-difference (send robot-env :joint-list) (send robot-env :invariant-joint-list)))
