@@ -334,6 +334,7 @@ Solve inverse kinematics problem with sqp optimization.
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
+    (dissoc-root-virtual t)
     (joint-angle-margin 0.0)
     (posture-joint-list
      (make-list (length target-coords-list) :initial-element nil))
@@ -758,7 +759,9 @@ Solve inverse kinematics problem with sqp optimization.
            (send *irtviewer* :objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))
          (objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
-     (send-all robot-env-list :dissoc-root-virtual)
+     ;; 最適化の結果sqp-optを使いまわしたい時は、dissoc-root-virtualせず、:inverse-kinematics-statics-trajectory-optmotiongenを再び呼ぶ
+     (when dissoc-root-virtual
+       (send-all robot-env-list :dissoc-root-virtual))
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
