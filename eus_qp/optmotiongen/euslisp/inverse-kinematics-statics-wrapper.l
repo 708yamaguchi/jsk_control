@@ -339,8 +339,11 @@ Solve inverse kinematics problem with sqp optimization.
      (make-list (length target-coords-list) :initial-element nil))
     (posture-joint-angle-list
      (make-list (length target-coords-list) :initial-element nil))
+    (only-kinematics?)
     (optimize-torque?)
     (optimize-start-end-torque?)
+    (kin-scale 1.0)
+    (base-size-scale (* 10.0 1e-4))
     (eom-trans-thre 1e-1)
     (eom-rot-thre 1e-1)
     (torque-thre 1e-1)
@@ -611,15 +614,18 @@ Solve inverse kinematics problem with sqp optimization.
                                   (send robot-env :get :collision-pair-list)
                                   :collision-distance-margin
                                   (* 1e-3 collision-distance-limit) ;; [m]
+                                  :only-kinematics? only-kinematics?
+                                  :kin-scale kin-scale
+                                  :base-size-scale base-size-scale
                                   :variant-joint-angle-margin joint-angle-margin
                                   :invariant-joint-angle-margin joint-angle-margin
                                   ))
                        )
                   (send config-task :put :thre thre)
                   (send config-task :put :rthre rthre)
-                  (send config-task :put :eom-trans-thre eom-trans-thre)
-                  (send config-task :put :eom-rot-thre eom-rot-thre)
-                  (send config-task :put :torque-thre torque-thre)
+                  (send config-task :put :eom-trans-thre (if only-kinematics? 1e10 eom-trans-thre))
+                  (send config-task :put :eom-rot-thre (if only-kinematics? 1e10 eom-rot-thre))
+                  (send config-task :put :torque-thre (if only-kinematics? 1e10 torque-thre))
                   config-task
                   ))
             (range (length robot-env-list))

@@ -37,6 +37,7 @@
           (_dim-task "$\mathit{dim}(\bm{e})$")
           ;; scale
           (_kin-scale-mat-list "$K_{\mathit{kin}}$")
+          (_kin-scale)
           (_base-size-scale)
           (_target-posture-scale-list "$k_{\mathit{posture}}$")
           (_norm-regular-scale-max "$k_{\mathit{max}}$")
@@ -264,6 +265,7 @@ Initialize instance
           (setq _target-posture-scale-list
                 (make-list (length posture-joint-list) :initial-element target-posture-scale))
           ))
+   (setq _kin-scale kin-scale)
    (setq _base-size-scale base-size-scale)
    (setq _norm-regular-scale-max norm-regular-scale-max)
    (setq _norm-regular-scale-coeff norm-regular-scale-coeff)
@@ -342,11 +344,40 @@ return $\mathcal{J}_{\mathit{drive}}$
    _drive-joint-list
    )
   (:only-kinematics?
-   ()
+   (&optional (only-kinematics? :nil))
    "
 return whether to consider only kinematics or not
    "
-   _only-kinematics?
+   (cond ((equal only-kinematics? :nil)
+          _only-kinematics?
+          )
+         (t
+          (setq _only-kinematics? only-kinematics?)
+          ))
+   )
+  (:kin-scale
+   (&optional (kin-scale :nil))
+   "
+return whether to consider only kinematics or not
+   "
+   (cond ((equal kin-scale :nil)
+          _kin-scale
+          )
+         (t
+          (setq _kin-scale kin-scale)
+          ))
+   )
+  (:base-size-scale
+   (&optional (base-size-scale :nil))
+   "
+return whether to consider only kinematics or not
+   "
+   (cond ((equal base-size-scale :nil)
+          _base-size-scale
+          )
+         (t
+          (setq _base-size-scale base-size-scale)
+          ))
    )
   (:theta
    ()
