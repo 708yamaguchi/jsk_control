@@ -1,0 +1,28 @@
+# input.txt - グリッドサーチ用パラメータ
+# 1行が1回の試行に相当します。
+# 各パラメータリストをセミコロン(;)で区切って記述してください。
+# 書式: :random-angle-vector-seedの値 ; :kin-scale-listの値 ; :base-size-scale-listの値 ; :fix-variant-joint-list ; :fix-pad-diameter-listの値
+
+# nil                        ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+# nil                        ; (list 0.4); (list 0) ; (list nil) ; (list nil)
+
+# (list 452279960 1165689301)  ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) angle vectorの初期seedが良い感じ 452279960 1165689301
+# (list 1100480186 1630208828) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) angle vectorの初期seedが良い感じ 1100480186 1630208828
+# (list 146213465 584322183)   ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) これを使う angle vectorの初期seedが良い感じ 146213465 584322183
+# (list 265200647 345587332) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+
+
+(list 2120673933 1032916792) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 1980976459 1362339639) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 1689724006 117196900) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+
+
+
+
+(list 459166522 382755856) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 12315451 1596612429) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 1809498154 1852136675) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 1382094534 1207810569) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 498722983 428081247) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 566331134 13231682) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 860217820 1488608567) ; (list 0.4 0.4 0.4 0.4 0.4 0.4); (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
