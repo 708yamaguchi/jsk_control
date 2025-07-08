@@ -1,0 +1,31 @@
+# input.txt - グリッドサーチ用パラメータ
+# 1行が1回の試行に相当します。
+# 各パラメータリストをセミコロン(;)で区切って記述してください。
+# 書式: :random-angle-vector-seedの値 ; :kin-scale-listの値 ; :base-size-scale-listの値 ; :fix-variant-joint-listの値
+
+nil                          ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)
+(list 452279960 1165689301)  ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1691385740 610949300)  ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1383619260 420487155)  ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 725216987 587983898)   ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1434233739 1702565414) ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 220368190 956234945)   ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 2060544648 769453454)  ; (list 1.0 1.0 0.01 0.01); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+
+nil                          ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)
+(list 452279960 1165689301)  ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1691385740 610949300)  ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1383619260 420487155)  ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 725216987 587983898)   ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1434233739 1702565414) ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 220368190 956234945)   ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 2060544648 769453454)  ; (list 1.0 0.01 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+
+nil                          ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)
+(list 452279960 1165689301)  ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1691385740 610949300)  ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1383619260 420487155)  ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 725216987 587983898)   ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 1434233739 1702565414) ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 220368190 956234945)   ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
+(list 2060544648 769453454)  ; (list 1.0 1.0 1.0 1.0); (list 0 (* 1.0 1e-4)  (* 5.0 1e-4) (* 10.0 1e-4)) ; (list nil nil nil t)  # angle vectorの初期seedが良い感じ
