@@ -1,0 +1,14 @@
+# input.txt - グリッドサーチ用パラメータ
+# 1行が1回の試行に相当します。
+# 各パラメータリストをセミコロン(;)で区切って記述してください。
+# 書式: :random-angle-vector-seedの値 ; :kin-scale-listの値 ; :base-size-scale-listの値 ; :fix-variant-joint-list ; :fix-pad-diameter-listの値
+
+# nil                        ; (list 0.3 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t)
+(list 452279960 1165689301)  ; (list 0.3 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) # angle vectorの初期seedが良い感じ 452279960 1165689301
+(list 1100480186 1630208828) ; (list 0.3 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) # angle vectorの初期seedが良い感じ 1100480186 1630208828
+(list 146213465 584322183)   ; (list 0.3 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil nil) ; (list nil nil nil nil nil t) # これを使う angle vectorの初期seedが良い感じ 146213465 584322183
+
+# nil                        ; (list 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil) ; (list nil nil nil nil nil)
+(list 452279960 1165689301)  ; (list 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil) ; (list nil nil nil nil nil)
+(list 1100480186 1630208828) ; (list 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil) ; (list nil nil nil nil nil)
+(list 146213465 584322183)   ; (list 0.3 0.3 0.3 0.3 0.3); (list 0 (* 0.2 1e-4) (* 3.0 1e-4) (* 4.0 1e-4) (* 5.0 1e-4)) ; (list nil nil nil nil nil) ; (list nil nil nil nil nil)

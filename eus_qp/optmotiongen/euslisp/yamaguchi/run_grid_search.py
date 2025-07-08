@@ -1,14 +1,34 @@
 import subprocess
 import sys
 import os
-from multiprocessing import Pool, Manager, Lock
+import signal
+from multiprocessing import Pool, Manager
+
+# グローバル変数としてプロセスプールを保持
+# シグナルハンドラからアクセスするために必要
+pool = None
+
+def signal_handler(sig, frame):
+    """
+    Ctrl+Cなどのシグナルを捕捉したときに呼び出される関数
+    """
+    global pool
+    print("\n中断リクエストを受け取りました。すべてのプロセスを終了します...", file=sys.stderr)
+    if pool:
+        # ワーカプロセスのタスクを強制終了
+        pool.terminate()
+        # プロセスの終了を待つ
+        pool.join()
+    sys.exit(1)
 
 
 def run_grid_search_multiprocess_single_output(input_file='input.txt', output_file='output.txt', num_processes=None):
     """
     input.txtからセミコロン区切りのパラメータを読み込み、
     グリッドサーチをマルチプロセスで実行して結果を単一の出力ファイルに書き込む。
+    (シグナルハンドリング対応済み)
     """
+    global pool
     print(f"'{input_file}' からパラメータを読み込んでいます...")
 
     try:
@@ -30,64 +50,57 @@ def run_grid_search_multiprocess_single_output(input_file='input.txt', output_fi
             valid_line_indices.append(i)
 
     if num_processes is None:
-        num_processes = os.cpu_count() or 1 # CPUコア数を取得、取得できない場合は1
+        num_processes = os.cpu_count() or 1
 
-    print(f"--- {num_processes}個のプロセスで{len(valid_line_indices)}個の条件をグリッドサーチし、結果を'{output_file}' に出力します ---")
+    print(f"--- {num_processes}個のプロセスで{len(valid_lines)}個の条件をグリッドサーチし、結果を'{output_file}' に出力します ---")
 
-    # Managerを作成し、共有オブジェクトを管理する
+    # Managerを作成し、共有ロックを管理
     with Manager() as manager:
-        # Manager経由で共有ファイルオブジェクトを作成 (実際にはファイル名を共有し、各プロセスでオープン)
-        # より直接的な方法として、Managerは共有可能な型 (リスト、辞書、Value、Array) を提供しますが、
-        # ファイルオブジェクト自体を直接共有することはできません。
-        # 代わりに、Managerを使って Lock を共有し、各プロセスが同じファイルにアクセスする際に同期を取ります。
-
-        # ロックオブジェクトをマネージャーから取得
         shared_lock = manager.Lock()
 
-        # 各プロセスが書き込むファイルをメインプロセスで開く
-        # 'w' モードで開始し、既存の内容をクリア
+        # 出力ファイルを初期化（'w'モードで空にする）
         with open(output_file, 'w', encoding='utf-8') as f_out:
-            # f_out は Manager の管理下にはないが、ロックにより排他制御される
-            # ここではダミーとしてf_outを渡すのではなく、プロセス内でファイルを開く
-            pass # 初期化のために開いてすぐ閉じるか、後で'a'モードで開く
+            pass
 
-        # タスクリストを作成 (共有ファイルオブジェクトは直接渡せないため、ロックのみ渡す)
-        # ここでの工夫は、shared_file を Manager.list() のようなものにしない点。
-        # ファイル操作は低レベルなため、Manager が直接サポートするオブジェクトではない。
-        # 各プロセスで output_file を 'a' (追記) モードで開き、共有ロックを使って排他制御する。
         tasks = [(i, line, total_lines, output_file, shared_lock)
                  for i, line in zip(valid_line_indices, valid_lines)]
 
-        # プロセスプールを作成し、タスクを実行
-        with Pool(processes=num_processes) as pool:
-            # mapはiterableの各要素を関数に渡す。この場合、ファイルパスと共有ロックを渡す
-            pool.map(process_parameter_line_to_shared_file_with_reopen, tasks) # 関数名を変更
+        try:
+            # プロセスプールを作成し、グローバル変数に格納
+            pool = Pool(processes=num_processes)
+            # mapはiterableの各要素を関数に渡す
+            pool.map(process_parameter_line_with_robust_subprocess, tasks)
+
+            # 正常終了時はプールを閉じる
+            pool.close()
+            pool.join()
+
+        except Exception as e:
+            print(f"メインプロセスで予期せぬエラーが発生しました: {e}", file=sys.stderr)
+            # エラー発生時はプールを強制終了
+            if pool:
+                pool.terminate()
+                pool.join()
 
     print("-" * 60)
     print(f"処理が完了しました。すべての結果は '{output_file}' に書き込まれました。")
 
 
-# 各プロセスでファイルを開く
-def process_parameter_line_to_shared_file_with_reopen(line_info):
+def process_parameter_line_with_robust_subprocess(line_info):
     """
-    単一のパラメータ行を処理し、結果を共有ロックを使って単一のファイルに書き込む関数
-    (各プロセスがファイルを開き直す)
+    単一のパラメータ行を処理し、結果を共有ロックを使って単一のファイルに書き込む関数。
+    サブプロセスを新しいプロセスグループで起動し、確実に終了させる。
     """
     line_index, line, total_lines, output_file_path, lock = line_info
-
-    # input.txt の実際の行番号 (0-indexed -> 1-indexed)
-    line_index += 1
-    line = line.strip()
-    if not line or line.startswith('#'):
-        return
+    line_index += 1  # 1-indexedに変換
 
     params = line.split(';')
-    if len(params) != 4:
-        sys.stderr.write(f"  警告 (プロセスID: {os.getpid()}): {line_index+1}行目のフォーマットが不正です（パラメータが4つではありません）。スキップします: {line}\n")
+    if len(params) != 5:
+        sys.stderr.write(f"  警告 (プロセスID: {os.getpid()}): {line_index}行目のフォーマットが不正です。スキップします: {line}\n")
         sys.stderr.flush()
         return
 
-    random_angle_vector_seed, kin_scale, base_size_scale, fix_variant = [p.strip() for p in params]
+    random_angle_vector_seed, kin_scale, base_size_scale, fix_variant, fix_pad_diameter = [p.strip() for p in params]
     lisp_command = (
         f"(progn "
         # f" (main (list *faucet-task*)"
@@ -97,6 +110,7 @@ def process_parameter_line_to_shared_file_with_reopen(line_info):
         f" :kin-scale-list {kin_scale}"
         f" :base-size-scale-list {base_size_scale}"
         f" :fix-variant-joint-list {fix_variant}"
+        f" :fix-pad-diameter-list {fix_pad_diameter}"
         f" :debug-view nil"
         f")"
         f" (exit)"
@@ -110,54 +124,75 @@ def process_parameter_line_to_shared_file_with_reopen(line_info):
     print(f" kin-scale: {kin_scale}")
     print(f" base-size: {base_size_scale}")
     print(f" fix-joint: {fix_variant}")
+    print(f" fix-pad-diameter: {fix_pad_diameter}")
 
+    proc = None
     try:
-        result = subprocess.run(
+        # Popenでサブプロセスを開始。start_new_session=Trueで新しいプロセスグループを作成。
+        proc = subprocess.Popen(
             command_list,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             encoding='utf-8',
-            check=True
+            start_new_session=True  # ★重要: これでプロセスグループが作られる
         )
+        # サブプロセスの終了を待つ
+        stdout, stderr = proc.communicate()
 
-        # ロックを取得してからファイルに書き込む
-        # 各子プロセスがファイルを追記モード ('a') で開く
+        # ロックを取得してファイルに書き込む
         with lock:
             with open(output_file_path, 'a', encoding='utf-8') as f_out:
                 f_out.write(f"==== PARAMETERS START (Input Line: {line_index}) ====\n")
                 f_out.write(f"Parameters: {line}\n")
                 f_out.write(f"==========================================\n")
-                f_out.write(result.stdout)
+                if proc.returncode == 0:
+                    f_out.write(stdout)
+                    print(f"プロセスID: {os.getpid()}が成功しました。")
+                else:
+                    # エラーの場合
+                    error_message = (
+                        f"Command failed with exit code {proc.returncode}\n"
+                        f"Stdout:\n{stdout}\n"
+                        f"Stderr:\n{stderr}\n"
+                    )
+                    f_out.write(error_message)
+                    sys.stderr.write(f"エラー (プロセスID: {os.getpid()}, 行: {line_index}): コマンド実行に失敗しました。詳細は '{output_file_path}' を確認してください。\n")
+                    sys.stderr.flush()
+
                 f_out.write(f"\n==== PARAMETERS END (Input Line: {line_index}) ====\n")
                 f_out.write("\n\n")
-        print(f"プロセスID: {os.getpid()}が成功しました。")
 
-    except subprocess.CalledProcessError as e:
-        with lock:
-            with open(output_file_path, 'a', encoding='utf-8') as f_out:
-                f_out.write(f"==== PARAMETERS START (Input Line: {line_index}) ====\n")
-                f_out.write(f"Parameters: {line}\n")
-                f_out.write(f"==========================================\n")
-                f_out.write(f"Command failed with exit code {e.returncode}\n")
-                f_out.write(f"Stdout:\n{e.stdout}\n")
-                f_out.write(f"Stderr:\n{e.stderr}\n")
-                f_out.write(f"\n==== PARAMETERS END (Input Line: {line_index}) (ERROR) ====\n")
-                f_out.write("\n\n")
-        sys.stderr.write(f"エラー (プロセスID: {os.getpid()}): {e}. 詳細は '{output_file_path}' を確認してください。\n")
-        sys.stderr.flush()
     except Exception as e:
-        sys.stderr.write(f"予期せぬエラー (プロセスID: {os.getpid()}): {e}\n")
+        # このワーカープロセス自体で起きた予期せぬエラー
+        sys.stderr.write(f"予期せぬエラー (プロセスID: {os.getpid()}, 行: {line_index}): {e}\n")
         sys.stderr.flush()
-
+    finally:
+        # 重要: 正常終了・エラーを問わず、サブプロセスがまだ生きていればkillする
+        if proc and proc.poll() is None:
+            print(f"プロセスグループ {proc.pid} をクリーンアップします...", file=sys.stderr)
+            try:
+                # プロセスグループ全体にSIGTERMシグナルを送信
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                # プロセスが既に存在しない場合は何もしない
+                pass
 
 if __name__ == '__main__':
+    # ROS環境のチェック
     ros_package_path = os.getenv('ROS_PACKAGE_PATH')
     if not (ros_package_path and 'eus_qp' in ros_package_path):
-        print('Cannot find eus_qp package. Use source command')
-        exit()
+        print('Cannot find eus_qp package. Use source command', file=sys.stderr)
+        sys.exit(1)
 
-    if os.path.exists('output.txt'):
-        os.remove('output.txt')
-        print("既存の 'output.txt' を削除しました。")
+    # 既存の出力ファイルを削除
+    output_filename = 'output.txt'
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
+        print(f"既存の '{output_filename}' を削除しました。")
 
-    run_grid_search_multiprocess_single_output()
+    # シグナルハンドラを設定 (Ctrl+C と kill コマンドに対応)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    run_grid_search_multiprocess_single_output(output_file=output_filename)

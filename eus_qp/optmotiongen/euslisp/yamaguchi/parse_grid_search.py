@@ -180,6 +180,6 @@ if __name__ == '__main__':
 
     parsed_data = parse_grid_search_output('output.txt')
     if parsed_data:
-        eval_parsed_data(parsed_data, plot=args.plot, plot_thre=100)
+        eval_parsed_data(parsed_data, plot=args.plot, plot_thre=200)
     else:
         print("パースするデータがありませんでした。")
