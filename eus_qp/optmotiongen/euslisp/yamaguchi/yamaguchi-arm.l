@@ -27,6 +27,7 @@
    (setq _pad-diameter pad-diameter)
    (send self :add-rigid-legs)
    (send self :add-vacuum-pad)
+   (send self :fix-pad-diameter)
    (send self :init-ending)
    )
   (:add-rigid-legs
@@ -94,10 +95,9 @@
    ()
    (let* ((base-link (find "base_link" (send self :links)
                            :test #'(lambda (x y) (equal x (send y :name)))))
-          (height 10)
           vacuum-pad-link vacuum-pad-joint vacuum-pad-coords
-          (vacuum-pad (make-cylinder (* _pad-diameter 0.5) height))
           vacuum-pad-normal-link vacuum-pad-normal-joint vacuum-pad-normal-coords
+          vacuum-pad-radius-link vacuum-pad-radius-joint vacuum-pad-radius-coords
           )
      ;; 吸引力発生用
      (setq vacuum-pad-link (instance bodyset-link
@@ -121,10 +121,9 @@
      (send vacuum-pad-link :assoc vacuum-pad-coords)
      (send self :put :vacuum-pad-coords vacuum-pad-coords)
      ;; 垂直抗力用
-     (send vacuum-pad :set-color #f(0.3 0.3 1))
      (setq vacuum-pad-normal-link (instance bodyset-link
                                      :init (make-cascoords)
-                                     :bodies (list vacuum-pad)
+                                     :bodies (list (make-cube 1e-3 1e-3 1e-3))
                                      :name "vacuum_pad_normal"))
      (send base-link :assoc vacuum-pad-normal-link)
      (setq vacuum-pad-normal-joint
@@ -142,12 +141,34 @@
                               :name ":vacuum-pad-normal-coords"))
      (send vacuum-pad-normal-link :assoc vacuum-pad-normal-coords)
      (send self :put :vacuum-pad-normal-coords vacuum-pad-normal-coords)
+     ;; vacuum-pad-radius-jointの長さが、可変サイズ吸着パッドの半径になる。
+     (setq vacuum-pad-radius-link (instance bodyset-link
+                                            :init (make-cascoords)
+                                            :bodies (list (make-cube 1e-3 1e-3 1e-3))
+                                            :name "vacuum_pad_radius"))
+     (send base-link :assoc vacuum-pad-radius-link)
+     (setq vacuum-pad-radius-joint
+           (instance linear-joint :init
+                     :name "vacuum_pad_radius_joint"
+                     :parent-link base-link :child-link vacuum-pad-radius-link
+                     :axis (float-vector 0 0 1)
+                     :min 10 :max 100 ;; 吸着パッドのサイズを0にはしない
+                     :max-joint-velocity 0
+                     :max-joint-torque 0))
+     (send vacuum-pad-radius-joint :joint-angle (* 0.5 _pad-diameter))
+     (setq links (append links (list vacuum-pad-radius-link)))
+     (setq joint-list (append joint-list (list vacuum-pad-radius-joint)))
+     (setq vacuum-pad-radius-coords (make-cascoords
+                                     :coords (send vacuum-pad-radius-link :copy-worldcoords)
+                                     :name ":vacuum-pad-radius-coords"))
+     (send vacuum-pad-radius-link :assoc vacuum-pad-radius-coords)
+     (send self :put :vacuum-pad-radius-coords vacuum-pad-radius-coords)
      )
    nil)
   (:invariant-joint-list
    ()
    (let (end-coords-list invariant-joint-list)
-     (dolist (coords-name (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :vacuum-pad-coords :vacuum-pad-normal-coords))
+     (dolist (coords-name (list :rigid-leg0-coords :rigid-leg1-coords :rigid-leg2-coords :rigid-leg3-coords :vacuum-pad-coords :vacuum-pad-normal-coords :vacuum-pad-radius-coords))
        (setq end-coords-list (append end-coords-list (list (send self :get coords-name)))))
      (dolist (ec end-coords-list)
        (let ((target-link (send ec :parent)))
@@ -172,8 +193,29 @@
      )
    nil)
   (:pad-diameter
+   (&optional (diameter))
+   (let ((j (find "vacuum_pad_radius_joint"
+                  (send self :joint-list)
+                  :test #'(lambda (x y) (equal x (send y :name))))))
+     (if diameter
+       (send j :joint-angle (* 0.5 diameter))
+       (* 2 (send j :joint-angle))))
+   )
+  (:fix-pad-diameter
    ()
-   _pad-diameter
+   (let ((j (find "vacuum_pad_radius_joint"
+                  (send self :joint-list)
+                  :test #'(lambda (x y) (equal x (send y :name))))))
+     (send j :min-angle (send j :joint-angle))
+     (send j :max-angle (send j :joint-angle)))
+   )
+  (:unfix-pad-diameter
+   ()
+   (let ((j (find "vacuum_pad_radius_joint"
+                  (send self :joint-list)
+                  :test #'(lambda (x y) (equal x (send y :name))))))
+     (send j :min-angle 10) ;; 吸着パッドのサイズを0にはしない
+     (send j :max-angle 100))
    )
   ;; By setting leg initial pose, optmotiongen calculation is likely to succeed
   (:leg-init
@@ -227,7 +269,7 @@
    )
   (:draw-support-polygon
    (&key (flush t))
-   (let ((pad-size 40) pad-pos pad-edges ;; padの半径
+   (let (pad-pos pad-edges
          (leg-size 2.5) leg-pos leg-edges) ;; legの一辺の長さの半分
      ;; vacuum-pad
      (setq pad-pos (send (send self :get :vacuum-pad-coords) :worldpos))
@@ -237,12 +279,12 @@
               pad-edges
               (list
                (instance edge :init
-                         :pvertex (v+ (float-vector (* pad-size (cos (* i (/ pi 4))))
-                                                    (* pad-size (sin (* i (/ pi 4))))
+                         :pvertex (v+ (float-vector (* (* 0.5 (send self :pad-diameter)) (cos (* i (/ pi 4))))
+                                                    (* (* 0.5 (send self :pad-diameter)) (sin (* i (/ pi 4))))
                                                     -1)
                                       pad-pos)
-                         :nvertex (v+ (float-vector (* pad-size (cos (* (+ i 1) (/ pi 4))))
-                                                    (* pad-size (sin (* (+ i 1) (/ pi 4))))
+                         :nvertex (v+ (float-vector (* (* 0.5 (send self :pad-diameter)) (cos (* (+ i 1) (/ pi 4))))
+                                                    (* (* 0.5 (send self :pad-diameter)) (sin (* (+ i 1) (/ pi 4))))
                                                     -1)
                                       pad-pos))))))
      ;; rigid legs
@@ -326,7 +368,7 @@
                  (float-vector (send (send self :leg-joint 3 :x) :joint-angle)
                                (send (send self :leg-joint 3 :y) :joint-angle))))
           (pad-points (mapcar #'(lambda (i)
-                                  (scale (* 0.5 _pad-diameter) (float-vector (cos (* i (/ pi 4))) (sin (* i (/ pi 4))))))
+                                  (scale (* 0.5 (send self :pad-diameter)) (float-vector (cos (* i (/ pi 4))) (sin (* i (/ pi 4))))))
                               (list 0 1 2 3 4 5 6 7)))
           (points (append leg-points pad-points)) ;; 点が3つ以上あるのが前提
           lower-hull upper-hull ccw-hull)
@@ -427,13 +469,19 @@
   )
 
 (defun draw-base-convex-hull (robot &key (v))
-  (let ((r (copy-object robot)))
+  (let* ((r (copy-object robot))
+         (vacuum-pad-normal-link
+          (find "vacuum_pad_normal" (send r :links)
+                :test #'(lambda (x y) (equal x (send y :name)))))
+         (vacuum-pad (make-cylinder (* (send r :pad-diameter) 0.5) 10)))
     ;; Set robot pose
     (send r :newcoords (make-coords))
+    (send vacuum-pad :newcoords (send vacuum-pad-normal-link :copy-worldcoords))
+    (send vacuum-pad :set-color #f(0.3 0.3 1))
     ;; Visualize
     (unless v
-      (setq v (send-lexpr (instantiate x::irtviewer) :create nil))
-      (send v :objects (list r)))
+      (setq v (send-lexpr (instantiate x::irtviewer) :create nil)))
+    (send v :objects (list r vacuum-pad))
     (send v :viewer :viewing :look
           #f(0 0 -1000)
           #f(0.0 0.0 0.0)

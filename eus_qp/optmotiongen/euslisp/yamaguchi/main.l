@@ -106,7 +106,7 @@
     sqp-opt))
 (warn "(check-task *faucet-task* :kin-scale 1.0) ;; 単体タスク複数作業場所に対して固定された剛体脚配置を使って静力学の整合性をチェック~%")
 
-;; roseus main.l '(main (list *faucet-task*) :set-viewpoint "faucet" :random-angle-vector-seed (list 51893784 1455289252) :kin-scale-list (list 0.6 0.6 0.01 0.01) :base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil t))'
+;; roseus main.l '(main (list *faucet-task*) :set-viewpoint "faucet" :random-angle-vector-seed (list 51893784 1455289252) :kin-scale-list (list 0.6 0.6 0.01 0.01) :base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil) :fix-pad-diameter-list (list nil t nil nil))'
 (defun main
     (tasks
      &key
@@ -115,6 +115,7 @@
      (kin-scale-list (list 1.0 1.0 0.01 0.01)) ;; デフォルトは1.0
      (base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4))) ;; デフォルトは(* 10.0 1e-4)
      (fix-variant-joint-list (list nil nil nil t))
+     (fix-pad-diameter-list (list nil t nil nil))
      (set-viewpoint)
      (debug-view t))
   "
@@ -151,6 +152,9 @@
                                 (elt random-angle-vector-seed 1)))
           (send robot :random-angle-vector))
       (send robot :move-rigid-leg-to-original))
+    (if (elt fix-pad-diameter-list 0)
+        (send robot :fix-pad-diameter)
+      (send robot :unfix-pad-diameter))
     (send robot :newcoords (make-coords))
 
     ;; 1回目のOptimization
@@ -178,7 +182,7 @@
                         :base-size-scale (car base-size-scale-list)
                         :initial-sqp-opt nil
                         :dissoc-root-virtual nil
-                        :thre 5.0 ;; 手先の許容位置誤差
+                        :thre 3.0 ;; 手先の許容位置誤差
                         :debug-view (when debug-view (list :additional-draw-objects (send *irtviewer* :objects)))
                         :revert-if-fail nil
                         :root-virtual-mode :6dof
@@ -195,7 +199,13 @@
         ;; (send-all config-task-list :only-kinematics? nil)
         (send-all config-task-list :kin-scale (elt kin-scale-list (+ i 1)))
         (send-all config-task-list :base-size-scale (elt base-size-scale-list (+ i 1)))
-        (if (elt fix-variant-joint-list i)
+        (let ((robot-list (send-all (send-all config-task-list :robot-env) :robot)))
+          (if (elt fix-pad-diameter-list (+ i 1))
+              (send-all robot-list :fix-pad-diameter)
+            (send-all robot-list :unfix-pad-diameter))
+          (send-all config-task-list :phi-max-vector :update? t)
+          (send-all config-task-list :phi-min-vector :update? t))
+        (if (elt fix-variant-joint-list (+ i 1))
             (let* ((robot-env-list (send-all config-task-list :robot-env))
                    (arm-joint-list (send-all (send-all robot-env-list :robot) :variant-joint-list))
                    (root-virtual-joint-list (send-all robot-env-list :root-virtual-joint-list))
@@ -206,6 +216,8 @@
               (mapcar #'(lambda (jl) (mapcar #'(lambda (j) (send j :min-angle (send j :joint-angle))) jl)) arm-joint-list)
               (mapcar #'(lambda (jl) (mapcar #'(lambda (j) (send j :max-angle (send j :joint-angle))) jl)) root-virtual-joint-list)
               (mapcar #'(lambda (jl) (mapcar #'(lambda (j) (send j :min-angle (send j :joint-angle))) jl)) root-virtual-joint-list)
+              (send-all config-task-list :theta-max-vector :update? t)
+              (send-all config-task-list :theta-min-vector :update? t)
               (send sqp-opt :optimize :loop-num loop-num-max :loop-num-min loop-num-min)
               ;; unfix variant joint angle
               (mapcar #'(lambda (jl max-angle-list) (mapcar #'(lambda (j m) (send j :max-angle m)) jl max-angle-list))
@@ -214,6 +226,8 @@
                       arm-joint-list orig-min-angle-list)
               (mapcar #'(lambda (jl) (mapcar #'(lambda (j) (send j :max-angle 1e10)) jl)) root-virtual-joint-list)
               (mapcar #'(lambda (jl) (mapcar #'(lambda (j) (send j :min-angle -1e10)) jl)) root-virtual-joint-list)
+              (send-all config-task-list :theta-max-vector :update? t)
+              (send-all config-task-list :theta-min-vector :update? t)
               )
           (send sqp-opt :optimize :loop-num loop-num-max :loop-num-min loop-num-min)))
       (print-sqp-result sqp-opt task-name-list :debug-view debug-view))

@@ -53,7 +53,6 @@
             (when dissoc-root-virtual
               (send robot-env :dissoc-root-virtual))
             (setq robot (send robot-env :robot :newcoords (make-coords)))
-            (send v :objects (list robot))
             (draw-base-convex-hull robot :v v)))
         (format t "Base worldcoords~%")
         (format t " ~A~%" (send (send config-task :robot-env) :robot :copy-worldcoords))

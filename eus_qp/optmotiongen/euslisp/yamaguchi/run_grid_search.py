@@ -4,6 +4,9 @@ import os
 import signal
 from multiprocessing import Pool, Manager
 
+# もしゾンビプロセスが残っていた場合に全てkillするコマンド
+# ps aux | grep "roseus" | grep -v grep | awk '{print $2}' | xargs kill
+
 # グローバル変数としてプロセスプールを保持
 # シグナルハンドラからアクセスするために必要
 pool = None
