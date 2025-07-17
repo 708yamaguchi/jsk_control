@@ -51,8 +51,8 @@
                #f(0.0 0.0 1.0)))
         ((equal name "table")
          (send *irtviewer* :viewer :viewing :look
-               #f(2164.53 -2264.89 2451.8)
-               #f(2779.37 -1748.98 2060.34)
+               #f(453.714 -3414.34 3758.35)
+               #f(3025.62 -1476.27 1973.26)
                #f(0.0 0.0 1.0)))
         )
   (send *irtviewer* :draw-objects))
