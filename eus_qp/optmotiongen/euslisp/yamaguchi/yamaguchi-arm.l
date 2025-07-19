@@ -357,7 +357,7 @@
    )
   (:base-convex-hull
    ()
-   ;; selfは原点にいるという前提
+   ;; 最初はロボット相対で座標を記述
    (let* ((leg-points
            (list (float-vector (send (send self :leg-joint 0 :x) :joint-angle)
                                (send (send self :leg-joint 0 :y) :joint-angle))
@@ -394,7 +394,12 @@
        (setq upper-hull (append upper-hull (list p))))
      ;; 上部と下部の凸包を結合して、半時計回りのリストを得る。始点と終点が重複するため、除去
      (setq ccw-hull (append (butlast lower-hull) (butlast upper-hull)))
-     ccw-hull
+     ;; 座標を3次元にして、ロボット座標相対に姿勢変換
+     (mapcar #'(lambda (p)
+                 (send (send self :copy-worldcoords)
+                       :transform-vector
+                       (float-vector (elt p 0) (elt p 1) 0)))
+             ccw-hull)
      ))
   (:draw-base-convex-hull
    (&key (flush t))
@@ -410,7 +415,7 @@
                          :pvertex (elt hull-points (mod i hull-length))
                          :nvertex (elt hull-points (mod (+ i 1) hull-length)))))))
      ;; Visualize
-     (send-all hull-edges :draw-on :flush flush :color (float-vector 1.0 0.5 0.5) :width 5))
+     (send-all hull-edges :draw-on :flush flush :color (float-vector 0.5 1.0 0.5) :width 5))
    )
   (:base-convex-hull-area
    ()

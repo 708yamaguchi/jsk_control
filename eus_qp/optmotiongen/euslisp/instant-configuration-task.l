@@ -2520,44 +2520,45 @@ return $\bm{d}_{\mathit{col}} \in \mathbb{R}^{N_{\mathit{col}}}$
    "
 Update viewer.
    "
-   (send-all (flatten _kin-target-coords-list) :draw-on :flush nil :color #f(0 1 0) :size 50 :width 10)
-   (dolist (att-coords (flatten _kin-attention-coords-list))
-     (cond ((equal att-coords :cog)
-            (send (scale 1e3 (send self :cog)) :draw-on :flush nil :color #f(1 0 0) :size 100 :width 2)
-            )
-           (t
-            (send att-coords :draw-on :flush nil :color #f(1 0 0) :size 100 :width 2)
-            ))
-     )
-   (send-all _contact-constraint-list :draw-on :flush nil)
-   (send-all (send self :get :collision-line-list) :draw-on :flush nil :color #f(1 0 0) :width 2)
-   (unless _only-kinematics?
-     (draw-force-value
-      :force-list (send self :force-list)
-      :moment-list (send self :moment-list)
-      :coords-list _contact-target-coords-list
-      :robot (send _robot-env :robot)
-      )
-     (draw-torque
-      :torque-vector _torque-vector
-      :torque-max-vector (send self :torque-max-vector)
-      :joint-list _drive-joint-list
-      :width 5 :size 200 :flush nil
-      :color (float-vector 1 1 0) :warning-color (float-vector 1 0 0)
-      :torque-threshold 1.01
-      )
-     (when (> _num-external 0)
-       (mapcar
-        #'(lambda (f c)
-            (with-set-color-line-width
-             *viewer* #f(0.3 0.8 0.8) 5
-             (send *irtviewer* :viewer :draw-arrow
-                   (send c :worldpos)
-                   (v+ (send c :worldpos) (scale 1 f)))))
-        (send self :external-force-list)
-        _external-coords-list
-        ))
-     )
+   ;; (send-all (flatten _kin-target-coords-list) :draw-on :flush nil :color #f(0 1 0) :size 50 :width 10)
+   ;; (dolist (att-coords (flatten _kin-attention-coords-list))
+   ;;   (cond ((equal att-coords :cog)
+   ;;          (send (scale 1e3 (send self :cog)) :draw-on :flush nil :color #f(1 0 0) :size 100 :width 2)
+   ;;          )
+   ;;         (t
+   ;;          (send att-coords :draw-on :flush nil :color #f(1 0 0) :size 100 :width 2)
+   ;;          ))
+   ;;   )
+   ;; (send-all _contact-constraint-list :draw-on :flush nil)
+   ;; (send-all (send self :get :collision-line-list) :draw-on :flush nil :color #f(1 0 0) :width 2)
+   ;; (unless _only-kinematics?
+   ;;   (draw-force-value
+   ;;    :force-list (send self :force-list)
+   ;;    :moment-list (send self :moment-list)
+   ;;    :coords-list _contact-target-coords-list
+   ;;    :robot (send _robot-env :robot)
+   ;;    )
+   ;;   (draw-torque
+   ;;    :torque-vector _torque-vector
+   ;;    :torque-max-vector (send self :torque-max-vector)
+   ;;    :joint-list _drive-joint-list
+   ;;    :width 5 :size 200 :flush nil
+   ;;    :color (float-vector 1 1 0) :warning-color (float-vector 1 0 0)
+   ;;    :torque-threshold 1.01
+   ;;    )
+   ;;   (when (> _num-external 0)
+   ;;     (mapcar
+   ;;      #'(lambda (f c)
+   ;;          (with-set-color-line-width
+   ;;           *viewer* #f(0.3 0.8 0.8) 5
+   ;;           (send *irtviewer* :viewer :draw-arrow
+   ;;                 (send c :worldpos)
+   ;;                 (v+ (send c :worldpos) (scale 1 f)))))
+   ;;      (send self :external-force-list)
+   ;;      _external-coords-list
+   ;;      ))
+   ;;   )
+   (send (send _robot-env :robot) :draw-base-convex-hull :flush nil)
    )
   (:print-status
    ()
