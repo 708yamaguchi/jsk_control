@@ -445,11 +445,32 @@
    )
   )
 
+(defun set-collada-body-transparency (c-body transparency)
+  (unless (derivedp c-body collada-body)
+    (return-from set-collada-body-transparency nil))
+  (let ((glvertices (send c-body :glvertices)))
+    ;; :GL-DISPLAYLIST-IDが残っていると、後から透明度を変更できない
+    (gl::delete-displaylist-id (get glvertices :GL-DISPLAYLIST-ID))
+    (setf (get glvertices :GL-DISPLAYLIST-ID) nil)
+    (setf (get glvertices :transparent) transparency)))
+
 (defun yamaguchi-arm
-    (&key (pad-diameter 80))
-  (instance yamaguchi-arm-robot
-            :init
-            :pad-diameter pad-diameter)
+    (&key (pad-diameter 80)
+          (transparency))
+  (let ((r (instance yamaguchi-arm-robot
+                     :init
+                     :pad-diameter pad-diameter)))
+    (when transparency
+      (dolist (link-name (list "link1" "link2" "link3" "link4" "link5" "link6"
+                               "gripper_link1" "gripper_link2"))
+        (let ((target-link
+               (find link-name (send r :links)
+                     :test #'(lambda (x y) (equal x (send y :name))))))
+          (mapcar #'(lambda (c-body)
+                      (set-collada-body-transparency c-body transparency))
+                  (send target-link :bodies))))
+      )
+    r)
   )
 
 (defun draw-contact-constraints (robot)
