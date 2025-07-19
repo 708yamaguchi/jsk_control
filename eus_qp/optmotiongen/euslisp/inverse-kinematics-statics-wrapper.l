@@ -287,8 +287,8 @@ Solve inverse kinematics problem with sqp optimization.
      (when debug-view
        (if (boundp '*irtviewer*)
            ;; If *irtviewer* already exists, do not change the viewpoint
-           (send *irtviewer* :objects (append (list robot-env) (cadr (memq :additional-draw-objects debug-view))))
-         (objects (append (list robot-env) (cadr (memq :additional-draw-objects debug-view))))))
+           (send *irtviewer* :objects (append (cadr (memq :additional-draw-objects debug-view)) (list robot-env)))
+         (objects (append (cadr (memq :additional-draw-objects debug-view)) (list robot-env)))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
      (send robot-env :dissoc-root-virtual)
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
@@ -756,8 +756,8 @@ Solve inverse kinematics problem with sqp optimization.
      (when debug-view
        (if (boundp '*irtviewer*)
            ;; If *irtviewer* already exists, do not change the viewpoint
-           (send *irtviewer* :objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))
-         (objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view))))))
+           (send *irtviewer* :objects (append (cadr (memq :additional-draw-objects debug-view)) robot-env-list))
+         (objects (append (cadr (memq :additional-draw-objects debug-view)) robot-env-list))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
      ;; 最適化の結果sqp-optを使いまわしたい時は、dissoc-root-virtualせず、:inverse-kinematics-statics-trajectory-optmotiongenを再び呼ぶ
      (when dissoc-root-virtual

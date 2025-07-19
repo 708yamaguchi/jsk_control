@@ -128,7 +128,7 @@
 ・sqp-opt内部では、:solve-qp-modeが:sqp-with-hotstartであり、qpoasesライブラリが内部で設定を継承することを想定している。
 ・前回最適化の結果を再利用しても、コールドスタート（プログラム再起動後など）だと、qpoases内部の設定が初期化されるため、うまくいかないことが多い。
 "
-  (let* ((robot (yamaguchi-arm :pad-diameter pad-diameter))
+  (let* ((robot (yamaguchi-arm :pad-diameter pad-diameter :transparency 0.4))
          (args (get-args robot tasks))
          (loop-num-min 30) (loop-num-max 50) ;; iteration回数は、loop-num-min以上、loop-num-max以下
          (task-name-list (flatten (mapcar #'(lambda(x) (make-list (send x :size) :initial-element (send x :name))) tasks)))
