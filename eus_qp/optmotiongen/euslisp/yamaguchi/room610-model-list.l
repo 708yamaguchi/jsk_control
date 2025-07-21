@@ -9,7 +9,7 @@
 (unless (boundp '*toshiba-microwave-oven*)
   (setq *toshiba-microwave-oven* (toshiba-microwave-oven))
   (send *toshiba-microwave-oven* :newcoords
-        (make-coords :pos (float-vector 6300 2100 800) :rpy (list (deg2rad -90) 0 0)))
+        (make-coords :pos (float-vector 6300 2200 800) :rpy (list (deg2rad -90) 0 0)))
 
 (unless (boundp '*room610-model-list*)
   (setq *room610-model-list*

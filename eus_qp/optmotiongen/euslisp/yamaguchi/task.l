@@ -118,8 +118,8 @@
                 :attachable-plane-obj
                 (instance attachable-plane :init
                           :offset 1200
-                          :min-angle-list (list 6020 1850)
-                          :max-angle-list (list 6480 2230)
+                          :min-angle-list (list 6020 1950)
+                          :max-angle-list (list 6480 2130)
                           :normal :z+)
                 :coords-list
                 (list
