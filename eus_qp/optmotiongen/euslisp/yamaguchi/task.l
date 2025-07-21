@@ -98,6 +98,31 @@
                  )
                 ))
 
+(setq *wipe-wall-task*
+      (instance task :init
+                :name "wipe-wall"
+                :attachable-plane-obj
+                (instance attachable-plane :init
+                          :offset 8500
+                          :min-angle-list (list -1250 800)
+                          :max-angle-list (list 1600 2000)
+                          :normal :x-)
+                :coords-list
+                (list
+                 (make-coords :pos (float-vector 8500 -250 1000) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8500 -250 1500) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8500 250 1000) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8500 250 1500) :rpy (list 0 0 0))
+                 )
+                :wrench-list
+                (list
+                 (float-vector -3 0 0 0 0 0)
+                 (float-vector -3 0 0 0 0 0)
+                 (float-vector -3 0 0 0 0 0)
+                 (float-vector -3 0 0 0 0 0)
+                 )
+                ))
+
 (setq *table-task*
       (instance task :init
                 :name "table"
