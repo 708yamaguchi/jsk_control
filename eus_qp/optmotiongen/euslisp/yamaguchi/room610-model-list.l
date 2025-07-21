@@ -36,8 +36,8 @@
                #f(0.0 0.0 1.0)))
         ((equal name "IH")
          (send *irtviewer* :viewer :viewing :look
-               #f(5805.94 -2065.66 2831.48)
-               #f(7620.59 -975.311 1508.62)
+               #f(6665.19 -3115.46 2621.31)
+               #f(7495.54 -1884.42 1831.78)
                #f(0.0 0.0 1.0)))
         ((equal name "faucet")
          (send *irtviewer* :viewer :viewing :look
