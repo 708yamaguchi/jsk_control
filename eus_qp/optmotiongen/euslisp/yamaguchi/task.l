@@ -59,6 +59,21 @@
                  )
                 ))
 
+(setq *faucet-wall-task*
+      (instance task :init
+                :name "faucet-wall"
+                :attachable-plane-obj
+                (instance attachable-plane :init
+                          :offset 8500
+                          :min-angle-list (list -1250 800)
+                          :max-angle-list (list 1600 2000)
+                          :normal :x-)
+                :coords-list
+                (send-all (send *faucet-task* :coords-list) :copy-worldcoords)
+                :wrench-list
+                (send *faucet-task* :wrench-list)
+                ))
+
 (setq *IH-task*
       (instance task :init
                 :name "IH"
