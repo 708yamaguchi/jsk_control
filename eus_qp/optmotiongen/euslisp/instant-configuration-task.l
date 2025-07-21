@@ -313,7 +313,8 @@ Initialize instance
           ))
    ;; 最後に足した数字が、base-size目的関数の要素数
    (when (rigid-legs-invariant? _invariant-joint-list)
-     (setq _dim-task (+ _dim-task 9)))
+     ;; (setq _dim-task (+ _dim-task 9)))
+     (setq _dim-task (+ _dim-task 8)))
    )
   (:robot-env
    ()
@@ -2613,7 +2614,8 @@ Print status.
           (y3 (send (find-joint "rigid_leg3_y_joint" _invariant-joint-list) :joint-angle))
           (pad-r (send (find-joint "vacuum_pad_radius_joint" _invariant-joint-list) :joint-angle))
           )
-     (scale _base-size-scale (float-vector x0 x1 x2 x3 y0 y1 y2 y3 (* 0.05 pad-r)))
+     ;; (scale _base-size-scale (float-vector x0 x1 x2 x3 y0 y1 y2 y3 (* 0.05 pad-r)))
+     (scale _base-size-scale (float-vector x0 x1 x2 x3 y0 y1 y2 y3))
      )
    )
   (:base-size-task-jacobian-with-phi
@@ -2621,7 +2623,8 @@ Print status.
    ;; base sizeヤコビアンを計算する際、X0からY3、R以外の変数でタスク関数e_base_sizeを微分した値は0
    ;; よって、X0からY3、Rで微分した値のみをヤコビアンにセットする。
    ;; TODO: リストを使う
-   (let* ((jac (make-matrix 9 _num-invariant-joint)) vec
+   ;; (let* ((jac (make-matrix 9 _num-invariant-joint)) vec
+   (let* ((jac (make-matrix 8 _num-invariant-joint)) vec
           (x0-index (joint-index-func "rigid_leg0_x_joint" _invariant-joint-list))
           (x1-index (joint-index-func "rigid_leg1_x_joint" _invariant-joint-list))
           (x2-index (joint-index-func "rigid_leg2_x_joint" _invariant-joint-list))
@@ -2633,11 +2636,13 @@ Print status.
           (pad-r-index (joint-index-func "vacuum_pad_radius_joint" _invariant-joint-list))
           (indices (list x0-index x1-index x2-index x3-index
                          y0-index y1-index y2-index y3-index
-                         pad-r-index))
+                         ;; pad-r-index))
+                         ))
           )
      (dotimes (i (length indices))
        (setq vec (coerce (make-list _num-invariant-joint :initial-element 0) float-vector))
-       (setf (elt vec (elt indices i)) (if (eq i (- (length indices) 1)) 0.05 1)) ;; パッドの半径だけ、別の重み
+       ;; (setf (elt vec (elt indices i)) (if (eq i (- (length indices) 1)) 0.05 1)) ;; パッドの半径だけ、別の重み
+       (setf (elt vec (elt indices i)) 1)
        (setf (matrix-row jac i) (scale _base-size-scale vec))
        )
      jac))
