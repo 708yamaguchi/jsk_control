@@ -17,7 +17,7 @@
 
 引数のtaskに定義されているcoordsやwrenchのうち、最初の要素を利用してチェック
 "
-  (let* ((robot (yamaguchi-arm :pad-diameter 80))
+  (let* ((robot (yamaguchi-arm :pad-diameter 60))
          (args (get-args robot (list task)))
          sqp-opt)
 
@@ -57,7 +57,7 @@
 
 (defun check-task
     (task &key (kin-scale 1.0))
-  (let* ((robot (yamaguchi-arm :pad-diameter 80))
+  (let* ((robot (yamaguchi-arm :pad-diameter 60))
          (args (get-args robot (list task)))
          (loop-num-min 30) (loop-num-max 100) ;; iteration回数は、loop-num-min以上、loop-num-max以下
          (task-name-list (make-list (send task :size) :initial-element (send task :name)))
@@ -110,7 +110,7 @@
 (defun main
     (tasks
      &key
-     (pad-diameter 80)
+     (pad-diameter 60)
      (random-angle-vector-seed nil)
      (kin-scale-list (list 1.0 1.0 0.01 0.01)) ;; デフォルトは1.0
      (base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4))) ;; デフォルトは(* 10.0 1e-4)

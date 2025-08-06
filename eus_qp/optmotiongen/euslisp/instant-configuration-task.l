@@ -2612,7 +2612,7 @@ Print status.
           (y1 (send (find-joint "rigid_leg1_y_joint" _invariant-joint-list) :joint-angle))
           (y2 (send (find-joint "rigid_leg2_y_joint" _invariant-joint-list) :joint-angle))
           (y3 (send (find-joint "rigid_leg3_y_joint" _invariant-joint-list) :joint-angle))
-          (pad-r (send (find-joint "vacuum_pad_radius_joint" _invariant-joint-list) :joint-angle))
+          ;; (pad-r (send (find-joint "vacuum_pad_radius_joint" _invariant-joint-list) :joint-angle))
           )
      ;; (scale _base-size-scale (float-vector x0 x1 x2 x3 y0 y1 y2 y3 (* 0.05 pad-r)))
      (scale _base-size-scale (float-vector x0 x1 x2 x3 y0 y1 y2 y3))

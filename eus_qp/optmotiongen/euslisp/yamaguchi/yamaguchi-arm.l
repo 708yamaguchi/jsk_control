@@ -1,4 +1,5 @@
-(require "yamaguchi_6axis_arm_with_vacuum_base.l")
+;; (require "yamaguchi_6axis_arm_with_vacuum_base.l")
+(require "yamaguchi_6axis_arm_nejineji.l")
 
 (defmacro with-set-color-line-width
   (vw color line-width &rest bodies)
@@ -16,8 +17,13 @@
         ))))
 
 (defclass yamaguchi-arm-robot
-  :super yamaguchi_6axis_arm_with_vacuum_base-robot
-  :slots (_pad-diameter)
+  ;; :super yamaguchi_6axis_arm_with_vacuum_base-robot
+  :super yamaguchi_6axis_arm_nejineji-robot
+  :slots (_pad-diameter
+          ;; vacuum_pad_normal_joint_jt vacuum_pad_joint_jt
+          ;; rigid_leg0_x_joint_jt rigid_leg1_x_joint_jt rigid_leg2_x_joint_jt rigid_leg3_x_joint_jt
+          ;; rigid_leg0_y_joint_jt rigid_leg1_y_joint_jt rigid_leg2_y_joint_jt rigid_leg3_y_joint_jt
+          )
   )
 
 (defmethod yamaguchi-arm-robot
@@ -28,7 +34,9 @@
    (send self :add-rigid-legs)
    (send self :add-vacuum-pad)
    (send self :fix-pad-diameter)
-   (send self :init-ending)
+   ;; overwrite bodies to return draw-things links not (send link :bodies)
+   ;; bodies include rigid legs and vacuum pad
+   (setq bodies (flatten (mapcar #'(lambda (b) (if (find-method b :bodies) (send b :bodies))) (send self :all-links))))
    )
   (:add-rigid-legs
    ()
@@ -81,6 +89,11 @@
                        :max-joint-velocity 10.0
                        :max-joint-torque 999999.0))
        (setq leg-joint-list (append leg-joint-list (list leg-joint-y))))
+     (dolist (j leg-joint-list)
+       (send (send j :child-link) :add-joint j)
+       (send (send j :child-link) :add-parent-link (send j :parent-link))
+       (send (send j :parent-link) :add-child-links (send j :child-link)))
+
      ;; Overwrite links and joint-list
      (setq links (append links dummy-links leg-links))
      (setq joint-list (append joint-list leg-joint-list))
@@ -163,6 +176,10 @@
                                      :name ":vacuum-pad-radius-coords"))
      (send vacuum-pad-radius-link :assoc vacuum-pad-radius-coords)
      (send self :put :vacuum-pad-radius-coords vacuum-pad-radius-coords)
+     (dolist (j (list vacuum-pad-joint vacuum-pad-normal-joint vacuum-pad-radius-joint))
+       (send (send j :child-link) :add-joint j)
+       (send (send j :child-link) :add-parent-link (send j :parent-link))
+       (send (send j :parent-link) :add-child-links (send j :child-link)))
      )
    nil)
   (:invariant-joint-list
@@ -443,6 +460,15 @@
      (send j :joint-angle (- (random 400.0) 200.0)))
    (send self :angle-vector)
    )
+  (:get-links-recursive
+   (parent-link)
+   (when parent-link
+     (cons parent-link
+           (mapcan #'(lambda (x) (send self :get-links-recursive x))
+                   (send parent-link :child-links)))))
+  (:all-links
+   ()
+   (send self :get-links-recursive (car (send self :links))))
   )
 
 (defun set-collada-body-transparency (c-body transparency)
@@ -455,20 +481,20 @@
     (setf (get glvertices :transparent) transparency)))
 
 (defun yamaguchi-arm
-    (&key (pad-diameter 80)
+    (&key (pad-diameter 60)
           (transparency))
   (let ((r (instance yamaguchi-arm-robot
                      :init
-                     :pad-diameter pad-diameter)))
+                     :pad-diameter pad-diameter))
+        (opaque-link-name "base_link") ;; not transparent link name
+        target-link
+        )
     (when transparency
-      (dolist (link-name (list "link1" "link2" "link3" "link4" "link5" "link6"
-                               "gripper_link1" "gripper_link2"))
-        (let ((target-link
-               (find link-name (send r :links)
-                     :test #'(lambda (x y) (equal x (send y :name))))))
+      (dolist (l (send r :all-links))
+        (when (not (equal opaque-link-name (send l :name)))
           (mapcar #'(lambda (c-body)
                       (set-collada-body-transparency c-body transparency))
-                  (send target-link :bodies))))
+                  (send l :bodies))))
       )
     r)
   )

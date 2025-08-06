@@ -164,14 +164,17 @@
       (when (equal (send (elt task-coords-list i) :name)
                    (send (elt task-coords-list (+ i 1)) :name))
         (setq same-position-task-index (append same-position-task-index (list i)))))
-    (dolist (j (list :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-x
-                     :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-y
-                     :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-linear-joint-z
-                     :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-x
-                     :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-y
-                     :yamaguchi_6axis_arm_with_vacuum_base-root-virtual-rotational-joint-z))
-      (dolist (i same-position-task-index)
-        (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (list j i))))))
+    (let (virtual-joint-list)
+      (dolist (joint-type (list "linear-joint" "rotational-joint"))
+        (dolist (axis (list "x" "y" "z"))
+          (setq virtual-joint-list
+                (append virtual-joint-list
+                        (list (read-from-string
+                               (format nil ":~A-~A-~A-~A"
+                                       (send robot :name) "root-virtual" joint-type axis)))))))
+      (dolist (j virtual-joint-list)
+        (dolist (i same-position-task-index)
+          (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (list j i)))))))
     (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
     (dolist (l same-position-task-index)
       (setf (elt adjacent-regular-scale-list l) 5e-4))
