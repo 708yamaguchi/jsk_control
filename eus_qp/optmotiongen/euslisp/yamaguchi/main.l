@@ -170,6 +170,7 @@
       (visualize-tasks tasks)
       (when set-viewpoint
         (set-viewpoint set-viewpoint)))
+    ;; (unix:sleep 3)
 
     ;; Robot setting
     (send robot :fix-gripper)
@@ -217,10 +218,12 @@
                         :min-loop loop-num-min
                         :stop loop-num-max
                         :optimize-torque? nil))
-    (print-sqp-result sqp-opt args :debug-view debug-view)
+    (print-sqp-result sqp-opt args :debug-view nil)
 
     ;; 2回目以降のOptimization
     (dotimes (i (- (length kin-scale-list) 1))
+      ;; (when (eq i (- (length kin-scale-list) 2))
+      ;;   (break))
       ;; 段階的最適化をするため、前回の最適化結果であるsqp-optのパラメータを変えてから、次の最適化の初期値にする
       ;; TODO: eom-scaleも変えられるようにする（そもそも必要ないかもしれない）
       (let* ((config-task-list (send (send sqp-opt :config-task) :instant-config-task-list)))
@@ -258,7 +261,7 @@
               (send-all config-task-list :theta-min-vector :update? t)
               )
           (send sqp-opt :optimize :loop-num loop-num-max :loop-num-min loop-num-min)))
-      (print-sqp-result sqp-opt args :debug-view debug-view))
+      (print-sqp-result sqp-opt args :debug-view nil))
 
     ;; 最適化計算が終了したら、robot-env-listを:dissoc-root-virtualして、仮想ルートジョイントを削除
     (send-all (send-all (send (send sqp-opt :config-task) :instant-config-task-list) :robot-env)
