@@ -47,6 +47,26 @@
              (contact-target-coords-list (send config-task :contact-target-coords-list)))
         (format t "angle vector~%")
         (format t " ~A~%" (send (send config-task :robot-env) :robot :angle-vector))
+
+        ;; 最終的な最適化の誤差
+        (let* ((kin-val (send config-task :kinematics-task-value :update? nil))
+               (e-kin (if kin-val (norm kin-val) nil))
+               (eom-trans (send config-task :eom-trans-task-value :update? nil))
+               (eom-rot (send config-task :eom-rot-task-value :update? nil))
+               (base-val (if (and (fboundp 'rigid-legs-invariant?)
+                                  (rigid-legs-invariant? (send config-task :invariant-joint-list)))
+                             (send config-task :base-size-task-value :update? nil)
+                           nil))
+               (e-base (if base-val (norm base-val) nil))
+               (total-val (send config-task :task-value :update? nil))
+               (e-all (if total-val (norm total-val) nil)))
+          (format t "Final Errors:~%")
+          (format t "  e_pos: ~A~%" e-kin)
+          (format t "  e_wrench(trans): ~A [N]~%" (if eom-trans (norm eom-trans) nil))
+          (format t "  e_wrench(rot): ~A [Nm]~%" (if eom-rot (norm eom-rot) nil))
+          (format t "  e_base: ~A~%" e-base)
+          (format t "  e: ~A~%" e-all))
+
         ;; Look at vacuum base shape
         (when (and debug-view (eq i 0))
           (let* ((robot-env (copy-object (send config-task :robot-env)))

@@ -111,10 +111,37 @@
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 10.3848 93.1552 10.3872 93.1551 10.3927 93.155 10.3903 93.1551 0.0 0.0 0.0))
 ;; -> Base convex hull (#f(-30.0 3.673940e-15 0.0) #f(-21.2132 -21.2132 0.0) #f(-5.880162e-14 -30.0 0.0) #f(21.2132 -21.2132 0.0) #f(30.0 0.0 0.0) #f(10.3927 93.155 0.0) #f(10.3903 93.1551 0.0) #f(10.3848 93.1552 0.0) #f(-21.2132 21.2132 0.0))
 ;; -> 4086.89 [mm^2]
+;; 蛇口（平面）タスク：
+;; 姿勢1：
+;;   e_pos: 0.002024
+;;   e_wrench(trans): 8.102424e-06 [N]
+;;   e_wrench(rot): 6.672572e-05 [Nm]
+;;   e_base: 0.187465
+;;   e: 0.187476
+;; 姿勢2：
+;;   e_pos: 5.246524e-05
+;;   e_wrench(trans): 3.139078e-08 [N]
+;;   e_wrench(rot): 3.231539e-07 [Nm]
+;;   e_base: 0.187465
+;;   e: 0.187465
+
 ;; roseus main.l '(main (list *faucet-wall-task*) :set-viewpoint "faucet" :random-angle-vector-seed (list 1777581173 1619544386) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 -21.2419 -25.0552 -35.6628 -27.3711 -73.6238 -36.662 -72.1304 -36.9323 0.0 0.0 0.0))
 ;; -> Base convex hull (#f(-73.6238 -36.662 0.0) #f(-72.1304 -36.9323 0.0) #f(-5.880162e-14 -30.0 0.0) #f(21.2132 -21.2132 0.0) #f(30.0 0.0 0.0) #f(21.2132 21.2132 0.0) #f(1.836970e-15 30.0 0.0) #f(-21.2132 21.2132 0.0))
 ;; -> 3880.03 [mm^2]
+;; 蛇口（壁面）タスク：
+;; 姿勢1：
+;;   e_pos: 0.002826
+;;   e_wrench(trans): 2.864730e-06 [N]
+;;   e_wrench(rot): 1.650252e-05 [Nm]
+;;   e_base: 0.128185
+;;   e: 0.128216
+;; 姿勢2：
+;;   e_pos: 0.001692
+;;   e_wrench(trans): 1.484045e-06 [N]
+;;   e_wrench(rot): 4.529604e-05 [Nm]
+;;   e_base: 0.128185
+;;   e: 0.128196
 
 ;; roseus main.l '(main (list *ih-task*) :set-viewpoint "IH" :random-angle-vector-seed (list 742790772 227240069) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 -43.6038 11.4783 -44.2986 11.459 -44.364 11.5106 -44.3771 11.483 0.0 0.0 0.0 0.0 0.0 0.0))
@@ -126,12 +153,51 @@
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 -13.7709 -91.0396 -10.6108 149.8 19.6753 165.633 -19.5571 -143.868 0.0 0.0 0.0 0.0 0.0 0.0))
 ;; -> Base convex hull (#f(-30.0 3.673940e-15 0.0) #f(-19.5571 -143.868 0.0) #f(30.0 0.0 0.0) #f(19.6753 165.633 0.0) #f(-10.6108 149.8 0.0))
 ;; -> 11400.0 [mm^2]
+;; 姿勢1：
+;;   e_pos: 0.002522
+;;   e_wrench(trans): 1.580613e-05 [N]
+;;   e_wrench(rot): 7.658116e-05 [Nm]
+;;   e_base: 0.282723
+;;   e: 0.282734
+;; 姿勢2：
+;;   e_pos: 0.002447
+;;   e_wrench(trans): 1.169996e-05 [N]
+;;   e_wrench(rot): 9.817100e-05 [Nm]
+;;   e_base: 0.282723
+;;   e: 0.282734
+;; 姿勢3：
+;;   e_pos: 0.002175
+;;   e_wrench(trans): 4.612754e-06 [N]
+;;   e_wrench(rot): 5.308761e-05 [Nm]
+;;   e_base: 0.282723
+;;   e: 0.282731
+;; 姿勢4：
+;;   e_pos: 0.000337
+;;   e_wrench(trans): 1.394419e-05 [N]
+;;   e_wrench(rot): 8.987842e-06 [Nm]
+;;   e_base: 0.282723
+;;   e: 0.282723
 
 ;; yamaguchi_4axis_arm_nejineji_short
 ;; roseus main.l '(main (list *microwave-task*) :set-viewpoint "microwave" :random-angle-vector-seed (list 1654553012 786543381) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
 ;; -> (send robot :angle-vector #f(0 0 0 0 0.0 0.0 -33.5556 -36.3041 -26.546 -28.5806 -42.6717 -46.4694 -35.7073 -38.6917 0.0 0.0 0.0))
 ;; Base convex hull (#f(-42.6717 -46.4694 0.0) #f(-5.880162e-14 -30.0 0.0) #f(21.2132 -21.2132 0.0) #f(30.0 0.0 0.0) #f(21.2132 21.2132 0.0) #f(1.836970e-15 30.0 0.0) #f(-21.2132 21.2132 0.0) #f(-30.0 3.673940e-15 0.0))
 ;; -> 3246.3 [mm^2]
+;; 電子レンジタスク：
+;; 姿勢1：
+;;   e_pos: 2.981672e-05
+;;   e_wrench(trans): 6.796077e-07 [N]
+;;   e_wrench(rot): 2.786066e-07 [Nm]
+;;   e_base: 0.103527
+;;   e: 0.103527
+;; 姿勢2：
+;;   e_pos: 0.00079
+;;   e_wrench(trans): 2.889290e-06 [N]
+;;   e_wrench(rot): 4.614444e-05 [Nm]
+;;   e_base: 0.103527
+;;   e: 0.10353
+
+
 
 ;; Draw base
 ;; (draw-base-convex-hull robot :v *irtviewer*)
