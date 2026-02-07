@@ -125,6 +125,7 @@
 ;;   e_wrench(rot): 3.231539e-07 [Nm]
 ;;   e_base: 0.187465
 ;;   e: 0.187465
+;; Intel(R) Core(TM) i9-13900KFでの計算時間：13.86 [s] (:debug-view nil)
 
 ;; roseus main.l '(main (list *faucet-wall-task*) :set-viewpoint "faucet" :random-angle-vector-seed (list 1777581173 1619544386) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 -21.2419 -25.0552 -35.6628 -27.3711 -73.6238 -36.662 -72.1304 -36.9323 0.0 0.0 0.0))
@@ -144,6 +145,7 @@
 ;;   e_wrench(rot): 4.529604e-05 [Nm]
 ;;   e_base: 0.128185
 ;;   e: 0.128196
+;; Intel(R) Core(TM) i9-13900KFでの計算時間：13.86 [s] (:debug-view nil)
 
 ;; roseus main.l '(main (list *ih-task*) :set-viewpoint "IH" :random-angle-vector-seed (list 742790772 227240069) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
 ;; -> (send robot :angle-vector #f(0 0 0 0 -90 0 0.0 0.0 -43.6038 11.4783 -44.2986 11.459 -44.364 11.5106 -44.3771 11.483 0.0 0.0 0.0 0.0 0.0 0.0))
@@ -180,6 +182,7 @@
 ;;   e_wrench(rot): 8.987842e-06 [Nm]
 ;;   e_base: 0.282723
 ;;   e: 0.282723
+;; Intel(R) Core(TM) i9-13900KFでの計算時間：40.98 [s] (:debug-view nil)
 
 ;; yamaguchi_4axis_arm_nejineji_short
 ;; roseus main.l '(main (list *microwave-task*) :set-viewpoint "microwave" :random-angle-vector-seed (list 1654553012 786543381) :kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4) :base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)) :fix-variant-joint-list (list nil nil nil nil nil nil))'
@@ -200,8 +203,7 @@
 ;;   e_wrench(rot): 4.614444e-05 [Nm]
 ;;   e_base: 0.103527
 ;;   e: 0.10353
-
-
+;; Intel(R) Core(TM) i9-13900KFでの計算時間：10.91 [s] (:debug-view nil)
 
 ;; Draw base
 ;; (draw-base-convex-hull robot :v *irtviewer*)
@@ -214,8 +216,7 @@
      (base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4))) ;; デフォルトは(* 10.0 1e-4)
      (fix-variant-joint-list (list nil nil nil t))
      (fix-pad-diameter-list (list nil t nil nil))
-     (set-viewpoint)
-     (debug-view t))
+     (set-viewpoint) (debug-view t) (start-time))
   "
  研究で使うメイン関数。吸着ベースの設計パラメータを時不変変数として扱っているのが特徴。
 
@@ -256,6 +257,7 @@
     ;;   (send robot :unfix-pad-diameter))
     (send robot :newcoords (make-coords))
 
+    (setq start-time (car (unix:ptimes)))
     ;; 1回目のOptimization
     ;; :inverse-kinematics-statics-trajectory-optmotiongen渡されている引数のうちいくつかは、robotオブジェクト内部のオブジェクトを参照している。
     ;; 以下のコメントにあるように、これら引数をselfに:putしてから(copy-object self)することで、robotオブジェクトではなくコピーされたオブジェクトの内部オブジェクトを参照できるようにしている
@@ -288,6 +290,7 @@
                         :min-loop loop-num-min
                         :stop loop-num-max
                         :optimize-torque? nil))
+    (format t "Optimization 1: elapsed time ~A [s]~%" (* 0.01 (- (car (unix:ptimes)) start-time)))
     (print-sqp-result sqp-opt args :debug-view nil)
 
     ;; 2回目以降のOptimization
@@ -331,6 +334,7 @@
               (send-all config-task-list :theta-min-vector :update? t)
               )
           (send sqp-opt :optimize :loop-num loop-num-max :loop-num-min loop-num-min)))
+      (format t "Optimization ~A: elapsed time ~A [s]~%" (+ i 2) (* 0.01 (- (car (unix:ptimes)) start-time)))
       (print-sqp-result sqp-opt args :debug-view nil))
 
     ;; 最適化計算が終了したら、robot-env-listを:dissoc-root-virtualして、仮想ルートジョイントを削除
