@@ -1,0 +1,73 @@
+larm-end-coords:
+  parent: l_hand_y_link
+  translate:
+  - 0.0
+  - 0.0
+  - 0.0
+rarm-end-coords:
+  parent: r_hand_y_link
+  translate:
+  - 0.0
+  - 0.0
+  - 0.0
+elv-end-coords:
+  parent: elv_storage_link
+  translate:
+  - 0.0
+  - 0.0
+  - 0.0725
+larm:
+- l_zaxis_joint: l_zaxis_joint
+- l_shoulder_y_joint: l_shoulder_y_joint
+- l_elbow_p1_joint: l_elbow_p1_joint
+- l_elbow_p2_joint: l_elbow_p2_joint
+- l_upper_arm_y_joint: l_upper_arm_y_joint
+- l_wrist_p_joint: l_wrist_p_joint
+- l_wrist_r_joint: l_wrist_r_joint
+rarm:
+- r_zaxis_joint: r_zaxis_joint
+- r_shoulder_y_joint: r_shoulder_y_joint
+- r_elbow_p1_joint: r_elbow_p1_joint
+- r_elbow_p2_joint: r_elbow_p2_joint
+- r_upper_arm_y_joint: r_upper_arm_y_joint
+- r_wrist_p_joint: r_wrist_p_joint
+- r_wrist_r_joint: r_wrist_r_joint
+elv:
+- elv_zaxis_joint: elv_zaxis_joint
+- elv_storage_y_joint: elv_storage_y_joint
+angle-vector:
+  reset-pose: &id001
+  - 700.0
+  - 0.0
+  - 44.977
+  - 44.977
+  - 0.0
+  - 0.0
+  - 0.0
+  - 700.0
+  - 0.0
+  - 44.977
+  - 44.977
+  - 0.0
+  - 0.0
+  - 0.0
+  - 200.0
+  - 0.0
+  reset-servo-pose: *id001
+  init-pose:
+  - 180.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 180.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 100.0
+  - 0.0

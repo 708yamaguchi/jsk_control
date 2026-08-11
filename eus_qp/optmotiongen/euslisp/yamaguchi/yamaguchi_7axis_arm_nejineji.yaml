@@ -1,0 +1,18 @@
+rarm:
+ - joint1 : joint1
+ - module1_joint1 : module1_joint1
+ - optional_yaw_joint1 : optional_yaw_joint1
+ - module2_joint1 : module2_joint1
+ - module3_joint1 : module3_joint1
+ - module4_joint1 : module4_joint1
+ - module4_joint2 : module4_joint2
+ - module5_gripper_joint1 : module5_gripper_joint1
+ - module5_gripper_joint2 : module5_gripper_joint2
+
+# angle-vector:
+#   reset-pose : [0, 30, 0, 0, 30, 0, -30, 0, 0] # アーム7軸 + グリッパー2軸 = 計9要素
+
+rarm-end-coords:
+  parent : module4_link2
+  translate : [0, 0.09, 0]
+  rotate : [1, 0, 0, -90]

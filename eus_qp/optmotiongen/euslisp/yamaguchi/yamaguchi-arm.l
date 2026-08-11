@@ -1,3 +1,4 @@
+(require "yamaguchi_7axis_arm_nejineji.l")
 (require "yamaguchi_6axis_arm_nejineji.l")
 (require "yamaguchi_4axis_arm_nejineji.l")
 (require "yamaguchi_6axis_arm_nejineji_short.l")
@@ -23,10 +24,11 @@
         ))))
 
 (defclass yamaguchi-arm-robot
+  :super yamaguchi_7axis_arm_nejineji-robot
   ;; :super yamaguchi_6axis_arm_nejineji-robot
   ;; :super yamaguchi_4axis_arm_nejineji-robot
   ;; :super yamaguchi_6axis_arm_nejineji_short-robot
-  :super yamaguchi_4axis_arm_nejineji_short-robot
+  ;; :super yamaguchi_4axis_arm_nejineji_short-robot
   ;; :super yamaguchi_6axis_arm_with_vacuum_base-robot
   :slots (_pad-diameter _base-cube _wrist-cube _forearm-cube _camera-cube)
   )

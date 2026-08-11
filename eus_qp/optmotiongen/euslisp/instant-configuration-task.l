@@ -2558,7 +2558,9 @@ Update viewer.
    ;;      _external-coords-list
    ;;      ))
    ;;   )
-   (send (send _robot-env :robot) :draw-base-convex-hull :flush nil)
+
+   (unless (derivedp (send _robot-env :robot) r8-robot)
+     (send (send _robot-env :robot) :draw-base-convex-hull :flush nil))
    )
   (:print-status
    ()

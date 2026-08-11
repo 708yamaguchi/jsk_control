@@ -64,11 +64,12 @@
           (format t "  e_pos: ~A~%" e-kin)
           (format t "  e_wrench(trans): ~A [N]~%" (if eom-trans (norm eom-trans) nil))
           (format t "  e_wrench(rot): ~A [Nm]~%" (if eom-rot (norm eom-rot) nil))
-          (format t "  e_base: ~A~%" e-base)
+          (when e-base (format t "  e_base: ~A~%" e-base))
           (format t "  e: ~A~%" e-all))
 
         ;; Look at vacuum base shape
-        (when (and debug-view (eq i 0))
+        (when (and debug-view (eq i 0)
+                   (find-method (send (send config-task :robot-env) :robot) :base-convex-hull))
           (let* ((robot-env (copy-object (send config-task :robot-env)))
                  (v (send-lexpr (instantiate x::irtviewer) :create nil))
                  robot)
@@ -115,15 +116,20 @@
       (format t "~%"))
     (format t "only-kinematics? ~A~%" (send (car instant-config-task-list) :only-kinematics?))
     (format t "kin-scale ~A~%" (send (car instant-config-task-list) :kin-scale))
-    (format t "base-size-scale ~A~%" (send (car instant-config-task-list) :base-size-scale))
-    (format t "Pad_diameter ~A~%" (send (send (car instant-config-task-list) :robot-env) :robot :pad-diameter))
-    (let* ((robot-env (copy-object (send (car instant-config-task-list) :robot-env)))
-           (robot (send robot-env :robot)))
-      (when dissoc-root-virtual
-        (send robot-env :dissoc-root-virtual))
-      (setq robot (send robot-env :robot :newcoords (make-coords)))
-      (format t "Base convex hull ~A~%" (send robot :base-convex-hull))
-      (format t "Base area [cm^2] ~A~%" (/ (send robot :base-convex-hull-area) 100.0)))
+    (when (and (find-method (car instant-config-task-list) :base-size-scale)
+               (send (car instant-config-task-list) :base-size-scale))
+      (format t "base-size-scale ~A~%" (send (car instant-config-task-list) :base-size-scale)))
+    (let ((robot (send (send (car instant-config-task-list) :robot-env) :robot)))
+      (when (find-method robot :pad-diameter)
+        (format t "Pad_diameter ~A~%" (send robot :pad-diameter)))
+      (when (find-method robot :base-convex-hull)
+        (let* ((robot-env (copy-object (send (car instant-config-task-list) :robot-env)))
+               (robot-copy (send robot-env :robot)))
+          (when dissoc-root-virtual
+            (send robot-env :dissoc-root-virtual))
+          (setq robot-copy (send robot-env :robot :newcoords (make-coords)))
+          (format t "Base convex hull ~A~%" (send robot-copy :base-convex-hull))
+          (format t "Base area [cm^2] ~A~%" (/ (send robot-copy :base-convex-hull-area) 100.0)))))
     (if collision
         (format t "Collision is found~%")
       (format t "Collision is not found~%"))
@@ -157,7 +163,7 @@
           (append
            (mapcar #'(lambda (x) (list (send robot :base-cube) (elt (send robot :links) x)))
                    (list 2 3)) ;; base and arm
-           (when (derivedp robot yamaguchi_6axis_arm_nejineji-robot)
+           (unless (derivedp robot r8-robot)
              (append
               (mapcar #'(lambda (x) (list (send robot :wrist-cube) (send (car x) :object)))
                       (send-all tasks :attachable-plane-list)) ;; wrist and plane
@@ -241,3 +247,87 @@
                                                    tasks)))
     args
     ))
+
+(defun get-r8-args
+    (robot tasks)
+  "R8ロボット用の引数抽出関数。接触・静力学考慮版"
+  (let* ((base-coords-list (if (find-method robot :base-coords-list)
+                               (send robot :base-coords-list)
+                             (let ((bc (send robot :base-coords)))
+                               (if (listp bc) bc (list bc)))))
+         (move-target (append (list (send robot :end-coords)) base-coords-list))
+         (limb-size (1- (length move-target)))
+         (task-coords-list (flatten (send-all tasks :coords-list)))
+         (task-wrench-list (flatten (send-all tasks :wrench-list)))
+         (task-target-coords (send-all task-coords-list :copy-worldcoords))
+         (task-size (length task-coords-list))
+         (attachable-plane-list (flatten (send-all tasks :attachable-plane-list)))
+         contact-target-coords-list
+         contact-move-target-list
+         (translation-axis-list (make-list task-size :initial-element
+                                            (append (list t) (make-list limb-size :initial-element t))))
+         (rotation-axis-list (make-list task-size :initial-element
+                                         (append (list nil) (make-list limb-size :initial-element t))))
+         (collision-avoidance-link-pair nil)
+         sqp-opt target-coords-list move-target-list contact-constraint-list
+         same-position-task-index temporary-invariant-joint-list adjacent-regular-scale-list
+         (external-wrench-list (mapcar #'list task-wrench-list))
+         (external-coords-list (make-list (length external-wrench-list) :initial-element (list (send robot :end-coords))))
+         (args (make-hash-table :test #'equal)))
+
+    (dotimes (i task-size)
+      (let (task-face)
+        (dotimes (j limb-size)
+          (setq task-face (append task-face (list (send (elt attachable-plane-list i)
+                                                        :face :margin 0
+                                                        :name (format nil "~A,~A" i j))))))
+        (setq target-coords-list
+              (append target-coords-list
+                      (list (append (list (elt task-target-coords i))
+                                    task-face)))))
+      (setq move-target-list (append move-target-list (list move-target)))
+      (setq contact-constraint-list (append contact-constraint-list
+                                             (list
+                                              (let (c-list)
+                                                (dotimes (k limb-size)
+                                                  (setq c-list (append c-list (list (instance rigid-leg-contact-constraint :init :name (format nil "rigid-leg ~A, ~A" k i) :size 10)))))
+                                                c-list)))))
+
+    (setq contact-target-coords-list (mapcar #'cdr target-coords-list))
+    (setq contact-move-target-list (mapcar #'cdr move-target-list))
+
+    (dotimes (i (- (length task-coords-list) 1))
+      (when (equal (send (elt task-coords-list i) :name)
+                   (send (elt task-coords-list (+ i 1)) :name))
+        (setq same-position-task-index (append same-position-task-index (list i)))))
+    (let (virtual-joint-list)
+      (dolist (joint-type (list "linear-joint" "rotational-joint"))
+        (dolist (axis (list "x" "y" "z"))
+          (setq virtual-joint-list
+                (append virtual-joint-list
+                        (list (read-from-string
+                               (format nil ":~A-~A-~A-~A"
+                                       (send robot :name) "root-virtual" joint-type axis)))))))
+      (dolist (j virtual-joint-list)
+        (dolist (i same-position-task-index)
+          (setq temporary-invariant-joint-list (append temporary-invariant-joint-list (list (list j i)))))))
+    (setq adjacent-regular-scale-list (make-list (- task-size 1) :initial-element 0))
+    (dolist (l same-position-task-index)
+      (setf (elt adjacent-regular-scale-list l) 5e-4))
+
+    (sethash :target-coords-list args target-coords-list)
+    (sethash :move-target-list args move-target-list)
+    (sethash :contact-target-coords-list args contact-target-coords-list)
+    (sethash :contact-move-target-list args contact-move-target-list)
+    (sethash :contact-constraint-list args contact-constraint-list)
+    (sethash :external-wrench-list args external-wrench-list)
+    (sethash :external-coords-list args external-coords-list)
+    (sethash :translation-axis-list args translation-axis-list)
+    (sethash :rotation-axis-list args rotation-axis-list)
+    (sethash :collision-avoidance-link-pair args collision-avoidance-link-pair)
+    (sethash :temporary-invariant-joint-list args temporary-invariant-joint-list)
+    (sethash :adjacent-regular-scale-list args adjacent-regular-scale-list)
+    (sethash :task-name-list args (flatten (mapcar #'(lambda (x)
+                                                       (make-list (send x :size) :initial-element (send x :name)))
+                                                   tasks)))
+    args))

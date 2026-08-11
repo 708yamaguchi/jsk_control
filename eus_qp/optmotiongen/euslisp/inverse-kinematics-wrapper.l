@@ -42,6 +42,7 @@
     (root-virtual-mode :fix)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
+    (dissoc-root-virtual t)
     (joint-angle-margin 0.0)
     (posture-joint-list)
     (posture-joint-angle-list)
@@ -218,15 +219,22 @@ Solve inverse kinematics problem with sqp optimization.
           )
      (send instant-config-task :put :thre thre)
      (send instant-config-task :put :rthre rthre)
+     (when debug-view
+       (if (boundp '*irtviewer*)
+           ;; If *irtviewer* already exists, do not change the viewpoint
+           (send *irtviewer* :objects (append (cadr (memq :additional-draw-objects debug-view)) (list robot-env)))
+         (objects (append (cadr (memq :additional-draw-objects debug-view)) (list robot-env)))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
-     (send robot-env :dissoc-root-virtual)
+     (when dissoc-root-virtual
+       (send robot-env :dissoc-root-virtual))
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
             (send self :angle-vector)
+            sqp-opt
             ))
      ))
   )
@@ -256,6 +264,7 @@ Solve inverse kinematics problem with sqp optimization.
     (root-virtual-joint-invariant? nil)
     (root-virtual-joint-min-angle-list)
     (root-virtual-joint-max-angle-list)
+    (dissoc-root-virtual t)
     (joint-angle-margin 0.0)
     (posture-joint-list
      (make-list (length target-coords-list) :initial-element nil))
@@ -529,13 +538,17 @@ Solve inverse kinematics problem with sqp optimization.
                      ))
           )
      (when debug-view
-       (objects (append robot-env-list (cadr (memq :additional-draw-objects debug-view)))))
+       (if (boundp '*irtviewer*)
+           ;; If *irtviewer* already exists, do not change the viewpoint
+           (send *irtviewer* :objects (append (cadr (memq :additional-draw-objects debug-view)) robot-env-list))
+         (objects (append (cadr (memq :additional-draw-objects debug-view)) robot-env-list))))
      (send sqp-opt :optimize :loop-num stop :loop-num-min min-loop)
-     (send-all robot-env-list :dissoc-root-virtual)
+      (when dissoc-root-virtual
+        (send-all robot-env-list :dissoc-root-virtual))
      (cond ((and (not (equal (send sqp-opt :status) :success)) revert-if-fail)
             (send self :angle-vector av-orig)
             (send self :newcoords rc-orig)
-            nil
+            sqp-opt
             )
            (t
             (send self :angle-vector (send (car robot-env-list) :robot :angle-vector))
@@ -546,6 +559,7 @@ Solve inverse kinematics problem with sqp optimization.
              (send-all robot-env-list :robot :angle-vector)
              (send-all robot-env-list :robot :copy-worldcoords)
              )
+            sqp-opt
             ))
      ))
   )

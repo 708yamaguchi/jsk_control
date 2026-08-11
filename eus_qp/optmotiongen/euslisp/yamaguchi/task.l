@@ -4,6 +4,7 @@
   :super propertied-object
   :slots (_name _attachable-plane-list _coords-list _wrench-list _size)
   )
+
 (defmethod task
   (:init
    (&key (name) (attachable-plane-obj) (coords-list) (wrench-list))
@@ -19,25 +20,24 @@
    (dotimes (i _size)
      (setq _attachable-plane-list (append _attachable-plane-list (list attachable-plane-obj))))
    )
-  (:size
-   ()
-   _size
-   )
-  (:name
-   ()
-   _name)
-  (:attachable-plane-list
-   ()
-   _attachable-plane-list)
-  (:coords-list
-   ()
-   _coords-list)
-  (:wrench-list
-   ()
-   _wrench-list)
+  (:size () _size)
+  (:name () _name)
+  (:attachable-plane-list () _attachable-plane-list)
+  (:coords-list () _coords-list)
+  (:wrench-list () _wrench-list)
+
+  ;; coords-list や wrench-list を再利用し、新しい配置可能領域を設定したタスクを生成
+  (:copy-with-attachable-plane
+   (new-name new-attachable-plane-obj)
+   (instance task :init
+             :name new-name
+             :attachable-plane-obj new-attachable-plane-obj
+             :coords-list (send-all _coords-list :copy-worldcoords)
+             :wrench-list _wrench-list))
   )
 
-;; wrenchを少し変えるだけでも最適化の成否が変わるのが難しい
+;; --- 既存タスク定義 ---
+
 (setq *faucet-task*
       (instance task :init
                 :name "faucet"
@@ -78,7 +78,6 @@
       (instance task :init
                 :name "IH"
                 :attachable-plane-obj
-                ;; 平面をキッチンの下側まで伸ばすと成功率が上がった
                 (instance attachable-plane :init
                           :offset 8500
                           :min-angle-list (list -1250 1000)
@@ -141,10 +140,6 @@
                  )
                 :wrench-list
                 (list
-                 ;; (float-vector 0 0 3 0 0 0)
-                 ;; (float-vector 0 0 3 0 0 0)
-                 ;; (float-vector 0 0 3 0 0 0)
-                 ;; (float-vector 0 0 3 0 0 0)
                  (float-vector 0 0 1 0 0 0)
                  (float-vector 0 0 1 0 0 0)
                  (float-vector 0 0 1 0 0 0)
@@ -197,3 +192,60 @@
                  (float-vector 0 0 2 0 0 0)
                  )
                 ))
+
+
+;; --- R8 用タスク定義 (各タスク専用の床面・配置領域を個別に指定) ---
+
+(setq *r8-faucet-task*
+      (send *faucet-task* :copy-with-attachable-plane
+            "r8-faucet"
+            (instance attachable-plane :init
+                      :offset 10 ;; 視認できるようにちょっと上げる
+                      :min-angle-list (list 6000 -1500)
+                      :max-angle-list (list 7500 2000)
+                      :normal :z+)))
+
+(setq *r8-ih-task*
+      (send *IH-task* :copy-with-attachable-plane
+            "r8-IH"
+            (instance attachable-plane :init
+                      :offset 0
+                      :min-angle-list (list 7000 -1500)
+                      :max-angle-list (list 8500 0)
+                      :normal :z+)))
+
+(setq *r8-wipe-ih-wall-task*
+      (send *wipe-ih-wall-task* :copy-with-attachable-plane
+            "r8-wipe-IH-wall"
+            (instance attachable-plane :init
+                      :offset 0
+                      :min-angle-list (list 7000 -1500)
+                      :max-angle-list (list 8500 0)
+                      :normal :z+)))
+
+(setq *r8-table-task*
+      (send *table-task* :copy-with-attachable-plane
+            "r8-table"
+            (instance attachable-plane :init
+                      :offset 0
+                      :min-angle-list (list 3500 -1000)
+                      :max-angle-list (list 5500 500)
+                      :normal :z+)))
+
+(setq *r8-microwave-task*
+      (send *microwave-task* :copy-with-attachable-plane
+            "r8-microwave"
+            (instance attachable-plane :init
+                      :offset 0
+                      :min-angle-list (list 5500 1000)
+                      :max-angle-list (list 7000 2500)
+                      :normal :z+)))
+
+(setq *r8-fridge-task*
+      (send *fridge-task* :copy-with-attachable-plane
+            "r8-fridge"
+            (instance attachable-plane :init
+                      :offset 0
+                      :min-angle-list (list 6000 1500)
+                      :max-angle-list (list 7800 3000)
+                      :normal :z+)))
