@@ -199,22 +199,22 @@
                 :attachable-plane-obj
                 (instance attachable-plane :init
                           :offset 8400
-                          :min-angle-list (list -1250 800)
+                          :min-angle-list (list -1250 900)
                           :max-angle-list (list 1600 2000)
                           :normal :x-)
                 :coords-list
                 (list
-                 (make-coords :pos (float-vector 7850 -220 900) :rpy (list 0 0 0))
-                 (make-coords :pos (float-vector 7850 520 900) :rpy (list 0 0 0))
-                 (make-coords :pos (float-vector 8150 -220 900) :rpy (list 0 0 0))
-                 (make-coords :pos (float-vector 8150 520 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 7870 -240 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 7870 540 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8200 -240 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8200 540 900) :rpy (list 0 0 0))
                  )
                 :wrench-list
                 (list
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
-                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
+                 (float-vector 0 0 1 0 0 0)
                  )
                 ))
 
