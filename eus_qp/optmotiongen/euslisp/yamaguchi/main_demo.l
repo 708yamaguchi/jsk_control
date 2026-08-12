@@ -19,6 +19,8 @@
     (:yamaguchi
      (yamaguchi-arm :pad-diameter pad-diameter :transparency 0.4))
     (:r8
+     ;; r8-arm.l の変更が即座に反映されるように再ロードする
+     (load "r8-arm.l")
      ;; 使用する手の左右を切り替えられる。
      (let ((robot (instance r8-arm-robot :init :arm :rarm)))
        (send robot :startup-pose)
@@ -27,7 +29,7 @@
 
 (defun run
     (&key
-     (task :faucet) ;; :faucet, :faucet-wall, :ih, :wipe-ih-wall, :microwave, :table, :fridge
+     (task :faucet) ;; :faucet, :faucet-wall, :ih, :wipe-ih-wall, :microwave, :table, :fridge, :kitchen
      (robot-type :yamaguchi) ;; :yamaguchi または :r8
      (pad-diameter 60)
      (debug-view t)
@@ -48,6 +50,10 @@
       (setq task-obj (if (eq robot-type :r8) *r8-faucet-task* *faucet-wall-task*))
       (setq viewpoint "faucet")
       (setq seed-val (if (eq random-angle-vector-seed :auto) (list 1777581173 1619544386) random-angle-vector-seed)))
+     ((or (eq task :kitchen) (eq task :kitchen-task) (equal task "kitchen") (equal task "kitchen-task"))
+      (setq task-obj (if (eq robot-type :r8) *r8-kitchen-task* *kitchen-task*))
+      (setq viewpoint "faucet")
+      (setq seed-val (if (eq random-angle-vector-seed :auto) nil random-angle-vector-seed)))
      ((or (eq task :ih) (eq task :IH) (equal task "IH") (equal task "ih"))
       (setq task-obj (if (eq robot-type :r8) *r8-ih-task* *IH-task*))
       (setq viewpoint "IH")
@@ -76,6 +82,7 @@
       (error "Unsupported task: ~A" task)))
 
     (setq robot (create-robot robot-type :pad-diameter pad-diameter))
+    (setq *robot* robot) ;; グローバル変数 *robot* に保存してインタプリタから参照可能にする
     (setq tasks (list task-obj))
 
     ;; 2. ロボットごとの最適化実行
@@ -104,6 +111,11 @@
                    :root-virtual-mode :6dof
                    :dissoc-root-virtual nil
                    :debug-view (when debug-view (list :additional-draw-objects (send *irtviewer* :objects)))))
+
+       ;; ベースの四隅の位置を表示
+       (when (find-method robot :print-base-info)
+         (send robot :print-base-info))
+       ;; 最適化の結果を表示
        (format t "Optimization 1: elapsed time ~A [s]~%" (* 0.01 (- (car (unix:ptimes)) start-time)))
        (if (eq (send sqp-opt :status) :success)
            (format t "Optimization succeeded.~%")
@@ -210,6 +222,7 @@
 
 (warn "(run :task :faucet :robot-type :yamaguchi)      ;; Yamaguchi-armでfaucetタスク実行~%")
 (warn "(run :task :faucet-wall :robot-type :yamaguchi) ;; Yamaguchi-armでfaucet-wallタスク実行~%")
+(warn "(run :task :kitchen :robot-type :yamaguchi)     ;; Yamaguchi-armでkitchenタスク実行~%")
 (warn "(run :task :ih :robot-type :yamaguchi)          ;; Yamaguchi-armでIHタスク実行 (*IH-task*)~%")
 (warn "(run :task :wipe-ih-wall :robot-type :yamaguchi);; Yamaguchi-armでwipe-ih-wallタスク実行 (*wipe-ih-wall-task*)~%")
 (warn "(run :task :microwave :robot-type :yamaguchi)   ;; Yamaguchi-armでmicrowaveタスク実行~%")

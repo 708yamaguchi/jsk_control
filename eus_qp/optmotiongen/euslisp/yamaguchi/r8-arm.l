@@ -31,8 +31,11 @@
      (setq base-coords-list nil)
      (dotimes (i (length offsets))
        (let* ((offset (elt offsets i))
-              (init-coords (send (send base-link :copy-worldcoords) :translate offset :local))
+              (ox (elt offset 0))
+              (oy (elt offset 1))
+              (init-coords (send base-link :copy-worldcoords))
               ;; 1. base_link -> dummy_link (x-axis linear joint)
+              ;; オフセットをかけずに base-link の座標で作成
               (dummy-link (instance bodyset-link
                                     :init (make-cascoords :coords (send init-coords :copy-worldcoords))
                                     :bodies (list (make-cube 1e-3 1e-3 1e-3))
@@ -42,7 +45,7 @@
                                  :name (format nil "base_coords_~A_x_joint" i)
                                  :parent-link base-link :child-link dummy-link
                                  :axis (float-vector 1 0 0)
-                                 :min min-angle :max max-angle
+                                 :min (+ ox min-angle) :max (+ ox max-angle)
                                  :max-joint-velocity 10.0
                                  :max-joint-torque 999999.0))
               ;; 2. dummy_link -> base_coords_link (y-axis linear joint)
@@ -56,14 +59,18 @@
                                  :name (format nil "base_coords_~A_y_joint" i)
                                  :parent-link dummy-link :child-link bc-link
                                  :axis (float-vector 0 1 0)
-                                 :min min-angle :max max-angle
+                                 :min (+ oy min-angle) :max (+ oy max-angle)
                                  :max-joint-velocity 10.0
                                  :max-joint-torque 999999.0))
               (bc (make-cascoords :name (format nil "base_coords_~A" i)
-                                  :coords (send bc-link :copy-worldcoords))))
+                                  :coords (send init-coords :copy-worldcoords))))
+         ;; 先に assoc 階層を構成
          (send base-link :assoc dummy-link)
          (send dummy-link :assoc bc-link)
          (send bc-link :assoc bc)
+         ;; ジョイント角度にオフセットを設定 (assoc階層に従って動く)
+         (send joint-x :joint-angle ox)
+         (send joint-y :joint-angle oy)
          (setq dummy-links (append dummy-links (list dummy-link)))
          (setq base-coords-links (append base-coords-links (list bc-link)))
          (setq base-joint-list (append base-joint-list (list joint-x joint-y)))
@@ -83,6 +90,38 @@
   (:base-coords-list
    ()
    base-coords-list)
+
+  ;; base-coords のワールド位置リストを返すメソッド
+  (:base-coords-pos-list
+   ()
+   (mapcar #'(lambda (bc) (send bc :worldpos)) base-coords-list))
+
+  ;; ベース原点から四隅までの直動関節 (x, y) の角度 (mm) リストを返すメソッド
+  (:base-joint-angles
+   ()
+   (let (res)
+     (dotimes (i (length base-coords-list))
+       (let ((jx (send self :joint (format nil "base_coords_~A_x_joint" i)))
+             (jy (send self :joint (format nil "base_coords_~A_y_joint" i))))
+         (push (list (if jx (send jx :joint-angle) 0.0)
+                     (if jy (send jy :joint-angle) 0.0))
+               res)))
+     (nreverse res)))
+
+  ;; 四隅の位置および2つの直動関節角度を表示するメソッド
+  (:print-base-info
+   ()
+   (format t "===== R8 Base Coords & Joint Angles =====~%")
+   (format t "Base Link Worldpos: ~A~%" (send (find "base_link" (send self :links) :test #'(lambda (x y) (equal x (send y :name)))) :worldpos))
+   (dotimes (i (length base-coords-list))
+     (let* ((bc (elt base-coords-list i))
+            (jx (send self :joint (format nil "base_coords_~A_x_joint" i)))
+            (jy (send self :joint (format nil "base_coords_~A_y_joint" i))))
+       (format t "Corner ~A (~A):~%" i (send bc :name))
+       (format t "  Worldpos    : ~A~%" (send bc :worldpos))
+       (format t "  Joint X (mm): ~A~%" (if jx (send jx :joint-angle) 0.0))
+       (format t "  Joint Y (mm): ~A~%" (if jy (send jy :joint-angle) 0.0))))
+   t)
 
   ;; タスク共通の不変ジョイント (ベース座標ジョイント + 操作していない側のアームのジョイント)
   (:invariant-joint-list

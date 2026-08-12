@@ -193,6 +193,31 @@
                  )
                 ))
 
+(setq *kitchen-task*
+      (instance task :init
+                :name "kitchen-task"
+                :attachable-plane-obj
+                (instance attachable-plane :init
+                          :offset 8400
+                          :min-angle-list (list -1250 800)
+                          :max-angle-list (list 1600 2000)
+                          :normal :x-)
+                :coords-list
+                (list
+                 (make-coords :pos (float-vector 7850 -220 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 7850 520 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8150 -220 900) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 8150 520 900) :rpy (list 0 0 0))
+                 )
+                :wrench-list
+                (list
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 (float-vector 0 0 3 0 0 0)
+                 )
+                ))
+
 
 ;; --- R8 用タスク定義 (各タスク専用の床面・配置領域を個別に指定) ---
 
@@ -248,4 +273,13 @@
                       :offset 0
                       :min-angle-list (list 6000 1500)
                       :max-angle-list (list 7800 3000)
+                      :normal :z+)))
+
+(setq *r8-kitchen-task*
+      (send *kitchen-task* :copy-with-attachable-plane
+            "r8-kitchen-task"
+            (instance attachable-plane :init
+                      :offset 10
+                      :min-angle-list (list 6000 -1500)
+                      :max-angle-list (list 7750 2000)
                       :normal :z+)))
