@@ -10,16 +10,38 @@
 (unless (boundp '*room610*)
   (setq *room610* (room610)))
 
-;; *room610* 内の洗濯機 (room610-laundry-machine) の位置変更
+;; 除外したいオブジェクト名のリスト（将来消したい物体名をここに追加できます）
+(defvar *room610-remove-object-names*
+  (list "room610-x-leg-desk" "room610-sweeper" "room610-bears-panel"
+        ))
+
+;; *room610* から指定されたオブジェクトを削除（同名物体が複数あっても警告なしで全削除）
+(when (boundp '*room610*)
+  (dolist (name *room610-remove-object-names*)
+    (let ((targets (send *room610* :find-object name)))
+      (dolist (target targets)
+        (send *room610* :dissoc target))
+      (setf (slot *room610* scene-model 'objs)
+            (set-difference (slot *room610* scene-model 'objs) targets)))))
+
+;; *room610* 内の洗濯機、冷蔵庫などの配置変更
 (let ((laundry (find-if #'(lambda (o) (substringp "room610-laundry-machine" (send o :name))) (send *room610* :objects)))
       (fridge (find-if #'(lambda (o) (substringp "room610-fridge" (send o :name))) (send *room610* :objects)))
+      (tv1 (find-if #'(lambda (o) (substringp "room610-tv1" (send o :name))) (send *room610* :objects)))
+      (audio-shelf (find-if #'(lambda (o) (substringp "room610-audio_shelf" (send o :name))) (send *room610* :objects)))
       )
   (when laundry
     (send laundry :newcoords
           (make-coords :pos (float-vector 8550 2200 0) :rpy (list pi 0 0))))
   (when fridge
     (send fridge :newcoords
-          (make-coords :pos (float-vector 5550 2000 0) :rpy (list -pi/2 0 0))))
+          (make-coords :pos (float-vector 4650 2250 0) :rpy (list -pi/2 0 0))))
+  (when tv1
+    (send tv1 :newcoords
+          (make-coords :pos (float-vector 3500 2200 700) :rpy (list -pi/2 0 0))))
+  (when audio-shelf
+    (send audio-shelf :newcoords
+          (make-coords :pos (float-vector 3500 2200 0) :rpy (list -pi/2 0 0))))
   )
 
 ;; 電子レンジの追加
@@ -38,7 +60,7 @@
 (unless (boundp '*room602-square-600-closet*)
   (setq *room602-square-600-closet* (room602-square-600-closet))
   (send *room602-square-600-closet* :newcoords
-        (make-coords :pos (float-vector 3000 2200 0) :rpy (list (/ -pi 2) 0 0))))
+        (make-coords :pos (float-vector 2400 2300 0) :rpy (list (/ -pi 2) 0 0))))
 
 (unless (boundp '*room610-model-list*)
   (setq *room610-model-list*
