@@ -2,6 +2,7 @@
 
 (load "models/room610-scene.l")
 (load "models/toshiba-microwave-oven-object.l")
+(load "models/room602-square-600-closet-object.l")
 (load "faucet.l")
 
 (require "gl.l")
@@ -9,22 +10,43 @@
 (unless (boundp '*room610*)
   (setq *room610* (room610)))
 
+;; *room610* 内の洗濯機 (room610-laundry-machine) の位置変更
+(let ((laundry (find-if #'(lambda (o) (substringp "room610-laundry-machine" (send o :name))) (send *room610* :objects)))
+      (fridge (find-if #'(lambda (o) (substringp "room610-fridge" (send o :name))) (send *room610* :objects)))
+      )
+  (when laundry
+    (send laundry :newcoords
+          (make-coords :pos (float-vector 8550 2200 0) :rpy (list pi 0 0))))
+  (when fridge
+    (send fridge :newcoords
+          (make-coords :pos (float-vector 5550 2000 0) :rpy (list -pi/2 0 0))))
+  )
+
+;; 電子レンジの追加
 (unless (boundp '*toshiba-microwave-oven*)
   (setq *toshiba-microwave-oven* (toshiba-microwave-oven))
   (send *toshiba-microwave-oven* :newcoords
         (make-coords :pos (float-vector 6300 2150 800) :rpy (list (deg2rad -90) 0 0))))
 
+;; 蛇口の追加
 (unless (boundp '*faucet*)
   (setq *faucet* (make-faucet))
   (send *faucet* :newcoords
         (make-coords :pos (float-vector 8200 770 900) :rpy (list (/ pi 3) 0 0))))
+
+;; クローゼットの追加
+(unless (boundp '*room602-square-600-closet*)
+  (setq *room602-square-600-closet* (room602-square-600-closet))
+  (send *room602-square-600-closet* :newcoords
+        (make-coords :pos (float-vector 3000 2200 0) :rpy (list (/ -pi 2) 0 0))))
 
 (unless (boundp '*room610-model-list*)
   (setq *room610-model-list*
         (append
          (send *room610* :objects)
          (list *toshiba-microwave-oven*)
-         (list *faucet*))))
+         (list *faucet*)
+         (list *room602-square-600-closet*))))
 
 (defun set-room610-viewpoint ()
   (send *irtviewer* :viewer :viewing :look
