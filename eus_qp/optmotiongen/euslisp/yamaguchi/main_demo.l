@@ -19,7 +19,10 @@
     (:yamaguchi
      (yamaguchi-arm :pad-diameter pad-diameter :transparency 0.4))
     (:r8
-     (instance r8-arm-robot :init :arm :rarm)) ;; 左右の手を切り替えられる。
+     ;; 使用する手の左右を切り替えられる。
+     (let ((robot (instance r8-arm-robot :init :arm :rarm)))
+       (send robot :startup-pose)
+       robot))
     (t (error "Unsupported robot-type: ~A" robot-type))))
 
 (defun run

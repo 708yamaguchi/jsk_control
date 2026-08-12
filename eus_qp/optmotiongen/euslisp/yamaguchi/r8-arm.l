@@ -27,7 +27,7 @@
                         (float-vector -345 -235 0)
                         (float-vector  345 -235 0)))
          dummy-links base-coords-links base-joint-list
-         (min-angle -1e5) (max-angle 1e5))
+         (min-angle -1) (max-angle 1))
      (setq base-coords-list nil)
      (dotimes (i (length offsets))
        (let* ((offset (elt offsets i))
@@ -113,6 +113,87 @@
   (:target-arm
    (&optional a)
    (if a (setq target-arm a))
-   target-arm))
+   target-arm)
+
+  ;; Python reset_pose の EusLisp 移植
+  (:reset-pose
+   ()
+   ;; Left arm initial pose
+   (send self :l_zaxis_joint :joint-angle 700.0)  ;; Middle of range (0.7m -> 700mm)
+   (send self :l_shoulder_y_joint :joint-angle (rad2deg 0.0))
+   (send self :l_elbow_p1_joint :joint-angle (rad2deg 0.785))  ;; 45 degrees
+   (send self :l_elbow_p2_joint :joint-angle (rad2deg 0.785))  ;; 45 degrees
+   (send self :l_upper_arm_y_joint :joint-angle (rad2deg 0.0))
+   (send self :l_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :l_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Right arm initial pose
+   (send self :r_zaxis_joint :joint-angle 700.0)  ;; Middle of range (0.7m -> 700mm)
+   (send self :r_shoulder_y_joint :joint-angle (rad2deg 0.0))
+   (send self :r_elbow_p1_joint :joint-angle (rad2deg 0.785))  ;; 45 degrees
+   (send self :r_elbow_p2_joint :joint-angle (rad2deg 0.785))  ;; 45 degrees
+   (send self :r_upper_arm_y_joint :joint-angle (rad2deg 0.0))
+   (send self :r_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :r_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Elevator initial pose
+   (send self :elv_zaxis_joint :joint-angle 700.0)  ;; Middle of range (0.7m -> 700mm)
+   (send self :elv_storage_y_joint :joint-angle (rad2deg 0.0))
+
+   (send self :angle-vector))
+
+  ;; Python startup_pose の EusLisp 移植
+  (:startup-pose
+   ()
+   ;; Left arm initial pose
+   (send self :l_zaxis_joint :joint-angle 820.0)  ;; 0.82m -> 820mm
+   (send self :l_shoulder_y_joint :joint-angle (rad2deg 0.12531464))
+   (send self :l_elbow_p1_joint :joint-angle (rad2deg 0.02666055))
+   (send self :l_elbow_p2_joint :joint-angle (rad2deg 0.02666055))
+   (send self :l_upper_arm_y_joint :joint-angle (rad2deg 0.0))
+   (send self :l_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :l_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Right arm initial pose
+   (send self :r_zaxis_joint :joint-angle 820.0)  ;; 0.82m -> 820mm
+   (send self :r_shoulder_y_joint :joint-angle (rad2deg -0.12531464))
+   (send self :r_elbow_p1_joint :joint-angle (rad2deg 0.02666055))
+   (send self :r_elbow_p2_joint :joint-angle (rad2deg 0.02666055))
+   (send self :r_upper_arm_y_joint :joint-angle (rad2deg 0.0))
+   (send self :r_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :r_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Elevator initial pose
+   (send self :elv_zaxis_joint :joint-angle 421.8)  ;; 0.4218m -> 421.8mm
+   (send self :elv_storage_y_joint :joint-angle (rad2deg 0.0))
+
+   (send self :angle-vector))
+
+  ;; Python tuck_arm_pose の EusLisp 移植
+  (:tuck-arm-pose
+   ()
+   ;; Left arm initial pose
+   (send self :l_zaxis_joint :joint-angle 650.0)  ;; 0.65m -> 650mm
+   (send self :l_shoulder_y_joint :joint-angle (rad2deg 0.124791))
+   (send self :l_elbow_p1_joint :joint-angle (rad2deg 0.026369))
+   (send self :l_elbow_p2_joint :joint-angle (rad2deg 0.026369))
+   (send self :l_upper_arm_y_joint :joint-angle (rad2deg -1.570000))
+   (send self :l_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :l_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Right arm initial pose
+   (send self :r_zaxis_joint :joint-angle 950.0)  ;; 0.95m -> 950mm
+   (send self :r_shoulder_y_joint :joint-angle (rad2deg -0.124791))
+   (send self :r_elbow_p1_joint :joint-angle (rad2deg 0.026661))
+   (send self :r_elbow_p2_joint :joint-angle (rad2deg 0.026661))
+   (send self :r_upper_arm_y_joint :joint-angle (rad2deg 1.570000))
+   (send self :r_wrist_p_joint :joint-angle (rad2deg 0.0))
+   (send self :r_wrist_r_joint :joint-angle (rad2deg 0.0))
+
+   ;; Elevator initial pose
+   (send self :elv_zaxis_joint :joint-angle 421.8)  ;; 0.4218m -> 421.8mm
+   (send self :elv_storage_y_joint :joint-angle (rad2deg 0.0))
+
+   (send self :angle-vector)))
 
 (provide :r8-arm)

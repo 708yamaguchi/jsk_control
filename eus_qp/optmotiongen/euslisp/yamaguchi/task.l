@@ -202,25 +202,25 @@
             (instance attachable-plane :init
                       :offset 10 ;; 視認できるようにちょっと上げる
                       :min-angle-list (list 6000 -1500)
-                      :max-angle-list (list 7500 2000)
+                      :max-angle-list (list 7700 2000)
                       :normal :z+)))
 
 (setq *r8-ih-task*
       (send *IH-task* :copy-with-attachable-plane
             "r8-IH"
             (instance attachable-plane :init
-                      :offset 0
-                      :min-angle-list (list 7000 -1500)
-                      :max-angle-list (list 8500 0)
+                      :offset 10 ;; 視認できるようにちょっと上げる
+                      :min-angle-list (list 6000 -1500)
+                      :max-angle-list (list 7700 2000)
                       :normal :z+)))
 
 (setq *r8-wipe-ih-wall-task*
       (send *wipe-ih-wall-task* :copy-with-attachable-plane
-            "r8-wipe-IH-wall"
+            "r8-wipe-IH-wall" ;; 視認できるようにちょっと上げる
             (instance attachable-plane :init
-                      :offset 0
-                      :min-angle-list (list 7000 -1500)
-                      :max-angle-list (list 8500 0)
+                      :offset 10
+                      :min-angle-list (list 6000 -1500)
+                      :max-angle-list (list 8300 2000)
                       :normal :z+)))
 
 (setq *r8-table-task*

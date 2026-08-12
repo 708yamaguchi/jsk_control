@@ -251,10 +251,7 @@
 (defun get-r8-args
     (robot tasks)
   "R8ロボット用の引数抽出関数。接触・静力学考慮版"
-  (let* ((base-coords-list (if (find-method robot :base-coords-list)
-                               (send robot :base-coords-list)
-                             (let ((bc (send robot :base-coords)))
-                               (if (listp bc) bc (list bc)))))
+  (let* ((base-coords-list (send robot :base-coords-list))
          (move-target (append (list (send robot :end-coords)) base-coords-list))
          (limb-size (1- (length move-target)))
          (task-coords-list (flatten (send-all tasks :coords-list)))
