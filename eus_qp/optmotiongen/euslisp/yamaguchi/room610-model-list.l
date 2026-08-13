@@ -13,6 +13,8 @@
 ;; 除外したいオブジェクト名のリスト（将来消したい物体名をここに追加できます）
 (defvar *room610-remove-object-names*
   (list "room610-x-leg-desk" "room610-sweeper" "room610-bears-panel"
+        "room610-cabinet" "room610-cabinet-mamoru" "room610-tv3"
+        "room610-shelf1" "room610-shelf2" "room610-tray"
         ))
 
 ;; *room610* から指定されたオブジェクトを削除（同名物体が複数あっても警告なしで全削除）
@@ -29,6 +31,8 @@
       (fridge (find-if #'(lambda (o) (substringp "room610-fridge" (send o :name))) (send *room610* :objects)))
       (tv1 (find-if #'(lambda (o) (substringp "room610-tv1" (send o :name))) (send *room610* :objects)))
       (audio-shelf (find-if #'(lambda (o) (substringp "room610-audio_shelf" (send o :name))) (send *room610* :objects)))
+      (table (find-if #'(lambda (o) (substringp "room610-table" (send o :name))) (send *room610* :objects)))
+      (chair (find-if #'(lambda (o) (substringp "room610-chair" (send o :name))) (send *room610* :objects)))
       )
   (when laundry
     (send laundry :newcoords
@@ -42,6 +46,12 @@
   (when audio-shelf
     (send audio-shelf :newcoords
           (make-coords :pos (float-vector 3500 2200 0) :rpy (list -pi/2 0 0))))
+  (when table
+    (send table :newcoords
+          (make-coords :pos (float-vector 3500 0 0) :rpy (list pi/2 0 0))))
+  (when chair
+    (send chair :newcoords
+          (make-coords :pos (float-vector 3500 -300 0) :rpy (list pi/2 0 0))))
   )
 
 ;; 電子レンジの追加
@@ -87,6 +97,11 @@
          (send *irtviewer* :viewer :viewing :look
                #f(-8636.77 -8927.11 10455.5)
                #f(6740.47 1058.99 706.424)
+               #f(0.0 0.0 1.0)))
+        ((equal name "room610-wide")
+         (send *irtviewer* :viewer :viewing :look
+               #f(-10173.3 -17906.2 16081.5)
+               #f(3130.9 -877.624 3097.13)
                #f(0.0 0.0 1.0)))
         ((equal name "fridge")
          (send *irtviewer* :viewer :viewing :look

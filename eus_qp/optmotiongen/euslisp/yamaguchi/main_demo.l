@@ -29,7 +29,7 @@
 
 (defun run
     (&key
-     (task :faucet) ;; :faucet, :faucet-wall, :ih, :wipe-ih-wall, :microwave, :table, :fridge, :kitchen
+     (task :faucet) ;; :faucet, :faucet-wall, :ih, :wipe-ih-wall, :microwave, :table, :fridge, :kitchen, :closet
      (robot-type :yamaguchi) ;; :yamaguchi または :r8
      (pad-diameter 60)
      (debug-view t)
@@ -73,6 +73,10 @@
      ((or (eq task :fridge) (equal task "fridge"))
       (setq task-obj (if (eq robot-type :r8) *r8-fridge-task* *fridge-task*))
       (setq viewpoint "fridge")
+      (setq seed-val (if (eq random-angle-vector-seed :auto) nil random-angle-vector-seed)))
+     ((or (eq task :closet) (equal task "closet"))
+      (setq task-obj (if (eq robot-type :r8) *r8-closet-task* *closet-task*))
+      (setq viewpoint "room610-wide")
       (setq seed-val (if (eq random-angle-vector-seed :auto) nil random-angle-vector-seed)))
      ((derivedp task task)
       (setq task-obj task)
@@ -226,4 +230,6 @@
 (warn "(run :task :ih :robot-type :yamaguchi)          ;; Yamaguchi-armでIHタスク実行 (*IH-task*)~%")
 (warn "(run :task :wipe-ih-wall :robot-type :yamaguchi);; Yamaguchi-armでwipe-ih-wallタスク実行 (*wipe-ih-wall-task*)~%")
 (warn "(run :task :microwave :robot-type :yamaguchi)   ;; Yamaguchi-armでmicrowaveタスク実行~%")
+(warn "(run :task :closet :robot-type :yamaguchi)      ;; Yamaguchi-armでclosetタスク実行~%")
 (warn "(run :task :faucet :robot-type :r8)             ;; R8で実行~%")
+(warn "(run :task :closet :robot-type :r8)             ;; R8でclosetタスク実行~%")

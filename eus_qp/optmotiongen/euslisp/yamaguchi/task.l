@@ -218,6 +218,32 @@
                  )
                 ))
 
+(setq *closet-task*
+      (instance task :init
+                :name "closet"
+                :attachable-plane-obj
+                (instance attachable-plane :init
+                          :offset 2000
+                          :min-angle-list (list 0 2100)
+                          :max-angle-list (list 1700 2700)
+                          :normal :y-)
+                :coords-list
+                (list
+                 (make-coords :pos (float-vector 2400 1900 700) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 2400 1900 1500) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 2600 1900 700) :rpy (list 0 0 0))
+                 (make-coords :pos (float-vector 2600 1900 1500) :rpy (list 0 0 0))
+                 )
+                :wrench-list
+                (list
+                 (float-vector 0 -1 0 0 0 0)
+                 (float-vector 0 -1 0 0 0 0)
+                 (float-vector 0 -1 0 0 0 0)
+                 (float-vector 0 -1 0 0 0 0)
+                 )
+                ))
+
+
 
 ;; --- R8 用タスク定義 (各タスク専用の床面・配置領域を個別に指定) ---
 
@@ -283,3 +309,13 @@
                       :min-angle-list (list 6000 -1500)
                       :max-angle-list (list 7750 2000)
                       :normal :z+)))
+
+(setq *r8-closet-task*
+      (send *closet-task* :copy-with-attachable-plane
+            "r8-closet"
+            (instance attachable-plane :init
+                      :offset 10 ;; 視認できるようにちょっと上げる
+                      :min-angle-list (list 1500 500)
+                      :max-angle-list (list 4000 1900)
+                      :normal :z+)))
+
