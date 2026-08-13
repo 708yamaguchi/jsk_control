@@ -127,9 +127,9 @@
 
       (:yamaguchi
        ;; Yamaguchi-arm: 静力学・接触制約・ベース設計パラメータを含めて段階的に解く
-       (let* ((kin-scale-list (list 0.4 0.4 0.4 0.4 0.4 0.4))
-              (base-size-scale-list (list 0 (* 4.0 1e-4) (* 6.0 1e-4) (* 8.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)))
-              (fix-variant-joint-list (list nil nil nil nil nil nil))
+       (let* ((kin-scale-list (list 1.0 1.0 0.01 0.01))
+              (base-size-scale-list (list 0 (* 10.0 1e-4) (* 10.0 1e-4) (* 10.0 1e-4)))
+              (fix-variant-joint-list (list nil nil nil t))
               (loop-num-min 30) (loop-num-max max-stop))
          (send robot :fix-gripper)
          (if seed-val
